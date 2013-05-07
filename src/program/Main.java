@@ -39,62 +39,39 @@ public class Main {
 	
 	/** user parameters end **/
 	public static void main(String[] args) throws IOException {
+		int recursionSize = 4;
 		outFolderPrefix = "out/";
-		trainFile = "data/train.txt.SPL";
-		//trainFile = "/home/anjan/workspace/HMM/out/decoded/train.decoded.txt";
-		testFile = "data/test.txt.SPL";
-		vocabFile = trainFile;
-		numStates = 20;
-		numIter = 200;
-		String outFile = "out/decoded/test.decoded.txt";
-		String outFileTrain = "out/decoded/train.decoded.txt";
+		numStates = 2;
+		numIter = 60;
+		String trainFileBase = "out/decoded/train.txt.SPL";
+		String testFileBase = "out/decoded/test.txt.SPL";
 		HMMType modelType = HMMType.LOG_SCALE;
-		//HMMType modelType = HMMType.WITH_NO_FINAL_STATE;
-		//HMMType modelType = HMMType.WITH_FINAL_STATE;
 		
-		printParams();
-		corpus = new Corpus("\\s+", vocabThreshold);
-		Corpus.oneTimeStepObsSize = Corpus.findOneTimeStepObsSize(vocabFile);
-		//TRAIN
-		corpus.readVocab(vocabFile);
-		
-		corpus.readTrain(trainFile);
-		corpus.readTest(testFile);
-		
-		//save vocab file
-		corpus.saveVocabFile(outFolderPrefix + "/model/vocab.txt");
-		
-		if(modelType == HMMType.WITH_NO_FINAL_STATE) {
-			System.out.println("HMM with no final state");
-			model = new HMMNoFinalState(numStates, corpus);			
-		} else if(modelType == HMMType.WITH_FINAL_STATE) {
-			System.out.println("HMM with final state");
-			System.out.println("NOT WORKING");
-			System.exit(-1);
-			model = new HMMFinalState(numStates, corpus);
-		} else if(modelType == HMMType.LOG_SCALE) {
-			System.out.println("HMM Log scale");
+		for(int r=0; r<recursionSize; r++) {
+			System.out.println("RECURSION: " + r);
+			System.out.println("-----------------");
+			trainFile = trainFileBase + "." + r;
+			testFile = "out/decoded/test.txt.SPL." + r;
+			vocabFile = trainFile;
+			String outFileTrain = trainFileBase + "." + (r+1);
+			String outFile = testFileBase + "." + (r+1);
+			printParams();
+			corpus = new Corpus("\\s+", vocabThreshold);
+			Corpus.oneTimeStepObsSize = Corpus.findOneTimeStepObsSize(vocabFile);
+			//TRAIN
+			corpus.readVocab(vocabFile);
+			corpus.readTrain(trainFile);
+			corpus.readTest(testFile);
+			//corpus.saveVocabFile(outFolderPrefix + "/model/vocab.txt");
 			model = new HMMNoFinalStateLog(numStates, corpus);
-		}
-		
-		Random r = new Random(seed);
-		model.initializeRandom(r);
-		EM em = new EM(numIter, corpus, model);
-		//start training with EM
-		em.start();
-		
-		
-		/*
-		//TEST
-		corpus.readVocabFromDictionary("out/model/vocab.txt");
-		corpus.readTrain(trainFile);
-		corpus.readTest(testFile);
-		model = new HMMNoFinalState();
-		model.loadModel("/home/anjan/workspace/HMM/out/model/model_iter_53_states_80.txt");
-		*/
-		test(model, corpus.testInstanceList, outFile);		
-		test(model, corpus.trainInstanceList, outFileTrain);
-		//testPosteriorDistribution(model, corpus.testInstanceList, outFile + ".posterior_distribution");
+			Random random = new Random(seed);
+			model.initializeRandom(random);
+			EM em = new EM(numIter, corpus, model);
+			//start training with EM
+			em.start();
+			test(model, corpus.testInstanceList, outFile);		
+			test(model, corpus.trainInstanceList, outFileTrain);
+		}		
 	}
 	
 	public static void testPosteriorDistribution(HMMBase model, InstanceList instanceList, String outFile) {
@@ -126,25 +103,46 @@ public class Main {
 		System.out.println("Finished decoding");
 	}
 	
+	
 	public static void test(HMMBase model, InstanceList instanceList, String outFile) {
 		System.out.println("Decoding Data");
 		Decoder decoder = new Decoder(model);
 		try {
 			PrintWriter pw = new PrintWriter(new FileWriter(outFile));
+			PrintWriter pwSimple = new PrintWriter(new FileWriter(outFile + ".simple")); //word and latest hmmstate (no intermediate hmm states)
+			PrintWriter pwSimpleAll = new PrintWriter(new FileWriter(outFile + ".simple.all")); //word and intermediate hmm states and final
 			for(int n=0; n<instanceList.size(); n++) {
 				Instance instance = instanceList.get(n);
 				int[] decoded = decoder.viterbi(instance);
 				for(int t=0; t<decoded.length; t++) {
 					String word = instance.getWord(t);
 					int state = decoded[t];
-					pw.print(word + "|" + state);
+					pwSimple.println(word + " " + state);
+					pwSimpleAll.print(word + "\t");
+					for(int k=0; k<corpus.oneTimeStepObsSize; k++) {
+						pw.print(corpus.corpusVocab.get(k).indexToWord.get(instance.words[t][k]));
+						pw.print("|");
+						if(k != 0) {
+							//except the word itself
+							pwSimpleAll.print(corpus.corpusVocab.get(k).indexToWord.get(instance.words[t][k]));
+							pwSimpleAll.print("|");
+						}
+					}
+					pw.print(state);
 					if(t != decoded.length-1) {
 						pw.print(" ");
 					}
+					pwSimpleAll.print(state);
+					pwSimpleAll.println();
 				}
+				pwSimpleAll.println();
+				pwSimple.println();
 				pw.println();
 			}
+			pwSimple.println();
 			pw.close();
+			pwSimple.close();
+			pwSimpleAll.close();
 		} catch (IOException e) {
 			System.err.format("Could not open file for writing %s\n", outFile);
 			e.printStackTrace();

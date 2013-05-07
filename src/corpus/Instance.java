@@ -46,7 +46,7 @@ public class Instance {
 	}	
 	
 	public String getWord(int position) {
-		return c.corpusVocab.indexToWord.get(words[position]);
+		return c.corpusVocab.get(0).indexToWord.get(words[position]);
 	}
 	
 	public void populateWordArray(String line) {
@@ -55,13 +55,13 @@ public class Instance {
 		ArrayList<Integer> tempWordArray = new ArrayList<Integer>();
 		for(int i=0; i<splitted.length; i++) {
 			String word = splitted[i];
-			if(c.corpusVocab.lower) {
+			if(c.corpusVocab.get(0).lower) {
 				word = word.toLowerCase();
 			}
-			if(c.corpusVocab.smooth) {
+			if(c.corpusVocab.get(0).smooth) {
 				word = SmoothWord.smooth(word);
 			}
-			int index = c.corpusVocab.getIndex(word);
+			int index = c.corpusVocab.get(0).getIndex(word);
 			if(index >= 0) {
 				if(index == 0) {
 					unknownCount += 1;

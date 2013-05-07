@@ -1,5 +1,8 @@
 package program;
 
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.BufferedReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -32,6 +35,8 @@ public class Main {
 	static HMMBase model;
 	static Corpus corpus;
 	
+	static int oneTimeStepObsSize; //number of elements in observation e.g. word|hmm1|hmm2  has 3
+	
 	/** user parameters end **/
 	public static void main(String[] args) throws IOException {
 		outFolderPrefix = "out/";
@@ -49,14 +54,15 @@ public class Main {
 		
 		printParams();
 		corpus = new Corpus("\\s+", vocabThreshold);
-		
+		Corpus.oneTimeStepObsSize = Corpus.findOneTimeStepObsSize(vocabFile);
 		//TRAIN
-		
 		corpus.readVocab(vocabFile);
+		/*
 		corpus.readTrain(trainFile);
 		corpus.readTest(testFile);
 		//save vocab file
-		corpus.saveVocabFile(outFolderPrefix + "/model/vocab.txt");
+		//corpus.saveVocabFile(outFolderPrefix + "/model/vocab.txt");
+		
 		if(modelType == HMMType.WITH_NO_FINAL_STATE) {
 			System.out.println("HMM with no final state");
 			model = new HMMNoFinalState(numStates, corpus.corpusVocab.vocabSize);			
@@ -74,7 +80,7 @@ public class Main {
 		EM em = new EM(numIter, corpus, model);
 		//start training with EM
 		em.start();
-		
+		*/
 		
 		/*
 		//TEST
@@ -86,7 +92,7 @@ public class Main {
 		*/
 		test(model, corpus.testInstanceList, outFile);		
 		test(model, corpus.trainInstanceList, outFileTrain);
-		testPosteriorDistribution(model, corpus.testInstanceList, outFile + ".posterior_distribution");
+		//testPosteriorDistribution(model, corpus.testInstanceList, outFile + ".posterior_distribution");
 	}
 	
 	public static void testPosteriorDistribution(HMMBase model, InstanceList instanceList, String outFile) {
@@ -129,7 +135,10 @@ public class Main {
 				for(int t=0; t<decoded.length; t++) {
 					String word = instance.getWord(t);
 					int state = decoded[t];
-					pw.println(state + "\t" + word);
+					pw.print(word + "|" + state);
+					if(t != decoded.length-1) {
+						pw.print(" ");
+					}
 				}
 				pw.println();
 			}
@@ -150,5 +159,5 @@ public class Main {
 		sb.append("\nIterations : " + numIter);
 		sb.append("\nNumStates : " + numStates);
 		System.out.println(sb.toString());
-	}
+	}	
 }

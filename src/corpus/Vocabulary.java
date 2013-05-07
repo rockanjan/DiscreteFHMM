@@ -11,20 +11,20 @@ import java.util.Map;
 import util.SmoothWord;
 
 public class Vocabulary {
-	boolean debug = false;
+	boolean debug = true;
 	boolean smooth = true;
 	boolean lower = true;
 	public int vocabThreshold = 1;
 	//index zero reserved for *unk* (low freq features)
 	
-	private int index = 1;
+	public int index = -1;
 	public int vocabSize = -1;
-	public String UNKNOWN = "*unk*";
+	public static String UNKNOWN = "*unk*";
 	public Map<String, Integer> wordToIndex = new HashMap<String, Integer>();
 	public ArrayList<String> indexToWord = new ArrayList<String>();
 	public Map<Integer, Integer> indexToFrequency = new HashMap<Integer, Integer>();
 	
-	private int addItem(String word) {
+	public int addItem(String word) {
 		int returnId = -1;
 		if(wordToIndex.containsKey(word)) {
 			int wordIndex = wordToIndex.get(word);
@@ -41,46 +41,19 @@ public class Vocabulary {
 		return returnId;
 	}
 	
-	public void readVocabFromCorpus(Corpus c, String filename) throws IOException {
-		BufferedReader br = new BufferedReader(new FileReader(filename));
-		String line = null;
-		wordToIndex.put(UNKNOWN, 0);
-		indexToFrequency.put(0, 0);
-		indexToWord.add(UNKNOWN);
-		while( (line = br.readLine()) != null) {
-			line = line.trim();
-			if(! line.isEmpty()) {
-				String words[] = line.split(c.delimiter);
-				for(int i=0; i<words.length; i++) {
-					String word = words[i];
-					if(lower) {
-						word = word.toLowerCase();
-					}
-					if(smooth) {
-						word = SmoothWord.smooth(word);
-					}
-					int wordId = addItem(word);					
-				}
-			}
-		}
-		vocabSize = wordToIndex.size();
-		System.out.println("Vocab Size before reduction including UNKNOWN : " + vocabSize);
-		reduceVocab(c);
-		System.out.println("Vocab Size after reduction including UNKNOWN : " + vocabSize);
-		if(debug) {
-			c.debug();
-		}
-		br.close();		
-	}
-	
-	private void reduceVocab(Corpus c) {
+	public void reduceVocab(Corpus c) {
 		System.out.println("Reducing vocab");
 		Map<String, Integer> wordToIndexNew = new HashMap<String, Integer>();
 		ArrayList<String> indexToWordNew = new ArrayList<String>();
 		Map<Integer, Integer> indexToFrequencyNew = new HashMap<Integer, Integer>();
 		wordToIndexNew.put(UNKNOWN, 0);
-		indexToFrequencyNew.put(0, -1); //TODO: decide if this matters
+		if(wordToIndex.containsKey(UNKNOWN)) {
+			indexToFrequencyNew.put(0, indexToFrequency.get(0)); //TODO: decide if this matters
+		} else {
+			indexToFrequencyNew.put(0, 0); //TODO: decide if this matters
+		}
 		indexToWordNew.add(UNKNOWN);
+		
 		int featureIndex = 1;
 		for(int i=1; i<indexToWord.size(); i++) {
 			if(indexToFrequency.get(i) > vocabThreshold) {
@@ -88,6 +61,8 @@ public class Vocabulary {
 				indexToWordNew.add(indexToWord.get(i));
 				indexToFrequencyNew.put(featureIndex, indexToFrequency.get(i));
 				featureIndex = featureIndex + 1;
+			} else {
+				indexToFrequencyNew.put(0, indexToFrequencyNew.get(0) + indexToFrequency.get(i));
 			}
 		}
 		indexToWord = null; indexToFrequency = null; wordToIndex = null;
@@ -129,6 +104,20 @@ public class Vocabulary {
 			System.out.println("Vocab file corrputed: header size and the vocab size do not match");
 			System.exit(-1);
 		}
+	}
+	
+	public void debug() {
+		StringBuffer sb = new StringBuffer();
+		sb.append("DEBUG: Corpus\n");
+		sb.append("=============\n");
+		sb.append("vocab size : " + vocabSize);
+		sb.append("\nvocab frequency: \n");
+		for (int i = 0; i < vocabSize; i++) {
+			sb.append("\t" + indexToWord.get(i) + " --> "
+					+ indexToFrequency.get(i));
+			sb.append("\n");
+		}
+		System.out.println(sb.toString());
 	}
 	
 	public int getIndex(String word) {

@@ -1,5 +1,7 @@
 package model.inference;
 
+import java.util.ArrayList;
+
 import model.HMMBase;
 import model.HMMNoFinalState;
 import model.HMMType;
@@ -21,7 +23,7 @@ public abstract class ForwardBackward {
 	int nrStates;
 	MultinomialBase initial;
 	MultinomialBase transition;
-	MultinomialBase observation;
+	ArrayList<MultinomialBase> observation;
 	
 	public abstract void doInference();
 	public abstract void forward();
@@ -37,7 +39,7 @@ public abstract class ForwardBackward {
 	}
 	
 	public abstract void addToInitial(MultinomialBase initial);	
-	public abstract void addToObservation(MultinomialBase observation);	
+	public abstract void addToObservation(ArrayList<MultinomialBase> observation);	
 	public abstract void addToTransition(MultinomialBase transition);	
 	
 	/*

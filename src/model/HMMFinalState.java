@@ -1,16 +1,10 @@
 package model;
 
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
+
 import java.util.Random;
 
-import model.param.HMMParamBase;
+import corpus.Corpus;
 import model.param.HMMParamFinalState;
-import model.param.HMMParamNoFinalState;
 
 public class HMMFinalState extends HMMBase{
 	public HMMFinalState() {
@@ -18,10 +12,10 @@ public class HMMFinalState extends HMMBase{
 		this.hmmType = HMMType.WITH_FINAL_STATE;
 	}
 
-	public HMMFinalState(int nrStates, int nrObs) {
+	public HMMFinalState(int nrStates, Corpus c) {
 		super();
+		this.corpus = c;
 		this.nrStates = nrStates;
-		this.nrObs = nrObs;
 		this.nrStatesWithFake = nrStates + 1;
 		this.hmmType = HMMType.WITH_FINAL_STATE;
 	}
@@ -37,6 +31,7 @@ public class HMMFinalState extends HMMBase{
 	}
 	
 	public static void main(String[] args) {
+		/*
 		//check saving and loading model
 		int nrStates = 80;
 		int nrObs = 200;
@@ -58,6 +53,6 @@ public class HMMFinalState extends HMMBase{
 		} else {
 			System.out.println("Saved and Loaded models do not match");
 		}
-		
+		*/
 	}
 }

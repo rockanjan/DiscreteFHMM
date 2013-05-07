@@ -30,7 +30,8 @@ public class Decoder {
 		
 		for(int i=0; i<model.nrStates; i++) {
 			double init = model.param.initial.get(i, 0);
-			double obs = model.param.observation.get(instance.words[0], i);
+			//double obs = model.param.observation.get(instance.words[0], i);
+			double obs = instance.getObservationProbability(0, i);
 			probLattice[0][i] = Math.log(init) + Math.log(obs);			
 		}
 		
@@ -38,8 +39,8 @@ public class Decoder {
 		int maxIndex = -1;
 		for(int t=1; t<instance.T; t++) {
 			for(int j=0; j<model.nrStates; j++) {
-				double obs = model.param.observation.get(instance.words[t], j);
-				
+				//double obs = model.param.observation.get(instance.words[t], j);
+				double obs = instance.getObservationProbability(t, j);
 				maxValue = -Double.MAX_VALUE;
 				maxIndex = -1;
 				for(int i=0; i<model.nrStates; i++) {
@@ -83,7 +84,7 @@ public class Decoder {
 		
 		for(int i=0; i<model.nrStates; i++) {
 			double init = model.param.initial.get(i, 0);
-			double obs = model.param.observation.get(instance.words[0], i);
+			double obs = instance.getObservationProbability(0, i);
 			probLattice[0][i] = init + obs;			
 		}
 		
@@ -91,8 +92,8 @@ public class Decoder {
 		int maxIndex = -1;
 		for(int t=1; t<instance.T; t++) {
 			for(int j=0; j<model.nrStates; j++) {
-				double obs = model.param.observation.get(instance.words[t], j);
-				
+				//double obs = model.param.observation.get(instance.words[t], j);
+				double obs = instance.getObservationProbability(t, j);
 				maxValue = -Double.MAX_VALUE;
 				maxIndex = -1;
 				for(int i=0; i<model.nrStates; i++) {

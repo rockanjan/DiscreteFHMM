@@ -7,13 +7,15 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Random;
 
+import corpus.Corpus;
+
 import model.param.HMMParamBase;
 import model.param.HMMParamNoFinalState;
 
 public abstract class HMMBase {
+	public Corpus corpus;
 	public int nrStatesWithFake = -1; //the extending class should initialize this (for no fake, equals nrStates)
 	public int nrStates = -1;
-	public int nrObs = -1;
 	public HMMParamBase param;
 	String baseDir = "out/model/";
 	
@@ -38,6 +40,7 @@ public abstract class HMMBase {
 	 * return the location saved
 	 */
 	public String saveModel(int iterCount) {
+		/*
 		String modelFile;
 		if(iterCount < 0) {
 			modelFile = baseDir + "model_final_states_" + nrStates + ".txt";
@@ -87,9 +90,12 @@ public abstract class HMMBase {
 			return null;
 		}
 		return modelFile;
+		*/
+		return null;
 	}
 
 	public void loadModel(String location) {
+		/*
 		//TODO: currently loads only the exact same file format saved
 		try {
 			BufferedReader br = new BufferedReader(new FileReader(location));
@@ -156,12 +162,6 @@ public abstract class HMMBase {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-	}
-	
-	public void clone(HMMNoFinalState other) {
-		if(this.param == null) {
-			this.param = new HMMParamNoFinalState(this);
-		}
-		this.param.cloneFrom(other.param);
-	}
+		*/
+	}	
 }

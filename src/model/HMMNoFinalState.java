@@ -8,6 +8,8 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Random;
 
+import corpus.Corpus;
+
 import model.param.HMMParamBase;
 import model.param.HMMParamFinalState;
 import model.param.HMMParamNoFinalState;
@@ -18,11 +20,10 @@ public class HMMNoFinalState extends HMMBase{
 		this.hmmType = HMMType.WITH_NO_FINAL_STATE;
 	}
 
-	public HMMNoFinalState(int nrStates, int nrObs) {
+	public HMMNoFinalState(int nrStates, Corpus corpus) {
 		super();
 		this.nrStatesWithFake = nrStates;
 		this.nrStates = nrStates;
-		this.nrObs = nrObs;
 		this.hmmType = HMMType.WITH_NO_FINAL_STATE;
 	}
 
@@ -37,6 +38,7 @@ public class HMMNoFinalState extends HMMBase{
 	}
 	
 	public static void main(String[] args) {
+		/*
 		//check saving and loading model
 		int nrStates = 20;
 		int nrObs = 50;
@@ -58,6 +60,6 @@ public class HMMNoFinalState extends HMMBase{
 		} else {
 			System.out.println("Saved and Loaded models do not match");
 		}
-		
+		*/
 	}
 }

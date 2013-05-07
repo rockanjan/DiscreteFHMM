@@ -134,6 +134,7 @@ public class Corpus {
 		corpusVocab.get(0).vocabSize = corpusVocab.get(0).wordToIndex.size();
 		System.out.println("Vocab Size before reduction including UNKNOWN : " + corpusVocab.get(0).vocabSize);
 		
+		
 		corpusVocab.get(0).reduceVocab(this);
 		System.out.println("Vocab Size after reduction including UNKNOWN : " + corpusVocab.get(0).vocabSize);
 		
@@ -159,24 +160,26 @@ public class Corpus {
 		corpusVocab = new Vocabulary();
 		corpusVocab.readVocabFromDictionary(filename);
 	}
-	
+	*/
 	public void saveVocabFile(String filename) {
-		PrintWriter dictionaryWriter;
-		try {
-			dictionaryWriter = new PrintWriter(filename);
-			int V = corpusVocab.vocabSize;
-			dictionaryWriter.println(V);
-			for (int v = 0; v < V; v++) {
-				dictionaryWriter.println(corpusVocab.indexToWord.get(v));
-				dictionaryWriter.flush();
+		for(int i=0; i<oneTimeStepObsSize; i++) {
+			PrintWriter dictionaryWriter;
+			try {
+				dictionaryWriter = new PrintWriter(filename + "." + i);
+				int V = corpusVocab.get(i).vocabSize;
+				dictionaryWriter.println(V);
+				for (int v = 0; v < V; v++) {
+					dictionaryWriter.println(corpusVocab.get(i).indexToWord.get(v));
+					dictionaryWriter.flush();
+				}
+				dictionaryWriter.close();
+			} catch (FileNotFoundException e) {
+				e.printStackTrace();
+				System.exit(-1);
 			}
-			dictionaryWriter.close();
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-			System.exit(-1);
 		}
 	}	
-	*/
+	
 	
 	public static int findOneTimeStepObsSize(String filename) {
 		int result = -1;
@@ -203,11 +206,11 @@ public class Corpus {
 	}
 	
 	public static void main(String[] args) throws IOException {
-		//String inFile = "/home/anjan/workspace/HMM/out/decoded/test.decoded.txt";
-		//String inFile = "/home/anjan/workspace/HMM/data/test.txt.SPL";
+		//String inFile = "/home/anjan/workspace/HMM/out/decoded/train.decoded.txt";
+		String inFile = "/home/anjan/workspace/HMM/data/train.txt.SPL";
 		
 		//String inFile = "/home/anjan/workspace/HMM/data/train.txt.small.SPL";
-		String inFile = "/home/anjan/workspace/HMM/out/decoded/train.txt.small.SPL";
+		//String inFile = "/home/anjan/workspace/HMM/out/decoded/train.txt.small.SPL";
 		
 		int vocabThreshold = 1;
 		Corpus c = new Corpus("\\s+", vocabThreshold);

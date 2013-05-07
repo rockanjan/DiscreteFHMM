@@ -1,15 +1,8 @@
 package model;
 
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
 import java.util.Random;
 
-import model.param.HMMParamBase;
-import model.param.HMMParamFinalState;
+import corpus.Corpus;
 import model.param.HMMParamNoFinalState;
 import model.param.HMMParamNoFinalStateLog;
 
@@ -19,11 +12,11 @@ public class HMMNoFinalStateLog extends HMMBase{
 		this.hmmType = HMMType.LOG_SCALE;
 	}
 
-	public HMMNoFinalStateLog(int nrStates, int nrObs) {
+	public HMMNoFinalStateLog(int nrStates, Corpus c) {
 		super();
 		this.nrStatesWithFake = nrStates;
 		this.nrStates = nrStates;
-		this.nrObs = nrObs;
+		this.corpus = c;
 		this.hmmType = HMMType.LOG_SCALE;
 	}
 
@@ -38,6 +31,7 @@ public class HMMNoFinalStateLog extends HMMBase{
 	}
 	
 	public static void main(String[] args) {
+		/*
 		//check saving and loading model
 		int nrStates = 20;
 		int nrObs = 50;
@@ -59,6 +53,6 @@ public class HMMNoFinalStateLog extends HMMBase{
 		} else {
 			System.out.println("Saved and Loaded models do not match");
 		}
-		
+		*/
 	}
 }

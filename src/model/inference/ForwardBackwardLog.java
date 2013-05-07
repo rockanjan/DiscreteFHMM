@@ -1,5 +1,7 @@
 package model.inference;
 
+import java.util.ArrayList;
+
 import model.HMMBase;
 import model.HMMNoFinalState;
 import model.HMMType;
@@ -37,7 +39,7 @@ public class ForwardBackwardLog extends ForwardBackward{
 		//initialization: for t=0
 		for(int i=0; i<nrStates; i++) {
 			double pi = initial.get(i, 0);
-			double obs = observation.get(instance.words[0], i);
+			double obs = instance.getObservationProbability(0, i);
 			alpha[0][i] = pi + obs; //these prob are in logscale	
 						
 		}
@@ -50,7 +52,7 @@ public class ForwardBackwardLog extends ForwardBackward{
 					expParams[i] = alpha[t-1][i] + model.param.transition.get(j, i); 
 				}
 				double obs;
-				obs = observation.get(instance.words[t], j);
+				obs = instance.getObservationProbability(t, j);
 				alpha[t][j] = LogExp.logsumexp(expParams) + obs; 
 			}			
 		}
@@ -72,7 +74,7 @@ public class ForwardBackwardLog extends ForwardBackward{
 				double[] expParams = new double[nrStates];
 				for(int j=0; j<nrStates; j++) {
 					double trans = transition.get(j, i);
-					double obs = observation.get(instance.words[t+1], j);
+					double obs = instance.getObservationProbability(t+1, j);
 					expParams[j] = trans + obs + beta[t+1][j];
 				}
 				beta[t][i] = LogExp.logsumexp(expParams);
@@ -132,10 +134,12 @@ public class ForwardBackwardLog extends ForwardBackward{
 	}
 	
 	//works in normal scale (not log scale)
-	public void addToObservation(MultinomialBase observation) {
+	public void addToObservation(ArrayList<MultinomialBase> observation) {
 		for(int t=0; t<T; t++) {
 			for(int i=0; i<nrStates; i++) {
-				observation.addToCounts(instance.words[t], i, getStatePosterior(t, i));
+				for(int k=0; k<model.corpus.oneTimeStepObsSize;k++) {
+					observation.get(k).addToCounts(instance.words[t][k], i, getStatePosterior(t, i));
+				}
 			}
 		}
 	}
@@ -143,14 +147,6 @@ public class ForwardBackwardLog extends ForwardBackward{
 	//works in normal scale (not log scale)
 	public void addToTransition(MultinomialBase transition) {
 		for(int t=0; t<T-1; t++) {
-			/*
-			double norm = 0.0;
-			for(int i=0; i<nrStates; i++) {
-				for(int j=0; j<nrStates; j++) {
-					norm += Math.exp(getTransitionPosterior(i, j, t));
-				}
-			}
-			*/
 			for(int i=0; i<nrStates; i++) {
 				for(int j=0; j<nrStates; j++) {
 					transition.addToCounts(i, j, Math.exp(getTransitionPosterior(i, j, t)));
@@ -166,7 +162,8 @@ public class ForwardBackwardLog extends ForwardBackward{
 		//xi in Rabiner Tutorial
 		double alphaValue = alpha[position][currentState];
 		double trans = model.param.transition.get(nextState, currentState); //transition to next given current
-		double obs = model.param.observation.get(instance.words[position+1], nextState);
+		//double obs = model.param.observation.get(instance.words[position+1], nextState);
+		double obs = instance.getObservationProbability(position+1, nextState);
 		double betaValue = beta[position+1][nextState];		
 		double value = alphaValue + trans + obs + betaValue - logLikelihood;		
 		return value;

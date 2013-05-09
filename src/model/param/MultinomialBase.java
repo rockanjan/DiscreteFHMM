@@ -12,6 +12,14 @@ public abstract class MultinomialBase {
 	int x,y;
 	public double[][] count;
 	
+	public void initializeUniformCounts() {
+		for(int i=0; i<x; i++) {
+			for(int j=0; j<y; j++) {
+				count[j][i] = 1.0;
+			}
+		}
+	}
+	
 	public MultinomialBase(int x, int y) {
 		this.x = x; this.y = y;
 		count = new double[x][y];

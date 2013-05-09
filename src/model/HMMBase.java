@@ -17,12 +17,14 @@ public abstract class HMMBase {
 	public int nrStatesWithFake = -1; //the extending class should initialize this (for no fake, equals nrStates)
 	public int nrStates = -1;
 	public HMMParamBase param;
+	public HMMParamBase bestParam; //best found so far
 	String baseDir = "out/model/";
 	
 	public HMMType hmmType;
 	
 	public abstract void initializeRandom(Random r);
 	public abstract void initializeZeros();
+	public abstract void initializeZerosToBest();
 
 	public void checkModel() {
 		param.check();

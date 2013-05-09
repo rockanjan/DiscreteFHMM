@@ -30,6 +30,11 @@ public class HMMNoFinalStateLog extends HMMBase{
 		param.initializeZeros();
 	}
 	
+	public void initializeZerosToBest() {
+		bestParam = new HMMParamNoFinalState(this);
+		bestParam.initializeZeros();
+	}
+	
 	public static void main(String[] args) {
 		/*
 		//check saving and loading model

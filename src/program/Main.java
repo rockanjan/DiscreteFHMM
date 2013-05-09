@@ -39,22 +39,25 @@ public class Main {
 	
 	/** user parameters end **/
 	public static void main(String[] args) throws IOException {
-		int recursionSize = 4;
+		int recursionSize = 10;
 		outFolderPrefix = "out/";
 		numStates = 2;
-		numIter = 60;
+		numIter = 100;
 		String trainFileBase = "out/decoded/train.txt.SPL";
 		String testFileBase = "out/decoded/test.txt.SPL";
 		HMMType modelType = HMMType.LOG_SCALE;
-		
-		for(int r=0; r<recursionSize; r++) {
+		int[] stateSize = {100, 50, 10, 5, 2, 1};
+		//for(int r=0; r<recursionSize; r++) {
+		for(int i=0; i<stateSize.length-1; i++) {
+		//for (int r : stateSize) {
+			int r = stateSize[i];
 			System.out.println("RECURSION: " + r);
 			System.out.println("-----------------");
 			trainFile = trainFileBase + "." + r;
 			testFile = "out/decoded/test.txt.SPL." + r;
 			vocabFile = trainFile;
-			String outFileTrain = trainFileBase + "." + (r+1);
-			String outFile = testFileBase + "." + (r+1);
+			String outFileTrain = trainFileBase + "." + (stateSize[i+1]);
+			String outFile = testFileBase + "." + (stateSize[i+1]);
 			printParams();
 			corpus = new Corpus("\\s+", vocabThreshold);
 			Corpus.oneTimeStepObsSize = Corpus.findOneTimeStepObsSize(vocabFile);
@@ -63,9 +66,11 @@ public class Main {
 			corpus.readTrain(trainFile);
 			corpus.readTest(testFile);
 			//corpus.saveVocabFile(outFolderPrefix + "/model/vocab.txt");
-			model = new HMMNoFinalStateLog(numStates, corpus);
+			//model = new HMMNoFinalStateLog(numStates, corpus);
+			model = new HMMNoFinalStateLog(r, corpus);
 			Random random = new Random(seed);
 			model.initializeRandom(random);
+			model.initializeZerosToBest();
 			EM em = new EM(numIter, corpus, model);
 			//start training with EM
 			em.start();

@@ -62,4 +62,10 @@ public class HMMNoFinalState extends HMMBase{
 		}
 		*/
 	}
+
+	@Override
+	public void initializeZerosToBest() {
+		// TODO Auto-generated method stub
+		
+	}
 }

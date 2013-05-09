@@ -1,5 +1,7 @@
 package model.train;
 
+import java.util.Random;
+
 import model.HMMBase;
 import model.HMMNoFinalState;
 import model.HMMType;
@@ -105,11 +107,18 @@ public class EM {
 			if(lowerCount == 0) {
 				//save the best model so far
 				System.out.println("Saving the best model so far");
+				if(model.bestParam != null) {
+					System.out.println("best and recent model same? " + model.bestParam.equalsApprox(model.param));
+					model.bestParam.cloneFrom(model.param);
+				}
 				model.saveModel(iterCount);
 			}
 			lowerCount++;
 			if(lowerCount == maxConsecutiveDecreaseLimit) {
 				System.out.format("Converged: LL could not increase for %d iterations\n", maxConsecutiveDecreaseLimit);
+				if(model.bestParam != null) {
+					model.param.cloneFrom(model.bestParam);
+				}
 				return true;
 			}
 			return false;

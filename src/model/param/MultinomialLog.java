@@ -116,5 +116,5 @@ public class MultinomialLog extends MultinomialBase{
 		MultinomialLog ml = new MultinomialLog(10, 20);
 		ml.initializeRandom(new Random());
 		ml.checkDistribution();
-	}
+	}	
 }

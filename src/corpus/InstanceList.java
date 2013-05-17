@@ -4,6 +4,7 @@ import java.util.ArrayList;
 
 import util.MathUtils;
 import util.MyArray;
+import util.Timing;
 
 public class InstanceList extends ArrayList<Instance>{
 	private static final long serialVersionUID = -2409272084529539276L;
@@ -22,6 +23,8 @@ public class InstanceList extends ArrayList<Instance>{
 	}
 	
 	public double[][] getGradient(double[][] parameterMatrix) {
+		Timing timing = new Timing();
+		timing.start();
 		double gradient[][] = new double[parameterMatrix.length][parameterMatrix[0].length];
 		for(int i=0; i<parameterMatrix.length; i++) { //all vocab length
 			for(int j=0; j<parameterMatrix[0].length; j++) {
@@ -45,6 +48,7 @@ public class InstanceList extends ArrayList<Instance>{
 				}
 			}
 		}
+		System.out.println("Gradient computation time : " + timing.stop());
 		return gradient;
 		//return MyArray.createVector(gradient);
 	}

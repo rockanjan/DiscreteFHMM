@@ -34,7 +34,7 @@ public class Main {
 	
 	/** user parameters end **/
 	public static void main(String[] args) throws IOException {
-		int recursionSize = 10;
+		int recursionSize = 1;
 		outFolderPrefix = "out/";
 		numStates = 2;
 		numIter = 100;

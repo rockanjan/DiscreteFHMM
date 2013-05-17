@@ -85,6 +85,10 @@ public class LogLinearWeightsOptimizable implements Optimizable.ByGradientValue{
 		}
 		
 	}
+	
+	public double[][] getParameterMatrix() {
+		return MyArray.createMatrix(parameters, corpus.corpusVocab.get(0).vocabSize);
+	}
 
 	@Override
 	public void setParameter(int i, double value) {

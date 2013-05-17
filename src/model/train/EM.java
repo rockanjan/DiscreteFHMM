@@ -1,16 +1,12 @@
 package model.train;
 
-import java.util.Random;
-
 import model.HMMBase;
-import model.HMMNoFinalState;
 import model.HMMType;
 import model.param.HMMParamBase;
 import model.param.HMMParamFinalState;
 import model.param.HMMParamNoFinalState;
 import model.param.HMMParamNoFinalStateLog;
 
-import util.MyArray;
 import util.Stats;
 import util.Timing;
 import corpus.Corpus;
@@ -54,6 +50,7 @@ public class EM {
 			instance.doInference(model);
 			instance.forwardBackward.addToCounts(expectedCounts);
 			LL += instance.forwardBackward.logLikelihood;
+			instance.createDecodedViterbiCache();
 			instance.clearInference();
 		}
 	}
@@ -63,6 +60,10 @@ public class EM {
 //		MyArray.printTable(expectedCounts.transition.count);
 //		MyArray.printTable(expectedCounts.observation.count);
 		model.updateFromCounts(expectedCounts);
+		
+		//also update the log-linear model weights
+		//maximize CLL of the data
+		
 //		model.param.initial.printDistribution();
 //		model.param.transition.printDistribution();
 //		model.param.observation.printDistribution();

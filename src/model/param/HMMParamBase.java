@@ -7,9 +7,10 @@ import model.HMMBase;
 import model.HMMType;
 
 public abstract class HMMParamBase {
-	public MultinomialBase initial;
-	public MultinomialBase transition;
-	public ArrayList<MultinomialBase> observation;
+	public ArrayList<MultinomialBase> initial;
+	public ArrayList<MultinomialBase> transition;
+	
+	public LogLinearWeights weights;
 	
 	public HMMBase model;
 
@@ -25,78 +26,57 @@ public abstract class HMMParamBase {
 	
 	public void initializeZeros() {
 		if(model.hmmType == HMMType.LOG_SCALE) {
-			initial = new MultinomialLog(nrStates, 1);
-			transition = new MultinomialLog(nrStatesWithFake, nrStates);
-			observation = new ArrayList<MultinomialBase>();
-			for(int i=0; i<model.corpus.oneTimeStepObsSize; i++) {
-				MultinomialLog temp = new MultinomialLog(model.corpus.corpusVocab.get(i).vocabSize, nrStates);
-				observation.add(temp);
+			initial = new ArrayList<MultinomialBase>();
+			transition = new ArrayList<MultinomialBase>();
+			
+			MultinomialLog initialCurrent = new MultinomialLog(nrStates, 1);
+			MultinomialLog transitionCurrent = new MultinomialLog(nrStates, nrStates); //for current hidden states
+			
+			initial.add(initialCurrent);
+			transition.add(transitionCurrent);
+			for(int i=1; i<model.corpus.oneTimeStepObsSize; i++) {
+				MultinomialLog tempTrans = new MultinomialLog(model.corpus.corpusVocab.get(i).vocabSize, model.corpus.corpusVocab.get(i).vocabSize);
+				MultinomialLog tempInit = new MultinomialLog(model.corpus.corpusVocab.get(i).vocabSize, 1);
+				initial.add(tempInit);
+				transition.add(tempTrans);
 			}
-		} else {
-			initial = new MultinomialRegular(nrStates, 1);
-			transition = new MultinomialRegular(nrStatesWithFake, nrStates);
-			observation = new ArrayList<MultinomialBase>();
-			for(int i=0; i<model.corpus.oneTimeStepObsSize; i++) {
-				MultinomialRegular temp = new MultinomialRegular(model.corpus.corpusVocab.get(i).vocabSize, nrStates);
-				observation.add(temp);
-			}
+			
+			//initialize weights for the log-linear model
+			
+			
 		}
 	}
 	
 	public void initialize(Random r) {
-		if(model.hmmType == HMMType.LOG_SCALE) {
-			initial = new MultinomialLog(nrStates, 1);
-			transition = new MultinomialLog(nrStatesWithFake, nrStates);
-			observation = new ArrayList<MultinomialBase>();
-			for(int i=0; i<model.corpus.oneTimeStepObsSize; i++) {
-				MultinomialLog temp = new MultinomialLog(model.corpus.corpusVocab.get(i).vocabSize, nrStates);
-				observation.add(temp);
-			}
-		} else {
-			initial = new MultinomialRegular(nrStates, 1);
-			transition = new MultinomialRegular(nrStatesWithFake, nrStates);
-			observation = new ArrayList<MultinomialBase>();
-			for(int i=0; i<model.corpus.oneTimeStepObsSize; i++) {
-				MultinomialRegular temp = new MultinomialRegular(model.corpus.corpusVocab.get(i).vocabSize, nrStates);
-				observation.add(temp);
-			}
-		}
-		initial.initializeRandom(r);
-		transition.initializeRandom(r);
-		for(int i=0; i<model.corpus.oneTimeStepObsSize; i++) {
-			observation.get(i).initializeRandom(r);
-		}
-		
+		initializeZeros();
+		initial.get(0).initializeRandom(r);
+		transition.get(0).initializeRandom(r);
+		//others still initialized to zero
 	}
 	
 	public void check() { 
-		initial.checkDistribution();
-		transition.checkDistribution();
 		for(int i=0; i<model.corpus.oneTimeStepObsSize; i++) {
-			observation.get(i).checkDistribution();
+			initial.get(i).checkDistribution();
+			transition.get(i).checkDistribution();
 		}
 	}
 	
 	public void normalize() {
-		initial.normalize();
-		transition.normalize();
-		for(int i=0; i<model.corpus.oneTimeStepObsSize; i++) {
-			observation.get(i).normalize();
-		}
+		initial.get(0).normalize();
+		transition.get(0).normalize();		
 	}
 	
 	public void cloneFrom(HMMParamBase source) {
-		initial.cloneFrom(source.initial);
+		
 		for(int i=0; i<model.corpus.oneTimeStepObsSize; i++) {
-			observation.get(i).cloneFrom(source.observation.get(i));
+			initial.get(i).cloneFrom(source.initial.get(i));
+			transition.get(i).cloneFrom(source.transition.get(i));
 		}
-		transition.cloneFrom(source.transition);
 	}
 	
 	public void clear() {
 		initial = null;
-		transition = null;
-		observation = null;
+		transition = null;		
 	}
 	
 	@Override
@@ -111,13 +91,8 @@ public abstract class HMMParamBase {
 			return false;
 		}
 		
-		if(! this.initial.equalsExact(other.initial) && this.transition.equalsExact(other.transition)) {
+		if(! this.initial.get(0).equalsExact(other.initial.get(0)) && this.transition.get(0).equalsExact(other.transition.get(0))) {
 			result = false;
-		}
-		for(int i=0; i<model.corpus.oneTimeStepObsSize; i++) {
-			if(! this.observation.get(i).equalsExact(other.observation.get(i))) {
-				result = false;
-			}
 		}
 		return result;
 	}
@@ -131,13 +106,8 @@ public abstract class HMMParamBase {
 			return false;
 		}
 		
-		if(! this.initial.equalsApprox(other.initial) && this.transition.equalsApprox(other.transition)) {
+		if(! this.initial.get(0).equalsApprox(other.initial.get(0)) && this.transition.get(0).equalsApprox(other.transition.get(0))) {
 			result = false;
-		}
-		for(int i=0; i<model.corpus.oneTimeStepObsSize; i++) {
-			if(! this.observation.get(i).equalsApprox(other.observation.get(i))) {
-				result = false;
-			}
 		}
 		return result;
 	}

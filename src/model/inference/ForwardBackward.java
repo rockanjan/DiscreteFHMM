@@ -3,7 +3,6 @@ package model.inference;
 import java.util.ArrayList;
 
 import model.HMMBase;
-import model.HMMNoFinalState;
 import model.HMMType;
 import model.param.HMMParamBase;
 import model.param.MultinomialBase;
@@ -33,9 +32,8 @@ public abstract class ForwardBackward {
 	public abstract void checkStatePosterior();
 	
 	public void addToCounts(HMMParamBase param) { 
-		addToInitial(param.initial);
-		addToObservation(param.observation);
-		addToTransition(param.transition);
+		addToInitial(param.initial.get(0));
+		addToTransition(param.transition.get(0));
 	}
 	
 	public abstract void addToInitial(MultinomialBase initial);	

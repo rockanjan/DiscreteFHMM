@@ -1,16 +1,11 @@
 package program;
 
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.BufferedReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Random;
 
 import model.HMMBase;
-import model.HMMFinalState;
-import model.HMMNoFinalState;
 import model.HMMNoFinalStateLog;
 import model.HMMType;
 import model.inference.Decoder;
@@ -46,18 +41,14 @@ public class Main {
 		String trainFileBase = "out/decoded/train.txt.SPL";
 		String testFileBase = "out/decoded/test.txt.SPL";
 		HMMType modelType = HMMType.LOG_SCALE;
-		int[] stateSize = {100, 50, 10, 5, 2, 1};
-		//for(int r=0; r<recursionSize; r++) {
-		for(int i=0; i<stateSize.length-1; i++) {
-		//for (int r : stateSize) {
-			int r = stateSize[i];
-			System.out.println("RECURSION: " + r);
+		for(int i=0; i<recursionSize; i++) {
+			System.out.println("RECURSION: " + i);
 			System.out.println("-----------------");
-			trainFile = trainFileBase + "." + r;
-			testFile = "out/decoded/test.txt.SPL." + r;
+			trainFile = trainFileBase + "." + i;
+			testFile = "out/decoded/test.txt.SPL." + i;
 			vocabFile = trainFile;
-			String outFileTrain = trainFileBase + "." + (stateSize[i+1]);
-			String outFile = testFileBase + "." + (stateSize[i+1]);
+			String outFileTrain = trainFileBase + "." + (i+1);
+			String outFile = testFileBase + "." + (i+1);
 			printParams();
 			corpus = new Corpus("\\s+", vocabThreshold);
 			Corpus.oneTimeStepObsSize = Corpus.findOneTimeStepObsSize(vocabFile);
@@ -65,11 +56,10 @@ public class Main {
 			corpus.readVocab(vocabFile);
 			corpus.readTrain(trainFile);
 			corpus.readTest(testFile);
-			//corpus.saveVocabFile(outFolderPrefix + "/model/vocab.txt");
-			//model = new HMMNoFinalStateLog(numStates, corpus);
-			model = new HMMNoFinalStateLog(r, corpus);
+			model = new HMMNoFinalStateLog(numStates, corpus);
 			Random random = new Random(seed);
 			model.initializeRandom(random);
+			model.computePreviousTransitions();
 			model.initializeZerosToBest();
 			EM em = new EM(numIter, corpus, model);
 			//start training with EM

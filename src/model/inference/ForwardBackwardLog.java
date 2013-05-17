@@ -3,14 +3,9 @@ package model.inference;
 import java.util.ArrayList;
 
 import model.HMMBase;
-import model.HMMNoFinalState;
-import model.HMMType;
 import model.param.HMMParamBase;
 import model.param.MultinomialBase;
-import model.param.MultinomialRegular;
 import util.LogExp;
-import util.MyArray;
-import util.Stats;
 import corpus.Instance;
 
 public class ForwardBackwardLog extends ForwardBackward{
@@ -20,9 +15,8 @@ public class ForwardBackwardLog extends ForwardBackward{
 		this.instance = instance;
 		this.nrStates = model.nrStates;
 		T = instance.T; 
-		initial = model.param.initial;
-		transition = model.param.transition;
-		observation = model.param.observation;		
+		initial = model.param.initial.get(0);
+		transition = model.param.transition.get(0);
 	}
 	
 	@Override
@@ -49,7 +43,7 @@ public class ForwardBackwardLog extends ForwardBackward{
 			for(int j=0; j<nrStates; j++) {
 				double[] expParams = new double[nrStates];
 				for(int i=0; i<nrStates; i++) {
-					expParams[i] = alpha[t-1][i] + model.param.transition.get(j, i); 
+					expParams[i] = alpha[t-1][i] + transition.get(j, i); 
 				}
 				double obs;
 				obs = instance.getObservationProbability(t, j);
@@ -87,6 +81,8 @@ public class ForwardBackwardLog extends ForwardBackward{
 	@Override
 	public void computePosterior() {
 		posterior = new double[T][nrStates];
+		//instance.posteriors = new double[T][nrStates];
+		
 		for(int t=0; t<T; t++) {
 			double[] expSum = new double[nrStates];
 			for(int i=0; i<nrStates; i++) {
@@ -97,6 +93,8 @@ public class ForwardBackwardLog extends ForwardBackward{
 				//posterior[t][i] = alpha[t][i] + beta[t][i] - logLikelihood; //not working... why?
 				posterior[t][i] = alpha[t][i] + beta[t][i] - denom;
 				posterior[t][i] = Math.exp(posterior[t][i]);
+				
+				//instance.posteriors[t][i] = posterior[t][i];
 			}
 		}
 		//MyArray.printTable(posterior, "log posterior");
@@ -120,9 +118,8 @@ public class ForwardBackwardLog extends ForwardBackward{
 	}
 	
 	public void addToCounts(HMMParamBase param) { 
-		addToInitial(param.initial);
-		addToObservation(param.observation);
-		addToTransition(param.transition);
+		addToInitial(param.initial.get(0));
+		addToTransition(param.transition.get(0));
 	}
 	
 	//TODO: check if we can still work in log scale instead of exponents
@@ -161,7 +158,7 @@ public class ForwardBackwardLog extends ForwardBackward{
 	public double getTransitionPosterior(int currentState, int nextState, int position) {
 		//xi in Rabiner Tutorial
 		double alphaValue = alpha[position][currentState];
-		double trans = model.param.transition.get(nextState, currentState); //transition to next given current
+		double trans = transition.get(nextState, currentState); //transition to next given current
 		//double obs = model.param.observation.get(instance.words[position+1], nextState);
 		double obs = instance.getObservationProbability(position+1, nextState);
 		double betaValue = beta[position+1][nextState];		

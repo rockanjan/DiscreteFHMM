@@ -25,6 +25,11 @@ public abstract class HMMBase {
 	public abstract void initializeRandom(Random r);
 	public abstract void initializeZeros();
 	public abstract void initializeZerosToBest();
+	
+	/*
+	 * computes the transition probabilities for the states decoded in the previous layer (Z variables)
+	 */
+	public abstract void computePreviousTransitions();
 
 	public void checkModel() {
 		param.check();

@@ -2,6 +2,7 @@ package corpus;
 
 import java.util.ArrayList;
 
+import util.MathUtils;
 import util.SmoothWord;
 
 import model.HMMBase;
@@ -16,6 +17,11 @@ public class Instance {
 	public ForwardBackward forwardBackward;
 	public int nrStates;
 	public int unknownCount;
+	
+	//store the posteriors (important for training log-linear weights in M-step)
+	//public double[][] posteriors;
+	
+	public int[] decoded;
 
 	public double[][] observationCache;
 
@@ -45,30 +51,159 @@ public class Instance {
 		forwardBackward = null;
 		observationCache = null;
 	}
-
+	
+	/*
+	public void clearPosteriors() {
+		posteriors = null;
+	}
+	*/
+	
+	/*
+	 * returns log(ObservationProb)
+	 */
 	public double getObservationProbability(int position, int state) {
 		if (observationCache == null) {
 			observationCache = new double[T][nrStates];
 			for (int t = 0; t < T; t++) {
-				for (int i = 0; i < nrStates; i++) {
-					if (forwardBackward.model.hmmType == HMMType.LOG_SCALE) {
-						observationCache[t][i] = 0.0;
-						for (int k = 0; k < c.oneTimeStepObsSize; k++) {
-							observationCache[t][i] += forwardBackward.model.param.observation
-									.get(k).get(words[t][k], i);
-						}
-					} else {
-						observationCache[t][i] = 1.0;
-						for (int k = 0; k < c.oneTimeStepObsSize; k++) {
-							observationCache[t][i] *= forwardBackward.model.param.observation
-									.get(k).get(words[t][k], i);
-						}
+				for(int s=0; s<nrStates; s++) {
+					//TODO: store the log of the normalizer and also log of the numerator to avoid overflow
+					double normalizer = 0.0;
+					double[] conditionalVector = getConditionalVector(t, s);
+					//for all vocab items
+					for (int i=0; i<forwardBackward.model.corpus.corpusVocab.get(0).vocabSize; i++) {
+						double[] weightIthVocab = forwardBackward.model.param.weights.weights[i];
+						normalizer += Math.exp(MathUtils.dot(conditionalVector, weightIthVocab));
 					}
-				}
+					
+					//numerator: for this particular observation item at t
+					int observationIndex = this.words[t][0];
+					double[] weightObservation = forwardBackward.model.param.weights.weights[observationIndex];
+					double numerator = Math.exp(MathUtils.dot(conditionalVector, weightObservation));
+					
+					double result = Math.log(numerator / normalizer); 
+					observationCache[t][s] = result;
+				}				
 			}
 		}
 		return observationCache[position][state];
-
+	}
+	
+	
+	public double[] getConditionalVector(int t, int state){
+		double[] conditionalVector = new double[forwardBackward.model.param.weights.conditionalSize];
+		//fill the conditionVector
+		conditionalVector[0] = 1.0; //offset
+		int index = 1;
+		for(int i=0; i<nrStates; i++) {
+			if(i == state) {
+				conditionalVector[index] = 1.0;
+			} else {
+				conditionalVector[index] = 0.0;
+			}
+			index++;
+		}
+		for(int z=1; z<forwardBackward.model.corpus.oneTimeStepObsSize; z++) {
+			for(int i=0; i<forwardBackward.model.corpus.corpusVocab.get(z).vocabSize; i++) {
+				if( this.words[t][z] == i) {
+					conditionalVector[index] = 1.0;
+				} else {
+					conditionalVector[index] = 0.0;
+				}
+				index++;
+			}
+		}
+		return conditionalVector;
+	}
+	
+	/*
+	 * gets conditional vector using the posterior
+	 */
+	public double[] getConditionalVector(int t){
+		double[] conditionalVector = new double[forwardBackward.model.param.weights.conditionalSize];
+		//fill the conditionVector
+		conditionalVector[0] = 1.0; //offset
+		int index = 1;
+		for(int i=0; i<nrStates; i++) {
+			if(i == decoded[t]) {
+				conditionalVector[index] = 1.0;
+			} else {
+				conditionalVector[index] = 0.0;
+			}
+			index++;
+		}
+		for(int z=1; z<forwardBackward.model.corpus.oneTimeStepObsSize; z++) {
+			for(int i=0; i<forwardBackward.model.corpus.corpusVocab.get(z).vocabSize; i++) {
+				if(words[t][z] == i) {
+					conditionalVector[index] = 1.0;
+				} else {
+					conditionalVector[index] = 0.0;
+				}
+				index++;
+			}
+		}
+		return conditionalVector;
+	}
+	
+	public double getConditionalLogLikelihood(double[][] weights) {
+		double cll = 0.0;
+		for(int t=0; t<T; t++) {
+			double normalizer = 0.0;
+			double[] conditionalVector = getConditionalVector(t);
+			for (int i=0; i<forwardBackward.model.corpus.corpusVocab.get(0).vocabSize; i++) {
+				double[] weightIthVocab = weights[i];
+				normalizer += Math.exp(MathUtils.dot(conditionalVector, weightIthVocab));
+			}
+			int observationIndex = this.words[t][0];
+			double[] weightObservation = weights[observationIndex];
+			double numerator = Math.exp(MathUtils.dot(conditionalVector, weightObservation));
+			double result = Math.log(numerator / normalizer);
+			cll += result;
+		}
+		return cll;
+	}
+	
+	public void createDecodedViterbiCache(){
+		decoded = new int[T];
+		double[][] probLattice = new double[T][forwardBackward.model.nrStates];
+		int[][] stateLattice = new int[T][nrStates];
+		
+		for(int i=0; i<nrStates; i++) {
+			double init = forwardBackward.model.param.initial.get(0).get(i, 0);
+			double obs = getObservationProbability(0, i);
+			probLattice[0][i] = init + obs;			
+		}
+		
+		double maxValue = -Double.MAX_VALUE;
+		int maxIndex = -1;
+		for(int t=1; t<T; t++) {
+			for(int j=0; j<forwardBackward.model.nrStates; j++) {
+				//double obs = model.param.observation.get(instance.words[t], j);
+				double obs = getObservationProbability(t, j);
+				maxValue = -Double.MAX_VALUE;
+				maxIndex = -1;
+				for(int i=0; i<forwardBackward.model.nrStates; i++) {
+					double value = probLattice[t-1][i] + forwardBackward.model.param.transition.get(0).get(j, i) + obs;
+					if(value > maxValue) {
+						maxValue = value;
+						maxIndex = i;
+					}
+				}
+				probLattice[t][j] = maxValue;
+				stateLattice[t][j] = maxIndex;
+			}
+		}
+		maxValue = -Double.MAX_VALUE;
+		maxIndex = -1;
+		for(int i=0; i<nrStates; i++) {
+			if(probLattice[T-1][i] > maxValue) {
+				maxValue = probLattice[T-1][i];
+				decoded[T-1] = i;
+			}
+		}
+		//backtrack
+		for(int t=T-2; t>=0; t--) {
+			decoded[t] = stateLattice[t+1][decoded[t+1]];			
+		}				
 	}
 
 	/*

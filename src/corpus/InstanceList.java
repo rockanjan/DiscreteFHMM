@@ -23,6 +23,8 @@ public class InstanceList extends ArrayList<Instance>{
 	}
 	
 	public double[][] getGradient(double[][] parameterMatrix) {
+		double min = Double.MAX_VALUE;
+		double max = -Double.MAX_VALUE;
 		Timing timing = new Timing();
 		timing.start();
 		double gradient[][] = new double[parameterMatrix.length][parameterMatrix[0].length];
@@ -38,16 +40,24 @@ public class InstanceList extends ArrayList<Instance>{
 						
 						//expected value subtraction
 						double normalizer = 0.0;
+						
 						for(int v=0; v<parameterMatrix.length; v++) { //all vocabs
 							double[] weightVector = parameterMatrix[v];
 							normalizer += Math.exp(MathUtils.dot(weightVector, conditionalVector));
 						}
 						double numerator = Math.exp(MathUtils.dot(parameterMatrix[i], conditionalVector));
 						gradient[i][j] -= numerator / normalizer * conditionalVector[j];
+						if(gradient[i][j] < min) {
+							min = gradient[i][j];
+						}
+						if(gradient[i][j] > max) {
+							max = gradient[i][j];
+						}
 					}
 				}
 			}
 		}
+		System.out.format("Gradient: min %.3f max %.3f\n", min, max);
 		System.out.println("Gradient computation time : " + timing.stop());
 		return gradient;
 		//return MyArray.createVector(gradient);

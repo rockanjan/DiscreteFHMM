@@ -68,18 +68,17 @@ public class EM {
 		// also update the log-linear model weights
 		// maximize CLL of the data
 		double[] initParams = MyArray.createVector(model.param.weights.weights);
-		LogLinearWeightsOptimizable optimizable = new LogLinearWeightsOptimizable(
-				initParams, c);
+		LogLinearWeightsOptimizable optimizable = new LogLinearWeightsOptimizable(initParams, c);
 		Optimizer optimizer = new LimitedMemoryBFGS(optimizable);
-		
 		boolean converged = false;
 		try {
-			converged = optimizer.optimize(5);
+			converged = optimizer.optimize(5); //5 iters
 		} catch (IllegalArgumentException e) {
 			System.out.println("optimization threw exception");
 		}
 		model.param.weights.weights = optimizable.getParameterMatrix();
-
+		double[] minMax = MyArray.getMinMaxOfMatrix(model.param.weights.weights);
+		System.out.format("Parameters min=%.3f max=%.3f\n", minMax[0], minMax[1]);
 		// model.param.initial.printDistribution();
 		// model.param.transition.printDistribution();
 		// model.param.observation.printDistribution();

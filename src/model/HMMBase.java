@@ -37,7 +37,10 @@ public abstract class HMMBase {
 
 	public void updateFromCounts(HMMParamBase counts) {
 		counts.normalize();
-		param.cloneFrom(counts);
+		//don't try to update the initial and transition for the previously learnt layers (z1, z2...)
+		//update only for the current hidden layer x
+		param.initial.get(0).cloneFrom(counts.initial.get(0));
+		param.transition.get(0).cloneFrom(counts.transition.get(0));
 	}
 	
 	public String saveModel() {

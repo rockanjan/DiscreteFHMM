@@ -26,7 +26,7 @@ public class Main {
 	static String testFile;
 	static String outFolderPrefix;
 	static int numStates; 	
-	static int vocabThreshold = 1; //only above this included
+	static int vocabThreshold = 5; //only above this included
 	static HMMBase model;
 	static Corpus corpus;
 	
@@ -38,8 +38,10 @@ public class Main {
 		outFolderPrefix = "out/";
 		numStates = 2;
 		numIter = 100;
-		String trainFileBase = "out/decoded/train.txt.SPL";
+		//String trainFileBase = "out/decoded/train.txt.SPL";
+		String trainFileBase = "out/decoded/test.txt.SPL";
 		String testFileBase = "out/decoded/test.txt.SPL";
+		
 		HMMType modelType = HMMType.LOG_SCALE;
 		for(int i=0; i<recursionSize; i++) {
 			System.out.println("RECURSION: " + i);

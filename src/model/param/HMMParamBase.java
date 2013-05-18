@@ -42,8 +42,6 @@ public abstract class HMMParamBase {
 			}
 			
 			//initialize weights for the log-linear model
-			
-			
 		}
 	}
 	

@@ -21,14 +21,14 @@ public class Main {
 	/** user parameters **/
 	static String delimiter = "\\+";
 	static int numIter;
-	static long seed = 71;
+	static long seed = 999777;
 	
 	static String trainFile;
 	static String vocabFile;
 	static String testFile;
 	static String outFolderPrefix;
 	static int numStates; 	
-	static int vocabThreshold = 5; //only above this included
+	static int vocabThreshold = 10; //only above this included
 	static HMMBase model;
 	static Corpus corpus;
 	
@@ -38,12 +38,12 @@ public class Main {
 	public static void main(String[] args) throws IOException {
 		int recursionSize = 1;
 		outFolderPrefix = "out/";
-		numStates = 5;
-		numIter = 100;
-		//String trainFileBase = "out/decoded/train.txt.SPL";
-		//String testFileBase = "out/decoded/test.txt.SPL";
-		String trainFileBase = "out/decoded/simple_corpus_sorted.txt";
-		String testFileBase = "out/decoded/simple_corpus_sorted.txt";
+		numStates = 2;
+		numIter = 20;
+		String trainFileBase = "out/decoded/test.txt.SPL";
+		String testFileBase = "out/decoded/test.txt.SPL";
+//		String trainFileBase = "out/decoded/simple_corpus_sorted.txt";
+//		String testFileBase = "out/decoded/simple_corpus_sorted.txt";
 		
 		HMMType modelType = HMMType.LOG_SCALE;
 		for(int i=0; i<recursionSize; i++) {
@@ -70,7 +70,7 @@ public class Main {
 			EM em = new EM(numIter, corpus, model);
 			//start training with EM
 			em.start();
-			//MyArray.printTable(model.param.weights.weights, "Weights");
+			//MyArray.printTable(model.param.weights.weights, "Final Weights");
 			test(model, corpus.testInstanceList, outFile);		
 			test(model, corpus.trainInstanceList, outFileTrain);
 		}		

@@ -15,7 +15,7 @@ public class LogLinearWeightsOptimizable implements Optimizable.ByGradientValue{
 	double[] latestGradient;
 	Corpus corpus;
 	
-	double c2 = 0.5; //regularizer
+	double c2 = 0.0; //regularizer
 	
 	public LogLinearWeightsOptimizable(double[] initParams, Corpus corpus) {
 		this.corpus = corpus;
@@ -39,7 +39,7 @@ public class LogLinearWeightsOptimizable implements Optimizable.ByGradientValue{
 			double normSquared = MyArray.getL2NormSquared(parameters);
 			latestValue = cll - c2 * normSquared;
 		}
-		//System.out.println("CLL : " + latestValue);
+		System.out.println("CLL : " + latestValue);
         return latestValue;
 	}
 

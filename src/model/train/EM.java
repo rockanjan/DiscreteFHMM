@@ -73,7 +73,7 @@ public class EM {
 		Optimizer optimizer = new LimitedMemoryBFGS(optimizable);
 		boolean converged = false;
 		try {
-			converged = optimizer.optimize(); //5 iters
+			converged = optimizer.optimize(10); //5 iters
 		} catch (IllegalArgumentException e) {
 			System.out.println("optimization threw exception: IllegalArgument");
 		} catch (OptimizationException oe) {
@@ -82,7 +82,7 @@ public class EM {
 		model.param.weights.weights = optimizable.getParameterMatrix();
 		double[] minMax = MyArray.getMinMaxOfMatrix(model.param.weights.weights);
 		//System.out.format("Parameters min=%.3f max=%.3f\n", minMax[0], minMax[1]);
-		 model.param.initial.get(0).printDistribution();
+		//model.param.initial.get(0).printDistribution();
 		// model.param.transition.printDistribution();
 		// model.param.observation.printDistribution();
 	}

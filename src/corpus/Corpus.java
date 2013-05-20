@@ -50,6 +50,7 @@ public class Corpus {
 				}
 			}
 		}
+		testInstanceList.numberOfTokens = totalWords;
 		System.out.println("Test Instances: " + testInstanceList.size());
 		System.out.println("Test token count: " + totalWords);
 		System.out.println("Test unknown count : " + totalUnknown);
@@ -70,12 +71,12 @@ public class Corpus {
 					trainInstanceList.add(instance);
 					totalWords += instance.words.length;
 				} else {
-					System.err
-							.println("Could not read from train file, line = "
+					System.err.println("Could not read from train file, line = "
 									+ line);
 				}
 			}
 		}
+		trainInstanceList.numberOfTokens = totalWords;
 		System.out.println("Train Instances: " + trainInstanceList.size());
 		System.out.println("Train token count: " + totalWords);
 		System.out.println("Train unknown count : " + totalUnknown);

@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Random;
 
+import util.MyArray;
+
 import model.HMMBase;
 import model.HMMNoFinalStateLog;
 import model.HMMType;
@@ -19,7 +21,7 @@ public class Main {
 	/** user parameters **/
 	static String delimiter = "\\+";
 	static int numIter;
-	static long seed = 37;
+	static long seed = 71;
 	
 	static String trainFile;
 	static String vocabFile;
@@ -36,18 +38,19 @@ public class Main {
 	public static void main(String[] args) throws IOException {
 		int recursionSize = 1;
 		outFolderPrefix = "out/";
-		numStates = 2;
+		numStates = 5;
 		numIter = 100;
 		//String trainFileBase = "out/decoded/train.txt.SPL";
-		String trainFileBase = "out/decoded/test.txt.SPL";
-		String testFileBase = "out/decoded/test.txt.SPL";
+		//String testFileBase = "out/decoded/test.txt.SPL";
+		String trainFileBase = "out/decoded/simple_corpus_sorted.txt";
+		String testFileBase = "out/decoded/simple_corpus_sorted.txt";
 		
 		HMMType modelType = HMMType.LOG_SCALE;
 		for(int i=0; i<recursionSize; i++) {
 			System.out.println("RECURSION: " + i);
 			System.out.println("-----------------");
 			trainFile = trainFileBase + "." + i;
-			testFile = "out/decoded/test.txt.SPL." + i;
+			testFile = testFileBase + "." + i;
 			vocabFile = trainFile;
 			String outFileTrain = trainFileBase + "." + (i+1);
 			String outFile = testFileBase + "." + (i+1);
@@ -61,11 +64,13 @@ public class Main {
 			model = new HMMNoFinalStateLog(numStates, corpus);
 			Random random = new Random(seed);
 			model.initializeRandom(random);
+			//MyArray.printTable(model.param.weights.weights, "Weights");
 			model.computePreviousTransitions();
 			model.initializeZerosToBest();
 			EM em = new EM(numIter, corpus, model);
 			//start training with EM
 			em.start();
+			//MyArray.printTable(model.param.weights.weights, "Weights");
 			test(model, corpus.testInstanceList, outFile);		
 			test(model, corpus.trainInstanceList, outFileTrain);
 		}		

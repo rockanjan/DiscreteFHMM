@@ -81,7 +81,7 @@ public class ForwardBackwardLog extends ForwardBackward{
 	@Override
 	public void computePosterior() {
 		posterior = new double[T][nrStates];
-		//instance.posteriors = new double[T][nrStates];
+		instance.posteriors = new double[T][nrStates];
 		
 		for(int t=0; t<T; t++) {
 			double[] expSum = new double[nrStates];
@@ -93,8 +93,7 @@ public class ForwardBackwardLog extends ForwardBackward{
 				//posterior[t][i] = alpha[t][i] + beta[t][i] - logLikelihood; //not working... why?
 				posterior[t][i] = alpha[t][i] + beta[t][i] - denom;
 				posterior[t][i] = Math.exp(posterior[t][i]);
-				
-				//instance.posteriors[t][i] = posterior[t][i];
+				instance.posteriors[t][i] = posterior[t][i];
 			}
 		}
 		//MyArray.printTable(posterior, "log posterior");

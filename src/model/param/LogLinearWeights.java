@@ -22,11 +22,10 @@ public class LogLinearWeights {
 	}
 	
 	public void initializeRandom(Random r) {
-		initializeZeros();
-		double small = 1e-100;
+		weights = new double[vocabSize][conditionalSize];
 		for(int y=0; y<vocabSize; y++) {
 			for(int u=0; u<conditionalSize; u++) {
-				weights[y][u] = r.nextDouble() + small;
+				weights[y][u] = r.nextGaussian();
 			}
 		}
 	}

@@ -20,7 +20,7 @@ public class Instance {
 	public HMMBase model;
 	
 	//store the posteriors (important for training log-linear weights in M-step)
-	//public double[][] posteriors;
+	public double[][] posteriors;
 	
 	public int[] decoded;
 
@@ -93,7 +93,6 @@ public class Instance {
 	
 	public double[] getConditionalVector(int t, int state){
 		double[] conditionalVector = new double[model.param.weights.conditionalSize];
-		//System.out.println("Conditional Size: " + conditionalVector.length);
 		//fill the conditionVector
 		conditionalVector[0] = 1.0; //offset
 		int index = 1;
@@ -119,9 +118,9 @@ public class Instance {
 	}
 	
 	/*
-	 * gets conditional vector using the posterior
+	 * gets conditional vector using viterbi decoded (state is fixed for a time t)
 	 */
-	public double[] getConditionalVector(int t){
+	public double[] getConditionalVectorUsingViterbiDecoded(int t){
 		double[] conditionalVector = new double[model.param.weights.conditionalSize];
 		//fill the conditionVector
 		conditionalVector[0] = 1.0; //offset
@@ -147,11 +146,12 @@ public class Instance {
 		return conditionalVector;
 	}
 	
-	public double getConditionalLogLikelihood(double[][] weights) {
+	
+	public double getConditionalLogLikelihoodUsingViterbiDecoded(double[][] weights) {
 		double cll = 0.0;
 		for(int t=0; t<T; t++) {
 			double normalizer = 0.0;
-			double[] conditionalVector = getConditionalVector(t);
+			double[] conditionalVector = getConditionalVectorUsingViterbiDecoded(t);
 			for (int i=0; i<model.corpus.corpusVocab.get(0).vocabSize; i++) {
 				double[] weightIthVocab = weights[i];
 				normalizer += Math.exp(MathUtils.dot(conditionalVector, weightIthVocab));
@@ -161,6 +161,28 @@ public class Instance {
 			double numerator = Math.exp(MathUtils.dot(conditionalVector, weightObservation));
 			double result = Math.log(numerator / normalizer);
 			cll += result;
+		}
+		return cll;
+	}
+	
+	public double getConditionalLogLikelihoodUsingPosteriorDistribution(double[][] weights) {
+		double cll = 0.0;
+		for(int t=0; t<T; t++) {
+			for(int state=0; state<nrStates; state++) {
+				double posteriorProb = posteriors[t][state];
+				double normalizer = 0.0;
+				double[] conditionalVector = getConditionalVector(t, state);
+				//normalizer
+				for (int i=0; i<model.corpus.corpusVocab.get(0).vocabSize; i++) {
+					double[] weightIthVocab = weights[i];
+					normalizer += Math.exp(MathUtils.dot(conditionalVector, weightIthVocab));
+				}
+				int observationIndex = this.words[t][0];
+				double[] weightObservation = weights[observationIndex];
+				double numerator = Math.exp(MathUtils.dot(conditionalVector, weightObservation));
+				double result = posteriorProb * Math.log(numerator / normalizer); //expected CLL
+				cll += result;
+			}
 		}
 		return cll;
 	}

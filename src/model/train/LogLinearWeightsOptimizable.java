@@ -34,12 +34,12 @@ public class LogLinearWeightsOptimizable implements Optimizable.ByGradientValue{
 	public double getValue() {
 		if(paramChanged) {
 			double[][] weights = MyArray.createMatrix(parameters, corpus.corpusVocab.get(0).vocabSize);
-			double cll = corpus.trainInstanceList.getConditionalLogLikelihood(weights);
+			double cll = corpus.trainInstanceList.getConditionalLogLikelihoodUsingPosteriorDistribution(weights);
 			//add regularizer
 			double normSquared = MyArray.getL2NormSquared(parameters);
 			latestValue = cll - c2 * normSquared;
-			
 		}
+		//System.out.println("CLL : " + latestValue);
         return latestValue;
 	}
 
@@ -61,10 +61,9 @@ public class LogLinearWeightsOptimizable implements Optimizable.ByGradientValue{
 				latestGradient[i] = newGradientsVectorized[i];
 			}
 	        newGradientsVectorized = null;
-		} else {
-			for(int i=0; i<parameters.length; i++) {
-				gradient[i] = latestGradient[i];
-			}
+		}
+		for(int i=0; i<parameters.length; i++) {
+			gradient[i] = latestGradient[i];
 		}
 	}
 
@@ -92,14 +91,14 @@ public class LogLinearWeightsOptimizable implements Optimizable.ByGradientValue{
 
 	@Override
 	public void setParameter(int i, double value) {
-		System.out.println("set parameter called");
+		//System.out.println("set parameter called");
 		parameters[i] = value;
 		paramChanged = true;
 	}
 
 	@Override
 	public void setParameters(double[] newParam) {
-		System.out.println("set parameters called");
+		//System.out.println("set parameters called");
 		for(int i=0; i<parameters.length; i++) {
 			parameters[i] = newParam[i];
 		}

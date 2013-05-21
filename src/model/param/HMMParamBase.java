@@ -40,8 +40,14 @@ public abstract class HMMParamBase {
 				initial.add(tempInit);
 				transition.add(tempTrans);
 			}
-			
+			//initial random weights
+			int zSize = 0;
+			for(int i=1; i<model.corpus.oneTimeStepObsSize; i++) {
+				zSize += model.corpus.corpusVocab.get(i).vocabSize;
+			}
 			//initialize weights for the log-linear model
+			weights = new LogLinearWeights(model.corpus.corpusVocab.get(0).vocabSize, nrStates + zSize);
+			weights.initializeZeros();
 		}
 	}
 	
@@ -80,6 +86,8 @@ public abstract class HMMParamBase {
 			initial.get(i).cloneFrom(source.initial.get(i));
 			transition.get(i).cloneFrom(source.transition.get(i));
 		}
+		
+		this.weights = source.weights;
 	}
 	
 	public void clear() {

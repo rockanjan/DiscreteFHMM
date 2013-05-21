@@ -21,14 +21,14 @@ public class Main {
 	/** user parameters **/
 	static String delimiter = "\\+";
 	static int numIter;
-	static long seed = 999777;
+	static long seed = 37;
 	
 	static String trainFile;
 	static String vocabFile;
 	static String testFile;
 	static String outFolderPrefix;
 	static int numStates; 	
-	static int vocabThreshold = 10; //only above this included
+	static int vocabThreshold = 2; //only above this included
 	static HMMBase model;
 	static Corpus corpus;
 	
@@ -36,10 +36,10 @@ public class Main {
 	
 	/** user parameters end **/
 	public static void main(String[] args) throws IOException {
-		int recursionSize = 1;
+		int recursionSize = 10;
 		outFolderPrefix = "out/";
-		numStates = 2;
-		numIter = 20;
+		numStates = 10;
+		numIter = 100;
 		String trainFileBase = "out/decoded/test.txt.SPL";
 		String testFileBase = "out/decoded/test.txt.SPL";
 //		String trainFileBase = "out/decoded/simple_corpus_sorted.txt";

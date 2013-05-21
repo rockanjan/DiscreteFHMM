@@ -61,16 +61,13 @@ public class InstanceList extends ArrayList<Instance> {
 							double posteriorProb = instance.posteriors[t][state];
 							double[] conditionalVector = instance.getConditionalVector(t, state);
 							if (i == instance.words[t][0]) {
-								gradient[i][j] += conditionalVector[j];
+								gradient[i][j] += posteriorProb * conditionalVector[j];
 							}
-							double normalizer = partitionCache[tokenIndex][state];
-									
-							double numerator = Math.exp(MathUtils.dot(
-									parameterMatrix[i], conditionalVector));
-							gradient[i][j] -= numerator / normalizer * conditionalVector[j];
-							gradient[i][j] = posteriorProb * gradient[i][j];
+							double normalizer = partitionCache[tokenIndex][state];									
+							double numerator = Math.exp(MathUtils.dot(parameterMatrix[i], conditionalVector));
+							gradient[i][j] -= posteriorProb * numerator / normalizer * conditionalVector[j];							
 						}
-						tokenIndex++;
+						tokenIndex++;						
 					}
 				}
 			}

@@ -55,7 +55,7 @@ public class EM {
 			instance.doInference(model);
 			instance.forwardBackward.addToCounts(expectedCounts);
 			LL += instance.forwardBackward.logLikelihood;
-			instance.createDecodedViterbiCache();
+			//instance.createDecodedViterbiCache();
 			instance.clearInference();
 		}
 	}
@@ -69,18 +69,19 @@ public class EM {
 		// also update the log-linear model weights
 		// maximize CLL of the data
 		double[] initParams = MyArray.createVector(model.param.weights.weights);
+		model.param.weights.weights = null;
 		LogLinearWeightsOptimizable optimizable = new LogLinearWeightsOptimizable(initParams, c);
 		Optimizer optimizer = new LimitedMemoryBFGS(optimizable);
 		boolean converged = false;
 		try {
-			converged = optimizer.optimize(10); //5 iters
+			converged = optimizer.optimize(5); //5 iters
 		} catch (IllegalArgumentException e) {
 			System.out.println("optimization threw exception: IllegalArgument");
 		} catch (OptimizationException oe) {
 			System.out.println("optimization threw OptimizationException");
 		}
 		model.param.weights.weights = optimizable.getParameterMatrix();
-		double[] minMax = MyArray.getMinMaxOfMatrix(model.param.weights.weights);
+		//double[] minMax = MyArray.getMinMaxOfMatrix(model.param.weights.weights);
 		//System.out.format("Parameters min=%.3f max=%.3f\n", minMax[0], minMax[1]);
 		//model.param.initial.get(0).printDistribution();
 		// model.param.transition.printDistribution();

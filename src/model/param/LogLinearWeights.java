@@ -29,4 +29,12 @@ public class LogLinearWeights {
 			}
 		}
 	}
+	
+	public void cloneFrom(LogLinearWeights source) {
+		for(int i=0; i<vocabSize; i++) {
+			for(int j=0; j<conditionalSize; j++) {
+				this.weights[i][j] = source.weights[i][j];
+			}
+		}
+	}
 }

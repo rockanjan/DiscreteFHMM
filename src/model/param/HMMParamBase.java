@@ -60,8 +60,9 @@ public abstract class HMMParamBase {
 		//initial random weights
 		int zSize = 0;
 		for(int i=1; i<model.corpus.oneTimeStepObsSize; i++) {
-			zSize += model.corpus.corpusVocab.get(i).vocabSize;
-			//System.out.println("zSize = " + zSize);
+			initial.get(i).initializeUniformCounts();
+			transition.get(i).initializeUniformCounts();
+			zSize += model.corpus.corpusVocab.get(i).vocabSize;			
 		}
 		 
 		weights = new LogLinearWeights(model.corpus.corpusVocab.get(0).vocabSize, nrStates + zSize);

@@ -62,11 +62,17 @@ public class MultinomialLog extends MultinomialBase{
 			if(sum == 0) {
 				throw new RuntimeException("Sum = 0 in normalization");
 			}
+			if(Double.isInfinite(sum)) {
+				throw new RuntimeException("Sum is infinite in normalization");
+			}
+			if(Double.isNaN(sum)) {
+				throw new RuntimeException("Sum is NaN in normalization");
+			}
 			for(int j=0; j<x; j++) {
 				count[j][i] = count[j][i] / sum;
 				if(Double.isNaN(count[j][i])) {
-					System.out.format("count[%d][%d] = %f\n", j,i,count[j][i]);
-					System.out.format("sum = %f\n", sum);
+					System.err.format("count[%d][%d] = %f\n", j,i,count[j][i]);
+					System.err.format("sum = %f\n", sum);
 					throw new RuntimeException("Probability after normalization is NaN");
 				}
 				if(count[j][i] == 0) {

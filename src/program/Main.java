@@ -38,15 +38,15 @@ public class Main {
 	public static void main(String[] args) throws IOException {
 		int recursionSize = 10;
 		outFolderPrefix = "out/";
-		numStates = 10;
-		numIter = 100;
+		numStates = 2;
+		numIter = 40;
 		String trainFileBase = "out/decoded/test.txt.SPL";
 		String testFileBase = "out/decoded/test.txt.SPL";
 //		String trainFileBase = "out/decoded/simple_corpus_sorted.txt";
 //		String testFileBase = "out/decoded/simple_corpus_sorted.txt";
 		
 		HMMType modelType = HMMType.LOG_SCALE;
-		for(int i=0; i<recursionSize; i++) {
+		for(int i=1; i<recursionSize; i++) {
 			System.out.println("RECURSION: " + i);
 			System.out.println("-----------------");
 			trainFile = trainFileBase + "." + i;

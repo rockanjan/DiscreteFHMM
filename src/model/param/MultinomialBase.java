@@ -15,7 +15,7 @@ public abstract class MultinomialBase {
 	public void initializeUniformCounts() {
 		for(int i=0; i<x; i++) {
 			for(int j=0; j<y; j++) {
-				count[j][i] = 1.0;
+				count[i][j] = 1.0;
 			}
 		}
 	}

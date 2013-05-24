@@ -14,6 +14,8 @@ public class LogLinearWeightsOptimizable implements Optimizable.ByGradientValue{
 	double[] latestGradient;
 	Corpus corpus;
 	
+	public int gradientCallCount = 0;
+	
 	double c2 = 0.0; //regularizer
 	
 	public LogLinearWeightsOptimizable(double[] initParams, Corpus corpus) {
@@ -43,6 +45,7 @@ public class LogLinearWeightsOptimizable implements Optimizable.ByGradientValue{
 	//TODO: can reduce memory usage by not storing latestGradient
 	@Override
 	public void getValueGradient(double[] gradient) {
+		gradientCallCount++;
 		double[][] weights = MyArray.createMatrix(parameters, corpus.corpusVocab.get(0).vocabSize);
 		double[][] newGradients = corpus.trainInstanceList.getGradient(weights);
 		//regularizer

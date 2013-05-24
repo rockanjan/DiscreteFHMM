@@ -38,9 +38,9 @@ public class Main {
 	public static void main(String[] args) throws IOException {
 		int recursionSize = 10;
 		outFolderPrefix = "out/";
-		numStates = 10;
-		numIter = 100;
-		String trainFileBase = "out/decoded/test.txt.SPL";
+		numStates = 2;
+		numIter = 30;
+		String trainFileBase = "out/decoded/train.txt.SPL";
 		String testFileBase = "out/decoded/test.txt.SPL";
 //		String trainFileBase = "out/decoded/simple_corpus_sorted.txt";
 //		String testFileBase = "out/decoded/simple_corpus_sorted.txt";

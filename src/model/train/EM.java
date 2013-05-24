@@ -74,12 +74,13 @@ public class EM {
 		Optimizer optimizer = new LimitedMemoryBFGS(optimizable);
 		boolean converged = false;
 		try {
-			converged = optimizer.optimize(5); //5 iters
+			converged = optimizer.optimize(3); //5 iters
 		} catch (IllegalArgumentException e) {
 			System.out.println("optimization threw exception: IllegalArgument");
 		} catch (OptimizationException oe) {
 			System.out.println("optimization threw OptimizationException");
 		}
+		System.out.println("Gradient call count: " + optimizable.gradientCallCount);
 		model.param.weights.weights = optimizable.getParameterMatrix();
 		//double[] minMax = MyArray.getMinMaxOfMatrix(model.param.weights.weights);
 		//System.out.format("Parameters min=%.3f max=%.3f\n", minMax[0], minMax[1]);
@@ -93,7 +94,6 @@ public class EM {
 		Timing totalEMTime = new Timing();
 		totalEMTime.start();
 		Timing eStepTime = new Timing();
-
 		for (iterCount = 0; iterCount < numIter; iterCount++) {
 			LL = 0;
 			// e-step
@@ -101,16 +101,15 @@ public class EM {
 			Stats.totalFixes = 0;
 			eStep();
 			if (iterCount > 0) {
-				System.out
-						.format("LL %.2f Diff %.2f \t Iter %d \t Fixes: %d \t E-step time %s\n",
-								LL, (LL - bestOldLL), iterCount,
-								Stats.totalFixes, eStepTime.stop());
+				System.out.format("LL %.2f Diff %.2f \t Iter %d \t Fixes: %d \t iter time %s\n",LL, (LL - bestOldLL), iterCount,Stats.totalFixes, eStepTime.stop());
 			}
 			if (isConverged()) {
 				break;
 			}
+			
 			// m-step
 			mStep();
+			
 		}
 		System.out.println("Total EM Time : " + totalEMTime.stop());
 	}

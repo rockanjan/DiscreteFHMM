@@ -44,14 +44,14 @@ public class HMMNoFinalStateLog extends HMMBase{
 			Instance sentence = corpus.trainInstanceList.get(i);
 			//initial
 			for(int z=1; z<corpus.oneTimeStepObsSize; z++) {
-				double prevValue = this.param.initial.get(z).get( sentence.words[0][z], 1);
-				this.param.initial.get(z).addToCounts( sentence.words[0][z], 1, prevValue + 1);
+				double prevValue = this.param.initial.get(z).get( sentence.words[0][z], 0);
+				this.param.initial.get(z).addToCounts( sentence.words[0][z], 0, 1);
 			}
 			
 			for(int t=1; t<sentence.T; t++) {
 				for(int z=1; z<corpus.oneTimeStepObsSize; z++) {
 					double prevValue = this.param.transition.get(z).get( sentence.words[t][z], sentence.words[t-1][z]);
-					this.param.transition.get(z).addToCounts( sentence.words[t][z], sentence.words[t-1][z] , prevValue + 1);
+					this.param.transition.get(z).addToCounts( sentence.words[t][z], sentence.words[t-1][z] , 1);
 				}
 			}
 		}
@@ -62,33 +62,5 @@ public class HMMNoFinalStateLog extends HMMBase{
 			this.param.transition.get(z).normalize();
 			this.param.transition.get(z).checkDistribution();			
 		}
-	}
-	
-	public static void main(String[] args) {
-		/*
-		//check saving and loading model
-		int nrStates = 20;
-		int nrObs = 50;
-		HMMNoFinalStateLog hmm = new HMMNoFinalStateLog(nrStates, nrObs);
-		hmm.initializeRandom(new Random());
-		HMMParamBase beforeSaving = new HMMParamNoFinalState(hmm);
-		beforeSaving.initializeZeros();
-		beforeSaving.cloneFrom(hmm.param);
-		String fileSaved = hmm.saveModel();
-		hmm.param.clear();
-		hmm = null;
-		
-		HMMNoFinalStateLog loaded = new HMMNoFinalStateLog();
-		loaded.loadModel(fileSaved);
-		if(beforeSaving.equalsExact(loaded.param)) {
-			System.out.println("Saved and Loaded models match exactly");
-		} else if(beforeSaving.equalsApprox(loaded.param)) {
-			System.out.println("Saved and Loaded models match approx");
-		} else {
-			System.out.println("Saved and Loaded models do not match");
-		}
-		*/
-	}
-
-	
+	}	
 }

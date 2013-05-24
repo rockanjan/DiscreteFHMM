@@ -46,7 +46,7 @@ public class Main {
 //		String testFileBase = "out/decoded/simple_corpus_sorted.txt";
 		
 		HMMType modelType = HMMType.LOG_SCALE;
-		for(int i=0; i<recursionSize; i++) {
+		for(int i=1; i<recursionSize; i++) {
 			System.out.println("RECURSION: " + i);
 			System.out.println("-----------------");
 			trainFile = trainFileBase + "." + i;

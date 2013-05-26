@@ -64,7 +64,6 @@ public abstract class HMMParamBase {
 			transition.get(i).initializeUniformCounts();
 			zSize += model.corpus.corpusVocab.get(i).vocabSize;			
 		}
-		 
 		weights = new LogLinearWeights(model.corpus.corpusVocab.get(0).vocabSize, nrStates + zSize);
 		weights.initializeRandom(r);
 	}

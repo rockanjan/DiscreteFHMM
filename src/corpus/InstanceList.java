@@ -3,6 +3,7 @@ package corpus;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Random;
 
 import util.MathUtils;
 import util.MyArray;
@@ -31,8 +32,8 @@ public class InstanceList extends ArrayList<Instance> {
 		timing.start();
 		
 		//shuffle data
-		Collections.shuffle(this);
-		int randomPickInterval = 10; // selects a token for processing at the interval of the value. (0, value, 2*value, ...).
+		Collections.shuffle(this, new Random(37));
+		int randomPickInterval = 100; // selects a token for processing at the interval of the value. (0, value, 2*value, ...).
 		
 		//TODO: can further speed up partitionCache calculation (because for different state in the same timestep, Z's remain fixed)  
 		double[][] partitionCache = new double[this.numberOfTokens][this.get(0).model.nrStates];

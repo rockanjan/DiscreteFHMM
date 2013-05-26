@@ -28,7 +28,7 @@ public class Main {
 	static String testFile;
 	static String outFolderPrefix;
 	static int numStates; 	
-	static int vocabThreshold = 2; //only above this included
+	static int vocabThreshold = 1; //only above this included
 	static HMMBase model;
 	static Corpus corpus;
 	
@@ -38,7 +38,7 @@ public class Main {
 	public static void main(String[] args) throws IOException {
 		int recursionSize = 10;
 		outFolderPrefix = "out/";
-		numStates = 2;
+		numStates = 40;
 		numIter = 30;
 		String trainFileBase = "out/decoded/train.txt.SPL";
 		String testFileBase = "out/decoded/test.txt.SPL";
@@ -46,7 +46,7 @@ public class Main {
 //		String testFileBase = "out/decoded/simple_corpus_sorted.txt";
 		
 		HMMType modelType = HMMType.LOG_SCALE;
-		for(int i=1; i<recursionSize; i++) {
+		for(int i=0; i<recursionSize; i++) {
 			System.out.println("RECURSION: " + i);
 			System.out.println("-----------------");
 			trainFile = trainFileBase + "." + i;
@@ -70,6 +70,8 @@ public class Main {
 			EM em = new EM(numIter, corpus, model);
 			//start training with EM
 			em.start();
+			//save model
+			
 			//MyArray.printTable(model.param.weights.weights, "Final Weights");
 			test(model, corpus.testInstanceList, outFile);		
 			test(model, corpus.trainInstanceList, outFileTrain);

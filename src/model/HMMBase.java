@@ -1,6 +1,7 @@
 package model;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
@@ -18,14 +19,13 @@ public abstract class HMMBase {
 	public int nrStates = -1;
 	public HMMParamBase param;
 	public HMMParamBase bestParam; //best found so far
-	String baseDir = "out/model/";
 	
 	public HMMType hmmType;
+	public String baseDir = "out/model/";
 	
 	public abstract void initializeRandom(Random r);
 	public abstract void initializeZeros();
 	public abstract void initializeZerosToBest();
-	
 	/*
 	 * computes the transition probabilities for the states decoded in the previous layer (Z variables)
 	 */
@@ -43,24 +43,28 @@ public abstract class HMMBase {
 		param.transition.get(0).cloneFrom(counts.transition.get(0));
 	}
 	
-	public String saveModel() {
-		return saveModel(-1);
+	public String saveModel(int recursionLevel) {
+		return saveModel(recursionLevel, -1);
 	}
 	/*
 	 * return the location saved
 	 */
-	public String saveModel(int iterCount) {
+	public String saveModel(int recursionLevel, int iterCount) {
+		
+		File folder = new File(baseDir + "recursion_" + recursionLevel);
+		if(! folder.exists()) {
+			folder.mkdir();			
+		}
+		String modelFile = "";
 		/*
-		String modelFile;
 		if(iterCount < 0) {
-			modelFile = baseDir + "model_final_states_" + nrStates + ".txt";
+			modelFile = folder.getAbsolutePath() + "/model_states_" + nrStates + "_final.txt";
 		} else {
-			modelFile = baseDir + "model_iter_" + iterCount + "_states_" + nrStates + ".txt";
+			modelFile = folder.getAbsolutePath() + "/model_states_" + nrStates + "_iter_" + iterCount +  ".txt";			
 		}
 		PrintWriter pw;
 		try {
 			pw = new PrintWriter(modelFile);
-
 			pw.println(nrStates);
 			pw.println(nrObs);
 			pw.println();
@@ -99,9 +103,8 @@ public abstract class HMMBase {
 			e.printStackTrace();
 			return null;
 		}
-		return modelFile;
 		*/
-		return null;
+		return modelFile;
 	}
 
 	public void loadModel(String location) {

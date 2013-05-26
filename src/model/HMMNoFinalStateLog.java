@@ -62,5 +62,7 @@ public class HMMNoFinalStateLog extends HMMBase{
 			this.param.transition.get(z).normalize();
 			this.param.transition.get(z).checkDistribution();			
 		}
-	}	
+	}
+	
+	
 }

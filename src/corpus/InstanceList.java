@@ -20,10 +20,13 @@ public class InstanceList extends ArrayList<Instance> {
 	public double getConditionalLogLikelihoodUsingPosteriorDistribution(
 			double[][] parameterMatrix) {
 		double cll = 0;
+		Timing timing = new Timing();
+		timing.start();
 		for (int n = 0; n < this.size(); n++) {
 			Instance i = get(n);
 			cll += i.getConditionalLogLikelihoodUsingPosteriorDistribution(parameterMatrix);
 		}
+		System.out.println("CLL computation time : " + timing.stop());
 		return cll;
 	}
 
@@ -33,7 +36,7 @@ public class InstanceList extends ArrayList<Instance> {
 		
 		//shuffle data
 		Collections.shuffle(this, new Random(37));
-		int randomPickInterval = 100; // selects a token for processing at the interval of the value. (0, value, 2*value, ...).
+		int randomPickInterval = 1000; // selects a token for processing at the interval of the value. (0, value, 2*value, ...).
 		
 		//TODO: can further speed up partitionCache calculation (because for different state in the same timestep, Z's remain fixed)  
 		double[][] partitionCache = new double[this.numberOfTokens][this.get(0).model.nrStates];

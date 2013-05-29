@@ -28,32 +28,45 @@ public class Main {
 	static String testFile;
 	static String outFolderPrefix;
 	static int numStates; 	
-	static int vocabThreshold = 2; //only above this included
+	static int vocabThreshold = 1; //only above this included
 	static HMMBase model;
 	static Corpus corpus;
+	public static int currentRecursion;
 	
 	static int oneTimeStepObsSize; //number of elements in observation e.g. word|hmm1|hmm2  has 3
 	
+	static int recursionSize = 10;
 	/** user parameters end **/
 	public static void main(String[] args) throws IOException {
-		int recursionSize = 10;
+		numStates = 2;
+		recursionSize = 5;
+		train();
+		//String testFilenameBase = "/home/anjan/workspace/HMM/out/decoded/simple_corpus_sorted.txt";
+		//decodeFromPlainText(testFilenameBase, recursionSize);
+	}
+	
+	public static void train() throws IOException {
 		outFolderPrefix = "out/";
-		numStates = 5;
 		numIter = 30;
-		String trainFileBase = "out/decoded/train.txt.SPL";
-		String testFileBase = "out/decoded/test.txt.SPL";
-//		String trainFileBase = "out/decoded/simple_corpus_sorted.txt";
-//		String testFileBase = "out/decoded/simple_corpus_sorted.txt";
+		String trainFileBase;
+		String testFileBase;
 		
-		HMMType modelType = HMMType.LOG_SCALE;
-		for(int i=1; i<recursionSize; i++) {
-			System.out.println("RECURSION: " + i);
+//		trainFileBase = "out/decoded/train.txt.SPL";
+//		testFileBase = "out/decoded/test.txt.SPL";
+//		trainFileBase = "out/decoded/test.txt.SPL";
+//		testFileBase = trainFileBase;
+		
+		trainFileBase = "out/decoded/simple_corpus_sorted.txt";
+		testFileBase = "out/decoded/simple_corpus_sorted.txt";
+	
+		for(int currentRecursion=0; currentRecursion<recursionSize; currentRecursion++) {
+			System.out.println("RECURSION: " + currentRecursion);
 			System.out.println("-----------------");
-			trainFile = trainFileBase + "." + i;
-			testFile = testFileBase + "." + i;
+			trainFile = trainFileBase + "." + currentRecursion;
+			testFile = testFileBase + "." + currentRecursion;
 			vocabFile = trainFile;
-			String outFileTrain = trainFileBase + "." + (i+1);
-			String outFile = testFileBase + "." + (i+1);
+			String outFileTrain = trainFileBase + "." + (currentRecursion+1);
+			String outFile = testFileBase + "." + (currentRecursion+1);
 			printParams();
 			corpus = new Corpus("\\s+", vocabThreshold);
 			Corpus.oneTimeStepObsSize = Corpus.findOneTimeStepObsSize(vocabFile);
@@ -64,49 +77,27 @@ public class Main {
 			model = new HMMNoFinalStateLog(numStates, corpus);
 			Random random = new Random(seed);
 			model.initializeRandom(random);
-			//MyArray.printTable(model.param.weights.weights, "Weights");
 			model.computePreviousTransitions();
 			model.initializeZerosToBest();
 			EM em = new EM(numIter, corpus, model);
-			//start training with EM
 			em.start();
-			//save model
-			
-			//MyArray.printTable(model.param.weights.weights, "Final Weights");
+			model.saveModel(currentRecursion);
 			test(model, corpus.testInstanceList, outFile);		
-			test(model, corpus.trainInstanceList, outFileTrain);
-		}		
+			//test(model, corpus.trainInstanceList, outFileTrain);
+		}	
 	}
 	
-	public static void testPosteriorDistribution(HMMBase model, InstanceList instanceList, String outFile) {
-		System.out.println("Decoding Posterior distribution");
-		Decoder decoder = new Decoder(model);
-		try {
-			PrintWriter pw = new PrintWriter(new FileWriter(outFile));
-			for(int n=0; n<instanceList.size(); n++) {
-				Instance instance = instanceList.get(n);
-				double[][] decoded = decoder.posteriorDistribution(instance);
-				for(int t=0; t<decoded.length; t++) {
-					String word = instance.getWord(t);
-					pw.print(word + " ");
-					for(int i=0; i<decoded[t].length; i++) {
-						pw.print(decoded[t][i]);
-						if(i != model.nrStates) {
-							pw.print(" ");
-						}
-					}
-					pw.println();
-				}
-				pw.println();
-			}
-			pw.close();
-		} catch (IOException e) {
-			System.err.format("Could not open file for writing %s\n", outFile);
-			e.printStackTrace();
+	public static void decodeFromPlainText(String testFileBase, int numberOfRecursions) throws IOException {
+		for(currentRecursion = 0; currentRecursion < numberOfRecursions; currentRecursion++) {
+			corpus = new Corpus("\\s+", vocabThreshold);
+			model = new HMMNoFinalStateLog(numStates, corpus);
+			model.loadModel(currentRecursion); //also reads the vocab dictionaries
+			String testFile = testFileBase + "." + currentRecursion;
+			corpus.readTest(testFile);
+			String outFile = testFileBase + "." + (currentRecursion+1);
+			test(model, corpus.testInstanceList, outFile);
 		}
-		System.out.println("Finished decoding");
 	}
-	
 	
 	public static void test(HMMBase model, InstanceList instanceList, String outFile) {
 		System.out.println("Decoding Data");
@@ -153,6 +144,36 @@ public class Main {
 		}
 		System.out.println("Finished decoding");
 	}
+	
+	public static void testPosteriorDistribution(HMMBase model, InstanceList instanceList, String outFile) {
+		System.out.println("Decoding Posterior distribution");
+		Decoder decoder = new Decoder(model);
+		try {
+			PrintWriter pw = new PrintWriter(new FileWriter(outFile));
+			for(int n=0; n<instanceList.size(); n++) {
+				Instance instance = instanceList.get(n);
+				double[][] decoded = decoder.posteriorDistribution(instance);
+				for(int t=0; t<decoded.length; t++) {
+					String word = instance.getWord(t);
+					pw.print(word + " ");
+					for(int i=0; i<decoded[t].length; i++) {
+						pw.print(decoded[t][i]);
+						if(i != model.nrStates) {
+							pw.print(" ");
+						}
+					}
+					pw.println();
+				}
+				pw.println();
+			}
+			pw.close();
+		} catch (IOException e) {
+			System.err.format("Could not open file for writing %s\n", outFile);
+			e.printStackTrace();
+		}
+		System.out.println("Finished decoding");
+	}
+	
 	
 	public static void printParams() {
 		StringBuffer sb = new StringBuffer();

@@ -70,6 +70,14 @@ public abstract class MultinomialBase {
 		return result;
 	}
 	
+	public int getConditionedSize() {
+		return x;
+	}
+	
+	public int getConditionalSize() {
+		return y;
+	}
+	
 	public abstract void initializeRandom(Random r);
 	public abstract void smooth();
 	public abstract void normalize();

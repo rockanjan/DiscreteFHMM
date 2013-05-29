@@ -2,6 +2,8 @@ package corpus;
 
 import java.util.ArrayList;
 
+import javax.management.RuntimeErrorException;
+
 import util.MathUtils;
 import util.SmoothWord;
 
@@ -78,6 +80,7 @@ public class Instance {
 					}
 					
 					//numerator: for this particular observation item at t
+					//System.out.println(this.getWord(t));
 					int observationIndex = this.words[t][0];
 					double[] weightObservation = model.param.weights.weights[observationIndex];
 					double numerator = Math.exp(MathUtils.dot(conditionalVector, weightObservation));
@@ -245,6 +248,9 @@ public class Instance {
 		for (int i = 0; i < T; i++) {
 			String oneTimeStep = allTimeSteps[i];
 			String[] obsElements = oneTimeStep.split(c.obsDelimiter);
+			if(obsElements.length != c.oneTimeStepObsSize) {
+				throw new RuntimeException("One timestep observation size from vocab : " + c.oneTimeStepObsSize + " from instance: " + obsElements.length);
+			}
 			// original word
 			String word = obsElements[0];
 			if (c.corpusVocab.get(0).lower) {

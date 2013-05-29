@@ -100,7 +100,7 @@ public class Corpus {
 		readVocabFromCorpus(inFile);
 	}
 	
-	public void readVocabFromCorpus(String filename) throws IOException {
+	private void readVocabFromCorpus(String filename) throws IOException {
 		BufferedReader br = new BufferedReader(new FileReader(filename));
 		String line = null;
 		corpusVocab.get(0).wordToIndex.put(Vocabulary.UNKNOWN, 0);
@@ -207,15 +207,19 @@ public class Corpus {
 	}
 	
 	public static void main(String[] args) throws IOException {
-		//String inFile = "/home/anjan/workspace/HMM/out/decoded/train.decoded.txt";
-		String inFile = "/home/anjan/workspace/HMM/data/train.txt.SPL";
-		
-		//String inFile = "/home/anjan/workspace/HMM/data/train.txt.small.SPL";
-		//String inFile = "/home/anjan/workspace/HMM/out/decoded/train.txt.small.SPL";
-		
+		String inFile = "/home/anjan/workspace/HMM/data/simple_corpus_sorted.txt";
 		int vocabThreshold = 1;
 		Corpus c = new Corpus("\\s+", vocabThreshold);
 		Corpus.oneTimeStepObsSize = Corpus.findOneTimeStepObsSize(inFile);
 		c.readVocab(inFile);
+		c.saveVocabFile("/tmp/vocab.txt");
+		c.corpusVocab.get(0).readDictionary("/tmp/vocab.txt.0");
+		c.readTest(inFile);
+		for(int i=0; i<c.testInstanceList.size(); i++) {
+			for(int t=0; t<c.testInstanceList.get(i).T; t++) {
+				System.out.print(c.testInstanceList.get(i).getWord(t) + " ");
+			}
+			System.out.println();
+		}
 	}
 }

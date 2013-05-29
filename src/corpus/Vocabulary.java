@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -17,7 +18,7 @@ public class Vocabulary {
 	public int vocabThreshold = 1;
 	//index zero reserved for *unk* (low freq features)
 	
-	public int index = -1;
+	public int index = 0;
 	public int vocabSize = -1;
 	public static String UNKNOWN = "*unk*";
 	public Map<String, Integer> wordToIndex = new HashMap<String, Integer>();
@@ -41,6 +42,7 @@ public class Vocabulary {
 		return returnId;
 	}
 	
+	//only called for the word vocab
 	public void reduceVocab(Corpus c) {
 		System.out.println("Reducing vocab");
 		Map<String, Integer> wordToIndexNew = new HashMap<String, Integer>();
@@ -74,8 +76,24 @@ public class Vocabulary {
 		
 	}
 	
+	public void writeDictionary(String filename) {
+		try{
+			PrintWriter pw = new PrintWriter(filename);
+			//write vocabSize
+			pw.println(this.vocabSize);
+			for(int i=0; i<indexToWord.size(); i++) {
+				pw.println(indexToWord.get(i));
+			}
+			pw.close();
+		}
+		catch(IOException ioe) {
+			ioe.printStackTrace();
+			System.exit(-1);
+		}
+	}
+	
 	//reads from the dictionary
-	public void readVocabFromDictionary(String filename) {
+	public void readDictionary(String filename) {
 		BufferedReader br = null;
 		try {
 			br = new BufferedReader(new FileReader(filename));
@@ -95,13 +113,13 @@ public class Vocabulary {
 				}
 				addItem(line);
 			}
-			System.out.println("Loaded Vocab Size : " + wordToIndex.size());
+			System.out.println("Dictionary Loaded Vocab Size: " + wordToIndex.size());
 		} catch (IOException e) {
 			e.printStackTrace();
-			System.err.println("error reading vocab file");
+			System.err.println("error reading dictionary file");
 		}
 		if(vocabSize != wordToIndex.size()) {
-			System.out.println("Vocab file corrputed: header size and the vocab size do not match");
+			System.out.println("dictionary file corrputed: header size and the vocab size do not match");
 			System.exit(-1);
 		}
 	}
@@ -113,8 +131,7 @@ public class Vocabulary {
 		sb.append("vocab size : " + vocabSize);
 		sb.append("\nvocab frequency: \n");
 		for (int i = 0; i < vocabSize; i++) {
-			sb.append("\t" + indexToWord.get(i) + " --> "
-					+ indexToFrequency.get(i));
+			sb.append("\t" + i + " --> " + "\t" + indexToWord.get(i) + " --> " + indexToFrequency.get(i));
 			sb.append("\n");
 		}
 		System.out.println(sb.toString());
@@ -131,5 +148,4 @@ public class Vocabulary {
 			return 0; //unknown id
 		}
 	}
-	
 }

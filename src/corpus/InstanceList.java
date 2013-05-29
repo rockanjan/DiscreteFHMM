@@ -36,7 +36,10 @@ public class InstanceList extends ArrayList<Instance> {
 		
 		//shuffle data
 		Collections.shuffle(this, new Random(37));
-		int randomPickInterval = 1000; // selects a token for processing at the interval of the value. (0, value, 2*value, ...).
+		int randomPickInterval = 1;
+		if(this.numberOfTokens > 10000) {
+			randomPickInterval = 1000; // selects a token for processing at the interval of the value. (0, value, 2*value, ...).
+		}
 		
 		//TODO: can further speed up partitionCache calculation (because for different state in the same timestep, Z's remain fixed)  
 		double[][] partitionCache = new double[this.numberOfTokens][this.get(0).model.nrStates];

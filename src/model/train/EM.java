@@ -51,14 +51,15 @@ public class EM {
 			expectedCounts = new HMMParamNoFinalStateLog(model);
 		}
 		expectedCounts.initializeZeros();
-		for (int n = 0; n < c.trainInstanceList.size(); n++) {
-			Instance instance = c.trainInstanceList.get(n);
+		for (int n = 0; n < c.trainInstanceSampleList.size(); n++) {
+			Instance instance = c.trainInstanceSampleList.get(n);
 			instance.doInference(model);
 			instance.forwardBackward.addToCounts(expectedCounts);
 			LL += instance.forwardBackward.logLikelihood;
 			//instance.createDecodedViterbiCache();
 			instance.clearInference();
 		}
+		MyArray.printExpTable(model.param.transition.get(0).count);
 	}
 
 	public void mStep() {
@@ -90,8 +91,12 @@ public class EM {
 		Timing totalEMTime = new Timing();
 		totalEMTime.start();
 		Timing eStepTime = new Timing();
+		
+		c.trainInstanceSampleList = c.trainInstanceList;
 		for (iterCount = 0; iterCount < numIter; iterCount++) {
 			Timing oneIterEmTime = new Timing();
+			//sample new train instances
+			//c.generateRandomTrainingSample(1000);
 			oneIterEmTime.start();
 			LL = 0;
 			// e-step
@@ -107,6 +112,8 @@ public class EM {
 			// m-step
 			mStep();
 			System.out.format("iter EM time : %s\n" , oneIterEmTime.stop());
+			//clear random training samples
+			//c.clearRandomTrainingSample();
 		}
 		System.out.println("Total EM Time : " + totalEMTime.stop());
 	}

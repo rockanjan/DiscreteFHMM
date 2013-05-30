@@ -34,7 +34,7 @@ public class LogLinearWeightsOptimizable implements Optimizable.ByGradientValue{
 	@Override
 	public double getValue() {
 		double[][] weights = MyArray.createMatrix(parameters, corpus.corpusVocab.get(0).vocabSize);
-		double cll = corpus.trainInstanceList.getConditionalLogLikelihoodUsingPosteriorDistribution(weights);
+		double cll = corpus.trainInstanceSampleList.getConditionalLogLikelihoodUsingPosteriorDistribution(weights);
 		//add regularizer
 		double normSquared = MyArray.getL2NormSquared(parameters);
 		latestValue = cll - c2 * normSquared;
@@ -42,12 +42,11 @@ public class LogLinearWeightsOptimizable implements Optimizable.ByGradientValue{
         return latestValue;
 	}
 
-	//TODO: can reduce memory usage by not storing latestGradient
 	@Override
 	public void getValueGradient(double[] gradient) {
 		gradientCallCount++;
 		double[][] weights = MyArray.createMatrix(parameters, corpus.corpusVocab.get(0).vocabSize);
-		double[][] newGradients = corpus.trainInstanceList.getGradient(weights);
+		double[][] newGradients = corpus.trainInstanceSampleList.getGradient(weights);
 		//regularizer
 		for(int i=0; i<newGradients.length; i++) {
 			for(int j=0; j<newGradients[0].length; j++) {
@@ -85,10 +84,6 @@ public class LogLinearWeightsOptimizable implements Optimizable.ByGradientValue{
 		
 	}
 	
-	public double[][] getParameterMatrix() {
-		return MyArray.createMatrix(parameters, corpus.corpusVocab.get(0).vocabSize);
-	}
-
 	@Override
 	public void setParameter(int i, double value) {
 		//System.out.println("set parameter called");
@@ -103,7 +98,14 @@ public class LogLinearWeightsOptimizable implements Optimizable.ByGradientValue{
 		}
 	}
 	
-	public double[][] getFiniteDifferenceGradient() {
+	public double[][] getParameterMatrix() {
+		return MyArray.createMatrix(parameters, corpus.corpusVocab.get(0).vocabSize);
+	}
+
+	
+	/************ Debugging code *********/
+	
+	private double[][] getFiniteDifferenceGradient() {
 		double[][] weights = MyArray.createMatrix(parameters, corpus.corpusVocab.get(0).vocabSize);
 		double[][] newGradients = new double[weights.length][weights[0].length];
 		double step = 1e-2;
@@ -122,7 +124,7 @@ public class LogLinearWeightsOptimizable implements Optimizable.ByGradientValue{
 		return newGradients;
 	}
 	
-	public double[][] getGradientByEquation() {
+	private double[][] getGradientByEquation() {
 		double[][] weights = MyArray.createMatrix(parameters, corpus.corpusVocab.get(0).vocabSize);
 		double[][] newGradients = corpus.trainInstanceList.getGradient(weights);		
 		return newGradients;
@@ -146,4 +148,6 @@ public class LogLinearWeightsOptimizable implements Optimizable.ByGradientValue{
 		}
 		System.out.format("Gradient Difference: Max %.5f, Min %.5f\n", maxDiff, minDiff);
 	}
+	
+	/*************** Debugging code *********/
 }

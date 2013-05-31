@@ -51,8 +51,9 @@ public class EM {
 			expectedCounts = new HMMParamNoFinalStateLog(model);
 		}
 		expectedCounts.initializeZeros();
-		for (int n = 0; n < c.trainInstanceSampleList.size(); n++) {
-			Instance instance = c.trainInstanceSampleList.get(n);
+		System.out.println("Estep #tokens : " + c.trainInstanceEStepSampleList.numberOfTokens);
+		for (int n = 0; n < c.trainInstanceEStepSampleList.size(); n++) {
+			Instance instance = c.trainInstanceEStepSampleList.get(n);
 			instance.doInference(model);
 			instance.forwardBackward.addToCounts(expectedCounts);
 			LL += instance.forwardBackward.logLikelihood;
@@ -68,6 +69,7 @@ public class EM {
 		// MyArray.printTable(expectedCounts.observation.count);
 		model.updateFromCounts(expectedCounts);
 
+		System.out.println("Mstep #tokens : " + c.trainInstanceMStepSampleList.numberOfTokens);
 		// also update the log-linear model weights
 		// maximize CLL of the data
 		double[] initParams = MyArray.createVector(model.param.weights.weights);
@@ -91,12 +93,15 @@ public class EM {
 		Timing totalEMTime = new Timing();
 		totalEMTime.start();
 		Timing eStepTime = new Timing();
-		
-		c.trainInstanceSampleList = c.trainInstanceList;
+		//c.trainInstanceSampleList = c.trainInstanceList;
 		for (iterCount = 0; iterCount < numIter; iterCount++) {
+			if(iterCount > 20) {
+				Main.sampleSizeEStep = 2 * Main.sampleSizeEStep;
+				Main.sampleSizeMStep = 2 * Main.sampleSizeMStep;
+			}
 			Timing oneIterEmTime = new Timing();
 			//sample new train instances
-			//c.generateRandomTrainingSample(1000);
+			c.generateRandomTrainingEStepSample(Main.sampleSizeEStep);
 			oneIterEmTime.start();
 			LL = 0;
 			// e-step
@@ -110,10 +115,9 @@ public class EM {
 				break;
 			}
 			// m-step
+			c.generateRandomTrainingMStepSample(Main.sampleSizeMStep);
 			mStep();
-			System.out.format("iter EM time : %s\n" , oneIterEmTime.stop());
-			//clear random training samples
-			//c.clearRandomTrainingSample();
+			System.out.format("iter EM time : %s\n" , oneIterEmTime.stop());			
 		}
 		System.out.println("Total EM Time : " + totalEMTime.stop());
 	}

@@ -18,7 +18,7 @@ public class Vocabulary {
 	public int vocabThreshold = 1;
 	//index zero reserved for *unk* (low freq features)
 	
-	public int index = 0;
+	public int index = -1;
 	public int vocabSize = -1;
 	public static String UNKNOWN = "*unk*";
 	public Map<String, Integer> wordToIndex = new HashMap<String, Integer>();

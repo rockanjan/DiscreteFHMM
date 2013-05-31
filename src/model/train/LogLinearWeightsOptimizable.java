@@ -34,7 +34,7 @@ public class LogLinearWeightsOptimizable implements Optimizable.ByGradientValue{
 	@Override
 	public double getValue() {
 		double[][] weights = MyArray.createMatrix(parameters, corpus.corpusVocab.get(0).vocabSize);
-		double cll = corpus.trainInstanceSampleList.getConditionalLogLikelihoodUsingPosteriorDistribution(weights);
+		double cll = corpus.trainInstanceMStepSampleList.getConditionalLogLikelihoodUsingPosteriorDistribution(weights);
 		//add regularizer
 		double normSquared = MyArray.getL2NormSquared(parameters);
 		latestValue = cll - c2 * normSquared;
@@ -46,7 +46,7 @@ public class LogLinearWeightsOptimizable implements Optimizable.ByGradientValue{
 	public void getValueGradient(double[] gradient) {
 		gradientCallCount++;
 		double[][] weights = MyArray.createMatrix(parameters, corpus.corpusVocab.get(0).vocabSize);
-		double[][] newGradients = corpus.trainInstanceSampleList.getGradient(weights);
+		double[][] newGradients = corpus.trainInstanceMStepSampleList.getGradient(weights);
 		//regularizer
 		for(int i=0; i<newGradients.length; i++) {
 			for(int j=0; j<newGradients[0].length; j++) {

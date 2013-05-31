@@ -4,12 +4,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Random;
-
-import util.MyArray;
-
 import model.HMMBase;
 import model.HMMNoFinalStateLog;
-import model.HMMType;
 import model.inference.Decoder;
 import model.train.EM;
 import corpus.Corpus;
@@ -32,6 +28,8 @@ public class Main {
 	static HMMBase model;
 	static Corpus corpus;
 	public static int currentRecursion;
+	public static int sampleSizeEStep;
+	public static int sampleSizeMStep;
 	
 	static int oneTimeStepObsSize; //number of elements in observation e.g. word|hmm1|hmm2  has 3
 	
@@ -39,7 +37,7 @@ public class Main {
 	/** user parameters end **/
 	public static void main(String[] args) throws IOException {
 		numStates = 2;
-		recursionSize = 5;
+		recursionSize = 100;
 		train();
 		//String testFilenameBase = "/home/anjan/workspace/HMM/out/decoded/simple_corpus_sorted.txt";
 		//decodeFromPlainText(testFilenameBase, recursionSize);
@@ -48,16 +46,18 @@ public class Main {
 	public static void train() throws IOException {
 		outFolderPrefix = "out/";
 		numStates = 2;
-		numIter = 5;
+		numIter = 30;
 		String trainFileBase;
 		String testFileBase;
-//		trainFileBase = "out/decoded/test.txt.SPL";
-//		testFileBase = trainFileBase;
+		trainFileBase = "out/decoded/train.txt.SPL";
+		testFileBase = "out/decoded/test.txt.SPL";
 		
-		trainFileBase = "out/decoded/simple_corpus_sorted.txt";
-		testFileBase = "out/decoded/simple_corpus_sorted.txt";
+//		trainFileBase = "out/decoded/simple_corpus_sorted.txt";
+//		testFileBase = "out/decoded/simple_corpus_sorted.txt";
 	
 		for(int currentRecursion=0; currentRecursion<recursionSize; currentRecursion++) {
+			sampleSizeEStep = 1000;
+			sampleSizeMStep = 100;
 			System.out.println("RECURSION: " + currentRecursion);
 			System.out.println("-----------------");
 			trainFile = trainFileBase + "." + currentRecursion;

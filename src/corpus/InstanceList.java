@@ -1,12 +1,15 @@
 package corpus;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Random;
+
 import util.MathUtils;
 import util.Timing;
 
 public class InstanceList extends ArrayList<Instance> {
 	private static final long serialVersionUID = -2409272084529539276L;
-	int numberOfTokens;
+	public int numberOfTokens;
 	
 	public InstanceList() {
 		super();
@@ -72,7 +75,6 @@ public class InstanceList extends ArrayList<Instance> {
 				}
 			}
 		}
-		
 		System.out.println("Gradient computation time : " + timing.stop());		
 		return gradient;
 	}

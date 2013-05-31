@@ -21,7 +21,8 @@ public class Corpus {
 	// testInstanceList can be empty
 	public InstanceList testInstanceList;
 	
-	public InstanceList trainInstanceSampleList; //sampled sentences for stochastic training
+	public InstanceList trainInstanceEStepSampleList; //sampled sentences for stochastic training
+	public InstanceList trainInstanceMStepSampleList; //sampled sentences for stochastic training
 
 	public ArrayList<Vocabulary> corpusVocab;
 
@@ -190,11 +191,11 @@ public class Corpus {
 	/*
 	 * does not make a clone, just the reference
 	 */
-	public void generateRandomTrainingSample(int size) {
-		trainInstanceSampleList = new InstanceList();
+	public void generateRandomTrainingEStepSample(int size) {
+		trainInstanceEStepSampleList = new InstanceList();
 		if(trainInstanceList.size() <= size) {
-			trainInstanceSampleList.addAll(trainInstanceList);
-			trainInstanceSampleList.numberOfTokens = trainInstanceList.numberOfTokens;
+			trainInstanceEStepSampleList.addAll(trainInstanceList);
+			trainInstanceEStepSampleList.numberOfTokens = trainInstanceList.numberOfTokens;
 		} else {
 			ArrayList<Integer> randomInts = new ArrayList<Integer>();			
 			for(int i=0; i<trainInstanceList.size(); i++) {
@@ -203,16 +204,33 @@ public class Corpus {
 			Collections.shuffle(randomInts,random);
 			for(int i=0; i<size; i++) {
 				Instance instance = trainInstanceList.get(randomInts.get(i));
-				trainInstanceSampleList.add(instance);
-				trainInstanceSampleList.numberOfTokens += instance.T;
+				trainInstanceEStepSampleList.add(instance);
+				trainInstanceEStepSampleList.numberOfTokens += instance.T;
 			}			
 		}
-	}
+	}	
 	
-	public void clearRandomTrainingSample() {
-		trainInstanceSampleList.clear();
-		trainInstanceSampleList = null;
-	}
+	/*
+	 * should be subset of E-step samples (because the posterior distribution is needed)
+	 */
+	public void generateRandomTrainingMStepSample(int size) {
+		trainInstanceMStepSampleList = new InstanceList();
+		if(trainInstanceEStepSampleList.size() <= size) {
+			trainInstanceMStepSampleList.addAll(trainInstanceEStepSampleList);
+			trainInstanceMStepSampleList.numberOfTokens = trainInstanceEStepSampleList.numberOfTokens;
+		} else {
+			ArrayList<Integer> randomInts = new ArrayList<Integer>();			
+			for(int i=0; i<trainInstanceList.size(); i++) {
+				randomInts.add(i);
+			}
+			Collections.shuffle(randomInts,random);
+			for(int i=0; i<size; i++) {
+				Instance instance = trainInstanceEStepSampleList.get(randomInts.get(i));
+				trainInstanceMStepSampleList.add(instance);
+				trainInstanceMStepSampleList.numberOfTokens += instance.T;
+			}			
+		}
+	}	
 	
 	
 	public static int findOneTimeStepObsSize(String filename) {

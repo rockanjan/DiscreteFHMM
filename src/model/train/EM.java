@@ -1,5 +1,6 @@
 package model.train;
 
+import program.Main;
 import cc.mallet.optimize.LimitedMemoryBFGS;
 import cc.mallet.optimize.OptimizationException;
 import cc.mallet.optimize.Optimizer;
@@ -50,14 +51,15 @@ public class EM {
 			expectedCounts = new HMMParamNoFinalStateLog(model);
 		}
 		expectedCounts.initializeZeros();
-		for (int n = 0; n < c.trainInstanceList.size(); n++) {
-			Instance instance = c.trainInstanceList.get(n);
+		for (int n = 0; n < c.trainInstanceSampleList.size(); n++) {
+			Instance instance = c.trainInstanceSampleList.get(n);
 			instance.doInference(model);
 			instance.forwardBackward.addToCounts(expectedCounts);
 			LL += instance.forwardBackward.logLikelihood;
 			//instance.createDecodedViterbiCache();
 			instance.clearInference();
 		}
+		//MyArray.printExpTable(model.param.transition.get(0).count);
 	}
 
 	public void mStep() {
@@ -81,12 +83,7 @@ public class EM {
 			System.out.println("optimization threw OptimizationException");
 		}
 		System.out.println("Gradient call count: " + optimizable.gradientCallCount);
-		model.param.weights.weights = optimizable.getParameterMatrix();
-		//double[] minMax = MyArray.getMinMaxOfMatrix(model.param.weights.weights);
-		//System.out.format("Parameters min=%.3f max=%.3f\n", minMax[0], minMax[1]);
-		//model.param.initial.get(0).printDistribution();
-		// model.param.transition.printDistribution();
-		// model.param.observation.printDistribution();
+		model.param.weights.weights = optimizable.getParameterMatrix();		
 	}
 
 	public void start() {
@@ -94,7 +91,13 @@ public class EM {
 		Timing totalEMTime = new Timing();
 		totalEMTime.start();
 		Timing eStepTime = new Timing();
+		
+		c.trainInstanceSampleList = c.trainInstanceList;
 		for (iterCount = 0; iterCount < numIter; iterCount++) {
+			Timing oneIterEmTime = new Timing();
+			//sample new train instances
+			//c.generateRandomTrainingSample(1000);
+			oneIterEmTime.start();
 			LL = 0;
 			// e-step
 			eStepTime.start();
@@ -106,10 +109,11 @@ public class EM {
 			if (isConverged()) {
 				break;
 			}
-			
 			// m-step
 			mStep();
-			
+			System.out.format("iter EM time : %s\n" , oneIterEmTime.stop());
+			//clear random training samples
+			//c.clearRandomTrainingSample();
 		}
 		System.out.println("Total EM Time : " + totalEMTime.stop());
 	}
@@ -120,27 +124,21 @@ public class EM {
 		// System.out.println("Decrease Ratio: %.5f " + decreaseRatio);
 		if (precision > decreaseRatio && decreaseRatio > 0) {
 			System.out.println("Converged. Saving the final model");
-			model.saveModel(iterCount);
-			model.saveModel(-1); // final
+			model.saveModel(Main.currentRecursion);
 			return true;
 		}
 
 		if (LL < bestOldLL) {
 			if (lowerCount == 0) {
-				// save the best model so far
-				System.out.println("Saving the best model so far");
+				// cache the best model so far
+				System.out.println("Caching the best model so far");
 				if (model.bestParam != null) {
-					System.out.println("best and recent model same? "
-							+ model.bestParam.equalsApprox(model.param));
 					model.bestParam.cloneFrom(model.param);
-				}
-				model.saveModel(iterCount);
+				}				
 			}
 			lowerCount++;
 			if (lowerCount == maxConsecutiveDecreaseLimit) {
-				System.out.format(
-						"Converged: LL could not increase for %d iterations\n",
-						maxConsecutiveDecreaseLimit);
+				System.out.format("Saying Converged: LL could not increase for %d consecutive iterations\n",maxConsecutiveDecreaseLimit);
 				if (model.bestParam != null) {
 					model.param.cloneFrom(model.bestParam);
 				}

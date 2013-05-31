@@ -6,8 +6,10 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 
 import util.SmoothWord;
 
@@ -18,16 +20,20 @@ public class Corpus {
 	public InstanceList trainInstanceList = new InstanceList();
 	// testInstanceList can be empty
 	public InstanceList testInstanceList;
+	
+	public InstanceList trainInstanceSampleList; //sampled sentences for stochastic training
 
 	public ArrayList<Vocabulary> corpusVocab;
 
 	int vocabThreshold;
 	
 	public int totalWords; 
+	
+	Random random = new Random(37);
 
 	public Corpus(String delimiter, int vocabThreshold) {
 		this.delimiter = delimiter;
-		this.vocabThreshold = vocabThreshold;
+		this.vocabThreshold = vocabThreshold;		
 	}
 
 	public void readTest(String inFile) throws IOException {
@@ -100,7 +106,7 @@ public class Corpus {
 		readVocabFromCorpus(inFile);
 	}
 	
-	public void readVocabFromCorpus(String filename) throws IOException {
+	private void readVocabFromCorpus(String filename) throws IOException {
 		BufferedReader br = new BufferedReader(new FileReader(filename));
 		String line = null;
 		corpusVocab.get(0).wordToIndex.put(Vocabulary.UNKNOWN, 0);
@@ -179,7 +185,34 @@ public class Corpus {
 				System.exit(-1);
 			}
 		}
-	}	
+	}
+	
+	/*
+	 * does not make a clone, just the reference
+	 */
+	public void generateRandomTrainingSample(int size) {
+		trainInstanceSampleList = new InstanceList();
+		if(trainInstanceList.size() <= size) {
+			trainInstanceSampleList.addAll(trainInstanceList);
+			trainInstanceSampleList.numberOfTokens = trainInstanceList.numberOfTokens;
+		} else {
+			ArrayList<Integer> randomInts = new ArrayList<Integer>();			
+			for(int i=0; i<trainInstanceList.size(); i++) {
+				randomInts.add(i);
+			}
+			Collections.shuffle(randomInts,random);
+			for(int i=0; i<size; i++) {
+				Instance instance = trainInstanceList.get(randomInts.get(i));
+				trainInstanceSampleList.add(instance);
+				trainInstanceSampleList.numberOfTokens += instance.T;
+			}			
+		}
+	}
+	
+	public void clearRandomTrainingSample() {
+		trainInstanceSampleList.clear();
+		trainInstanceSampleList = null;
+	}
 	
 	
 	public static int findOneTimeStepObsSize(String filename) {
@@ -204,18 +237,22 @@ public class Corpus {
 		}
 		System.out.println("One timestep obs size = " + result);
 		return result;
-	}
+	}	
 	
 	public static void main(String[] args) throws IOException {
-		//String inFile = "/home/anjan/workspace/HMM/out/decoded/train.decoded.txt";
-		String inFile = "/home/anjan/workspace/HMM/data/train.txt.SPL";
-		
-		//String inFile = "/home/anjan/workspace/HMM/data/train.txt.small.SPL";
-		//String inFile = "/home/anjan/workspace/HMM/out/decoded/train.txt.small.SPL";
-		
+		String inFile = "/home/anjan/workspace/HMM/data/simple_corpus_sorted.txt";
 		int vocabThreshold = 1;
 		Corpus c = new Corpus("\\s+", vocabThreshold);
 		Corpus.oneTimeStepObsSize = Corpus.findOneTimeStepObsSize(inFile);
 		c.readVocab(inFile);
+		c.saveVocabFile("/tmp/vocab.txt");
+		c.corpusVocab.get(0).readDictionary("/tmp/vocab.txt.0");
+		c.readTest(inFile);
+		for(int i=0; i<c.testInstanceList.size(); i++) {
+			for(int t=0; t<c.testInstanceList.get(i).T; t++) {
+				System.out.print(c.testInstanceList.get(i).getWord(t) + " ");
+			}
+			System.out.println();
+		}
 	}
 }

@@ -36,7 +36,7 @@ public class InstanceList extends ArrayList<Instance> {
 		
 		//shuffle data
 		Collections.shuffle(this, new Random(37));
-		int randomPickInterval = 1000; // selects a token for processing at the interval of the value. (0, value, 2*value, ...).
+		int randomPickInterval = 1; // selects a token for processing at the interval of the value. (0, value, 2*value, ...).
 		
 		//TODO: can further speed up partitionCache calculation (because for different state in the same timestep, Z's remain fixed)  
 		double[][] partitionCache = new double[this.numberOfTokens][this.get(0).model.nrStates];
@@ -86,21 +86,7 @@ public class InstanceList extends ArrayList<Instance> {
 				}
 			}
 		}
-		/*
-		double min = Double.MAX_VALUE;
-		double max = -Double.MAX_VALUE;
-		for (int i = 0; i < parameterMatrix.length; i++) { // all vocab length
-			for (int j = 0; j < parameterMatrix[0].length; j++) {
-				if (gradient[i][j] < min) {
-					min = gradient[i][j];
-				}
-				if (gradient[i][j] > max) {
-					max = gradient[i][j];
-				}
-			}
-		}
-		System.out.format("Gradient: min %.3f max %.3f\n", min, max);
-		*/
+		
 		System.out.println("Gradient computation time : " + timing.stop());		
 		return gradient;
 		// return MyArray.createVector(gradient);

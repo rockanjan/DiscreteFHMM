@@ -4,9 +4,13 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Random;
+
+import util.MyArray;
 import model.HMMBase;
 import model.HMMNoFinalStateLog;
 import model.inference.Decoder;
+import model.param.HMMParamBase;
+import model.param.HMMParamNoFinalStateLog;
 import model.train.EM;
 import corpus.Corpus;
 import corpus.Instance;
@@ -54,9 +58,12 @@ public class Main {
 		
 //		trainFileBase = "out/decoded/simple_corpus_sorted.txt";
 //		testFileBase = "out/decoded/simple_corpus_sorted.txt";
+		
+		double[][] previousRecursionWeights = null;
+		
 	
 		for(int currentRecursion=0; currentRecursion<recursionSize; currentRecursion++) {
-			sampleSizeEStep = 1000;
+			sampleSizeEStep = 5000;
 			sampleSizeMStep = 100;
 			System.out.println("RECURSION: " + currentRecursion);
 			System.out.println("-----------------");
@@ -77,9 +84,15 @@ public class Main {
 			model.initializeRandom(random);
 			model.computePreviousTransitions();
 			model.initializeZerosToBest();
+			//initialize weights with previous recursion weights
+			if(previousRecursionWeights != null) {
+				model.param.initializeWeightsFromPreviousRecursion(previousRecursionWeights);
+			}
 			EM em = new EM(numIter, corpus, model);
 			em.start();
 			model.saveModel(currentRecursion);
+			//store weights to assign for the next recursion
+			previousRecursionWeights = MyArray.getCloneOfMatrix(model.param.weights.weights);
 			test(model, corpus.testInstanceList, outFile);		
 			test(model, corpus.trainInstanceList, outFileTrain);
 		}	

@@ -97,4 +97,14 @@ public class MyArray {
 		}
 		return result;
 	}
+	
+	public static double[][] getCloneOfMatrix(double[][] source) {
+		double[][] clone = new double[source.length][source[0].length];
+		for(int i=0; i<source.length; i++) {
+			for(int j=0; j<source[0].length; j++) {
+				clone[i][j] = source[i][j];
+			}
+		}
+		return clone;
+	}
 }

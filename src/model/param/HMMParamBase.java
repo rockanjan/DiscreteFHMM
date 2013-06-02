@@ -68,6 +68,27 @@ public abstract class HMMParamBase {
 		weights.initializeRandom(r);
 	}
 	
+	public void initializeWeightsFromPreviousRecursion(double[][] prev) {
+		if(prev.length != weights.weights.length) {
+			throw new RuntimeException("Weight initialization from previous recursion found different vocab dimension, prev = " 
+					+ prev.length + " new = " + weights.weights.length);
+		}
+		if(prev[0].length + nrStates != weights.weights[0].length) {
+			throw new RuntimeException("Weight initialization from previous recursion conditional dimension mismatch, prev = "
+					+ prev[0].length + " new = " + weights.weights[0].length + " nrStates = " + nrStates );
+		}
+		for(int v=0; v<prev.length; v++) {
+			int index = 0;
+			for(int c = weights.weights[0].length; c<weights.weights[0].length; c++) {
+				if(c >= 1 && c<=nrStates) {
+					continue;
+				}
+				weights.weights[v][c] = prev[v][index];
+				index++;
+			}
+		}
+	}
+	
 	public void check() { 
 		for(int i=0; i<model.corpus.oneTimeStepObsSize; i++) {
 			initial.get(i).checkDistribution();
@@ -81,12 +102,10 @@ public abstract class HMMParamBase {
 	}
 	
 	public void cloneFrom(HMMParamBase source) {
-		
 		for(int i=0; i<model.corpus.oneTimeStepObsSize; i++) {
 			initial.get(i).cloneFrom(source.initial.get(i));
 			transition.get(i).cloneFrom(source.transition.get(i));
 		}
-		
 		this.weights = source.weights;
 	}
 	

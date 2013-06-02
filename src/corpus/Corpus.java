@@ -220,7 +220,7 @@ public class Corpus {
 			trainInstanceMStepSampleList.numberOfTokens = trainInstanceEStepSampleList.numberOfTokens;
 		} else {
 			ArrayList<Integer> randomInts = new ArrayList<Integer>();			
-			for(int i=0; i<trainInstanceList.size(); i++) {
+			for(int i=0; i<trainInstanceEStepSampleList.size(); i++) {
 				randomInts.add(i);
 			}
 			Collections.shuffle(randomInts,random);

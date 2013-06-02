@@ -95,10 +95,11 @@ public class EM {
 		Timing eStepTime = new Timing();
 		//c.trainInstanceSampleList = c.trainInstanceList;
 		for (iterCount = 0; iterCount < numIter; iterCount++) {
-			if(iterCount > 20) {
-				Main.sampleSizeEStep = 2 * Main.sampleSizeEStep;
+			if(iterCount % 10 == 0 && iterCount > 1) {
+				//Main.sampleSizeEStep = 2 * Main.sampleSizeEStep;
 				Main.sampleSizeMStep = 2 * Main.sampleSizeMStep;
 			}
+			
 			Timing oneIterEmTime = new Timing();
 			//sample new train instances
 			c.generateRandomTrainingEStepSample(Main.sampleSizeEStep);
@@ -108,16 +109,17 @@ public class EM {
 			eStepTime.start();
 			Stats.totalFixes = 0;
 			eStep();
-			if (iterCount > 0) {
-				System.out.format("LL %.2f Diff %.2f \t Iter %d \t Fixes: %d \t iter time %s\n",LL, (LL - bestOldLL), iterCount,Stats.totalFixes, eStepTime.stop());
-			}
+			System.out.println("E-step time: " + eStepTime.stop());
+			double diff = LL - bestOldLL;
 			if (isConverged()) {
 				break;
 			}
 			// m-step
 			c.generateRandomTrainingMStepSample(Main.sampleSizeMStep);
 			mStep();
-			System.out.format("iter EM time : %s\n" , oneIterEmTime.stop());			
+			if (iterCount > 0) {
+				System.out.format("LL %.2f Diff %.2f \t Iter %d \t Fixes: %d \t iter time %s\n",LL, diff, iterCount,Stats.totalFixes, oneIterEmTime.stop());
+			}			
 		}
 		System.out.println("Total EM Time : " + totalEMTime.stop());
 	}

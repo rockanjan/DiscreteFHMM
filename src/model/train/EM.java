@@ -95,11 +95,6 @@ public class EM {
 		Timing eStepTime = new Timing();
 		//c.trainInstanceSampleList = c.trainInstanceList;
 		for (iterCount = 0; iterCount < numIter; iterCount++) {
-			if(iterCount % 10 == 0 && iterCount > 1) {
-				//Main.sampleSizeEStep = 2 * Main.sampleSizeEStep;
-				Main.sampleSizeMStep = 2 * Main.sampleSizeMStep;
-			}
-			
 			Timing oneIterEmTime = new Timing();
 			//sample new train instances
 			c.generateRandomTrainingEStepSample(Main.sampleSizeEStep);
@@ -135,6 +130,8 @@ public class EM {
 		}
 
 		if (LL < bestOldLL) {
+			//increase the number of examples in M-step
+			Main.sampleSizeMStep += 10;
 			if (lowerCount == 0) {
 				// cache the best model so far
 				System.out.println("Caching the best model so far");

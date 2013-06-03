@@ -63,8 +63,8 @@ public class Main {
 		
 	
 		for(int currentRecursion=0; currentRecursion<recursionSize; currentRecursion++) {
-			sampleSizeEStep = 5000;
-			sampleSizeMStep = 100;
+			sampleSizeEStep = 10000;
+			sampleSizeMStep = 10;
 			System.out.println("RECURSION: " + currentRecursion);
 			System.out.println("-----------------");
 			trainFile = trainFileBase + "." + currentRecursion;

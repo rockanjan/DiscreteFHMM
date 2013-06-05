@@ -28,7 +28,7 @@ public class Main {
 	static String testFile;
 	static String outFolderPrefix;
 	static int numStates; 	
-	static int vocabThreshold = 1; //only above this included
+	static int vocabThreshold = 5; //only above this included
 	static HMMBase model;
 	static Corpus corpus;
 	public static int currentRecursion;
@@ -53,18 +53,20 @@ public class Main {
 		numIter = 30;
 		String trainFileBase;
 		String testFileBase;
-		trainFileBase = "out/decoded/train.txt.SPL";
-		testFileBase = "out/decoded/test.txt.SPL";
+//		trainFileBase = "out/decoded/train.txt.SPL";
 		
-//		trainFileBase = "out/decoded/simple_corpus_sorted.txt";
-//		testFileBase = "out/decoded/simple_corpus_sorted.txt";
+		testFileBase = "out/decoded/test.txt.SPL";
+		trainFileBase = testFileBase;
+		
+		//trainFileBase = "out/decoded/simple_corpus_sorted.txt";
+		//testFileBase = "out/decoded/simple_corpus_sorted.txt";
 		
 		double[][] previousRecursionWeights = null;
 		
 	
 		for(int currentRecursion=0; currentRecursion<recursionSize; currentRecursion++) {
 			sampleSizeEStep = 10000;
-			sampleSizeMStep = 10;
+			sampleSizeMStep = 10000;
 			System.out.println("RECURSION: " + currentRecursion);
 			System.out.println("-----------------");
 			trainFile = trainFileBase + "." + currentRecursion;
@@ -77,6 +79,7 @@ public class Main {
 			Corpus.oneTimeStepObsSize = Corpus.findOneTimeStepObsSize(vocabFile);
 			//TRAIN
 			corpus.readVocab(vocabFile);
+			corpus.computeUnigramProbabilities();
 			corpus.readTrain(trainFile);
 			corpus.readTest(testFile);
 			model = new HMMNoFinalStateLog(numStates, corpus);
@@ -90,11 +93,11 @@ public class Main {
 			}
 			EM em = new EM(numIter, corpus, model);
 			em.start();
-			model.saveModel(currentRecursion);
+			//model.saveModel(currentRecursion);
 			//store weights to assign for the next recursion
 			previousRecursionWeights = MyArray.getCloneOfMatrix(model.param.weights.weights);
-			test(model, corpus.testInstanceList, outFile);		
-			test(model, corpus.trainInstanceList, outFileTrain);
+			//test(model, corpus.testInstanceList, outFile);		
+			//test(model, corpus.trainInstanceList, outFileTrain);
 		}	
 	}
 	

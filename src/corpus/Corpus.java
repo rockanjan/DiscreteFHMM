@@ -8,6 +8,7 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
@@ -31,6 +32,8 @@ public class Corpus {
 	public int totalWords; 
 	
 	Random random = new Random(37);
+	
+	public List<Double> unigramProbability;
 
 	public Corpus(String delimiter, int vocabThreshold) {
 		this.delimiter = delimiter;
@@ -105,6 +108,23 @@ public class Corpus {
 			corpusVocab.add(vHmmStates);
 		}
 		readVocabFromCorpus(inFile);
+	}
+	
+	public void computeUnigramProbabilities() {
+		unigramProbability = new ArrayList<Double>();
+		double sum = 0.0;
+		int totalFreq = 0;
+		for(int i=0; i<corpusVocab.get(0).vocabSize; i++) {
+			totalFreq += corpusVocab.get(0).indexToFrequency.get(i);
+		}
+		for(int i=0; i<corpusVocab.get(0).vocabSize; i++) {
+			double prob = 1.0 * corpusVocab.get(0).indexToFrequency.get(i) / totalFreq;
+			unigramProbability.add(prob);
+			sum += prob;
+		}
+		if(Math.abs(sum - 1) > 1e-5) {
+			throw new RuntimeException("Unigram Probabilities do not sum to 1. sum = " + sum); 
+		}
 	}
 	
 	private void readVocabFromCorpus(String filename) throws IOException {

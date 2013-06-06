@@ -29,8 +29,6 @@ public class Main {
 	static String vocabFile;
 	static String testFile;
 	static String outFolderPrefix;
-	static int numStates; 	
-	static int vocabThreshold = 5; //only above this included
 	static HMMBase model;
 	static Corpus corpus;
 	public static int currentRecursion;
@@ -39,21 +37,19 @@ public class Main {
 	
 	static int oneTimeStepObsSize; //number of elements in observation e.g. word|hmm1|hmm2  has 3
 	
-	static int recursionSize = 10;
-	
+	static int vocabThreshold = 2; //only above this included
+	static int recursionSize = 2;
+	static int numStates = 20;
 	/** user parameters end **/
 	public static void main(String[] args) throws IOException {
-		numStates = 2;
-		recursionSize = 1;
 		train();
-		String testFilenameBase = "out/decoded/test.txt.SPL";
-		decodeFromPlainText(testFilenameBase, recursionSize);
+		//String testFilenameBase = "out/decoded/test.txt.SPL";
+		//decodeFromPlainText(testFilenameBase, recursionSize);
 	}
 	
 	public static void train() throws IOException {
 		outFolderPrefix = "out/";
-		numStates = 2;
-		numIter = 5;
+		numIter = 40;
 		String trainFileBase;
 		String testFileBase;
 		trainFileBase = "out/decoded/test.txt.SPL";
@@ -67,12 +63,18 @@ public class Main {
 		
 	
 		for(int currentRecursion=0; currentRecursion<recursionSize; currentRecursion++) {
-			sampleSizeEStep = 230000; //total sentences in RCV1 is 2.2M 
-			sampleSizeMStep = 230;
+			sampleSizeEStep = 1000; //total sentences in RCV1 is 2.2M 
+			sampleSizeMStep = 50;
 			System.out.println("RECURSION: " + currentRecursion);
 			System.out.println("-----------------");
-			trainFile = trainFileBase + "." + currentRecursion;
-			testFile = testFileBase + "." + currentRecursion;
+			if(currentRecursion == 0) {
+				trainFile = trainFileBase;
+				testFile = testFileBase;
+			} else {
+				trainFile = trainFileBase + "." + currentRecursion;
+				testFile = testFileBase + "." + currentRecursion;
+			}
+			
 			vocabFile = trainFile;
 			String outFileTrain = trainFileBase + "." + (currentRecursion+1);
 			String outFile = testFileBase + "." + (currentRecursion+1);
@@ -104,11 +106,16 @@ public class Main {
 	}
 	
 	public static void decodeFromPlainText(String testFileBase, int numberOfRecursions) throws IOException {
+		System.out.println("Decoding from plain text");
 		for(currentRecursion = 0; currentRecursion < numberOfRecursions; currentRecursion++) {
 			corpus = new Corpus("\\s+", vocabThreshold);
 			model = new HMMNoFinalStateLog(numStates, corpus);
 			model.loadModel(currentRecursion); //also reads the vocab dictionaries
-			String testFile = testFileBase + "." + currentRecursion;
+			if(currentRecursion == 0) {
+				testFile = testFileBase;
+			} else {
+				testFile = testFileBase + "." + currentRecursion;
+			}
 			corpus.readTest(testFile);
 			String outFile = testFileBase + "." + (currentRecursion+1);
 			test(model, corpus.testInstanceList, outFile);

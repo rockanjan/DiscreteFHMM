@@ -42,6 +42,21 @@ public class Vocabulary {
 		return returnId;
 	}
 	
+	/* used when reading from dictionary */
+	public int addItem(String word, int freq) {
+		int returnId = -1;
+		if(wordToIndex.containsKey(word)) {
+			throw new RuntimeException(word + " found more than once in the dictionary");
+		} else {
+			wordToIndex.put(word, vocabReadIndex);
+			indexToWord.add(word);
+			indexToFrequency.put(vocabReadIndex, freq);
+			returnId = vocabReadIndex;
+			vocabReadIndex++;
+		}
+		return returnId;
+	}
+	
 	//only called for the word vocab
 	public void reduceVocab(Corpus c) {
 		System.out.println("Reducing vocab");
@@ -82,7 +97,7 @@ public class Vocabulary {
 			//write vocabSize
 			pw.println(this.vocabSize);
 			for(int i=0; i<indexToWord.size(); i++) {
-				pw.println(indexToWord.get(i));
+				pw.println(indexToWord.get(i) + " " + indexToFrequency.get(i));
 			}
 			pw.close();
 		}
@@ -111,7 +126,10 @@ public class Vocabulary {
 				if(line.isEmpty()) {
 					continue;
 				}
-				addItem(line);
+				String[] splitted = line.split("\\s+");
+				String word = splitted[0];
+				int freq = Integer.parseInt(splitted[1]);
+				addItem(word, freq);
 			}
 			System.out.println("Dictionary Loaded Vocab Size: " + wordToIndex.size());
 		} catch (IOException e) {

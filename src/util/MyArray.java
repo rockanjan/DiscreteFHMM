@@ -1,5 +1,7 @@
 package util;
 
+import java.util.List;
+
 public class MyArray {
 
 	public static void printTable(double[][] table) {
@@ -106,5 +108,12 @@ public class MyArray {
 			}
 		}
 		return clone;
+	}
+	
+	public static <T> void printTable(List<T> list) {
+		for(int i=0; i<list.size(); i++) {
+			System.out.print(list.get(i) + "\t");
+		}
+		System.out.println();
 	}
 }

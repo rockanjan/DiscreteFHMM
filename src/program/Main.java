@@ -83,7 +83,7 @@ public class Main {
 			Corpus.oneTimeStepObsSize = Corpus.findOneTimeStepObsSize(vocabFile);
 			//TRAIN
 			corpus.readVocab(vocabFile);
-			corpus.computeUnigramProbabilities();
+			corpus.setupSampler();
 			corpus.readTrain(trainFile);
 			corpus.readTest(testFile);
 			model = new HMMNoFinalStateLog(numStates, corpus);

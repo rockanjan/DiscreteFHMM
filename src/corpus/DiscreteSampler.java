@@ -119,7 +119,7 @@ public class DiscreteSampler {
 		
 		double[] sampledCount = new double[N];
 		//sample
-		int totalSamples = 1000;
+		int totalSamples = 100000;
 		for(int i=0; i<totalSamples; i++) {
 			sampledCount[sampler.sample()]++;
 		}

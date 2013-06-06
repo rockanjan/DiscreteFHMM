@@ -284,7 +284,8 @@ public class Instance {
 		
 		//TODO: might have to use logsumexp
 		for(int i=0; i<InstanceList.VOCAB_SAMPLE_SIZE; i++) {
-			int randomV = InstanceList.random.nextInt(model.corpus.corpusVocab.get(0).vocabSize);
+			//int randomV = InstanceList.random.nextInt(model.corpus.corpusVocab.get(0).vocabSize);
+			int randomV = Corpus.getRandomVocabItem();
 			sampled.add(randomV);
 			double numerator = Math.exp(MathUtils.dot(weights[randomV], conditionalVector));
 			sampleNumerator[randomV] += numerator; // addition because we might have repeated sampling

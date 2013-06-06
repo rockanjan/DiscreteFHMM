@@ -34,6 +34,7 @@ public class Corpus {
 	Random random = new Random(37);
 	
 	public List<Double> unigramProbability;
+	static DiscreteSampler vocabSampler;
 
 	public Corpus(String delimiter, int vocabThreshold) {
 		this.delimiter = delimiter;
@@ -108,6 +109,15 @@ public class Corpus {
 			corpusVocab.add(vHmmStates);
 		}
 		readVocabFromCorpus(inFile);
+	}
+	
+	public void setupSampler() {
+		computeUnigramProbabilities();
+		vocabSampler = new DiscreteSampler(unigramProbability);
+	}
+	
+	public static int getRandomVocabItem() {
+		return vocabSampler.sample();
 	}
 	
 	public void computeUnigramProbabilities() {

@@ -170,7 +170,8 @@ public class InstanceList extends ArrayList<Instance> {
 						double Z = 0;
 						HashSet<Integer> sampled = new HashSet<Integer>();
 						for(int i=0; i<VOCAB_SAMPLE_SIZE; i++) {
-							int randomV = random.nextInt(instance.model.corpus.corpusVocab.get(0).vocabSize);
+							//int randomV = random.nextInt(instance.model.corpus.corpusVocab.get(0).vocabSize);
+							int randomV = Corpus.getRandomVocabItem();
 							sampled.add(randomV);
 							double numerator = Math.exp(MathUtils.dot(parameterMatrix[randomV], conditionalVector));
 							sampleNumerator[randomV] += numerator; // addition because we might have repeated sampling

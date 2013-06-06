@@ -96,7 +96,7 @@ public class Corpus {
 	public void readVocab(String inFile) throws IOException {
 		corpusVocab = new ArrayList<Vocabulary>();
 		Vocabulary v = new Vocabulary(); //base vocabulary
-		v.index = 1; //zero reserved for *unk*
+		v.vocabReadIndex = 1; //zero reserved for *unk*
 		v.vocabThreshold = vocabThreshold;
 		corpusVocab.add(v);
 		
@@ -104,7 +104,7 @@ public class Corpus {
 		for(int i=1; i<oneTimeStepObsSize; i++) {
 			Vocabulary vHmmStates = new Vocabulary();
 			vHmmStates.vocabThreshold = 0;
-			vHmmStates.index = 0;
+			vHmmStates.vocabReadIndex = 0;
 			corpusVocab.add(vHmmStates);
 		}
 		readVocabFromCorpus(inFile);
@@ -162,6 +162,9 @@ public class Corpus {
 		corpusVocab.get(0).vocabSize = corpusVocab.get(0).wordToIndex.size();
 		System.out.println("Vocab Size before reduction including UNKNOWN : " + corpusVocab.get(0).vocabSize);
 		
+		if(corpusVocab.get(0).debug) {
+			corpusVocab.get(0).debug();
+		}
 		
 		corpusVocab.get(0).reduceVocab(this);
 		System.out.println("Vocab Size after reduction including UNKNOWN : " + corpusVocab.get(0).vocabSize);

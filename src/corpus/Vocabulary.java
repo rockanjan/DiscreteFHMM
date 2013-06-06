@@ -18,7 +18,7 @@ public class Vocabulary {
 	public int vocabThreshold = 1;
 	//index zero reserved for *unk* (low freq features)
 	
-	public int index = -1;
+	public int vocabReadIndex = 0;
 	public int vocabSize = -1;
 	public static String UNKNOWN = "*unk*";
 	public Map<String, Integer> wordToIndex = new HashMap<String, Integer>();
@@ -33,11 +33,11 @@ public class Vocabulary {
 			indexToFrequency.put(wordIndex, oldFreq + 1);
 			returnId = wordIndex;
 		} else {
-			wordToIndex.put(word, index);
+			wordToIndex.put(word, vocabReadIndex);
 			indexToWord.add(word);
-			indexToFrequency.put(index, 1);
-			returnId = index;
-			index++;
+			indexToFrequency.put(vocabReadIndex, 1);
+			returnId = vocabReadIndex;
+			vocabReadIndex++;
 		}
 		return returnId;
 	}

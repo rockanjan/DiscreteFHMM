@@ -1,6 +1,7 @@
 package corpus;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 
 import javax.management.RuntimeErrorException;
 
@@ -65,7 +66,7 @@ public class Instance {
 	/*
 	 * returns log(ObservationProb)
 	 */
-	public double getObservationProbability(int position, int state) {
+	public double getExactObservationProbability(int position, int state) {
 		if (observationCache == null) {
 			observationCache = new double[T][nrStates];
 			for (int t = 0; t < T; t++) {
@@ -86,6 +87,26 @@ public class Instance {
 					double numerator = Math.exp(MathUtils.dot(conditionalVector, weightObservation));
 					
 					double result = Math.log(numerator / normalizer); 
+					observationCache[t][s] = result;
+				}				
+			}
+		}
+		return observationCache[position][state];
+	}
+	
+	public double getObservationProbability(int position, int state) {
+		if (observationCache == null) {
+			observationCache = new double[T][nrStates];
+			for (int t = 0; t < T; t++) {
+				for(int s=0; s<nrStates; s++) {
+					//TODO: store the log of the normalizer and also log of the numerator to avoid overflow
+					double[] conditionalVector = getConditionalVector(t, s);
+					
+					int observationIndex = this.words[t][0];
+					double[] weightObservation = model.param.weights.weights[observationIndex];
+					double numerator = Math.exp(MathUtils.dot(conditionalVector, weightObservation));
+					
+					double result = Math.log(numerator / getApproxNormalizer(t, state, model.param.weights.weights)); 
 					observationCache[t][s] = result;
 				}				
 			}
@@ -190,6 +211,26 @@ public class Instance {
 		return cll;
 	}
 	
+	public double getApproxConditionalLogLikelihoodUsingPosteriorDistribution(double[][] weights) {
+		double cll = 0.0;
+		for(int t=0; t<T; t++) {
+			for(int state=0; state<nrStates; state++) {
+				double posteriorProb = posteriors[t][state];
+				double normalizer = 0.0;
+				double[] conditionalVector = getConditionalVector(t, state);
+				//
+				
+				int observationIndex = this.words[t][0];
+				double[] weightObservation = weights[observationIndex];
+				double numerator = Math.exp(MathUtils.dot(conditionalVector, weightObservation));
+				//double result = posteriorProb * Math.log(numerator / normalizer); //expected CLL
+				double result = posteriorProb * Math.log(numerator / getApproxNormalizer(t, state, weights)); //expected CLL
+				cll += result;
+			}
+		}
+		return cll;
+	}
+		
 	public void createDecodedViterbiCache(){
 		decoded = new int[T];
 		double[][] probLattice = new double[T][model.nrStates];
@@ -232,6 +273,28 @@ public class Instance {
 		for(int t=T-2; t>=0; t--) {
 			decoded[t] = stateLattice[t+1][decoded[t+1]];			
 		}				
+	}
+	
+	public double getApproxNormalizer(int position, int state, double[][] weights) {
+		//TODO: efficient sampling
+		double[] sampleNumerator = new double[weights.length];
+		double Z = 0;
+		HashSet<Integer> sampled = new HashSet<Integer>();
+		double[] conditionalVector = getConditionalVector(position, state);
+		
+		//TODO: might have to use logsumexp
+		for(int i=0; i<InstanceList.VOCAB_SAMPLE_SIZE; i++) {
+			int randomV = InstanceList.random.nextInt(model.corpus.corpusVocab.get(0).vocabSize);
+			sampled.add(randomV);
+			double numerator = Math.exp(MathUtils.dot(weights[randomV], conditionalVector));
+			sampleNumerator[randomV] += numerator; // addition because we might have repeated sampling
+			Z += numerator;
+		}
+		//at the token at this position too so that the probability is within [0,1]
+		double numeratorToken = Math.exp(MathUtils.dot(weights[words[position][0]], getConditionalVector(position, state)));
+		Z += numeratorToken;
+		Z = Z * model.corpus.corpusVocab.get(0).vocabSize / (InstanceList.VOCAB_SAMPLE_SIZE + 1);
+		return Z;
 	}
 
 	/*

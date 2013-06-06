@@ -37,4 +37,40 @@ public class LogLinearWeights {
 			}
 		}
 	}
+	
+	public boolean equalsExact(LogLinearWeights other) {
+		boolean result = true;
+		if(other.weights.length != weights.length || other.weights[0].length != weights[0].length) {
+			result = false;
+			return result;
+		}
+		for(int i=0; i<weights.length; i++) {
+			for(int j=0; j<weights[0].length; j++) {
+				if(weights[i][j] != other.weights[i][j]) {
+					result = false;
+					break;
+					
+				}
+			}
+		}
+		return result;
+	}
+	
+	public boolean equalsApprox(LogLinearWeights other) {
+		boolean result = true;
+		if(other.weights.length != weights.length || other.weights[0].length != weights[0].length) {
+			result = false;
+			return result;
+		}
+		for(int i=0; i<weights.length; i++) {
+			for(int j=0; j<weights[0].length; j++) {
+				if(Math.abs(weights[i][j] - other.weights[i][j]) > 1e-5) {
+					result = false;
+					break;
+					
+				}
+			}
+		}
+		return result;
+	}
 }

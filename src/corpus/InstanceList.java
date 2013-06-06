@@ -15,13 +15,27 @@ public class InstanceList extends ArrayList<Instance> {
 	private static final long serialVersionUID = -2409272084529539276L;
 	public int numberOfTokens;
 	
-	int VOCAB_SAMPLE_SIZE = 200;
-	Random random = new Random(37);
+	public static int VOCAB_SAMPLE_SIZE = 1000;
+	public static Random random = new Random(37);
 	
 	public InstanceList() {
 		super();
 	}
 
+	
+	
+	public double getApproxConditionalLogLikelihoodUsingPosteriorDistribution(double[][] parameterMatrix) {
+		double cll = 0;
+		Timing timing = new Timing();
+		timing.start();
+		for (int n = 0; n < this.size(); n++) {
+			Instance i = get(n);
+			cll += i.getApproxConditionalLogLikelihoodUsingPosteriorDistribution(parameterMatrix);
+		}
+		System.out.println("CLL computation time : " + timing.stop());
+		return cll;
+	}
+	
 	public double getConditionalLogLikelihoodUsingPosteriorDistribution(
 			double[][] parameterMatrix) {
 		double cll = 0;
@@ -34,6 +48,7 @@ public class InstanceList extends ArrayList<Instance> {
 		System.out.println("CLL computation time : " + timing.stop());
 		return cll;
 	}
+
 
 	public double[][] getGradient(double[][] parameterMatrix) {
 		Timing timing = new Timing();
@@ -138,11 +153,9 @@ public class InstanceList extends ArrayList<Instance> {
 	public double[][] getGradientApprox(double[][] parameterMatrix) {
 		Timing timing = new Timing();
 		timing.start();
-		int tokenIndex = 0;
 
 		timing.start();
 		double gradient[][] = new double[parameterMatrix.length][parameterMatrix[0].length];
-		tokenIndex = 0;
 		for (int n = 0; n < this.size(); n++) {
 			Instance instance = get(n);
 			for (int t = 0; t < instance.T; t++) {
@@ -163,15 +176,18 @@ public class InstanceList extends ArrayList<Instance> {
 							sampleNumerator[randomV] += numerator; // addition because we might have repeated sampling
 							Z += numerator;
 						}
-						
+						int currentTokenIndex = instance.words[t][0];
+						double numeratorToken = Math.exp(MathUtils.dot(parameterMatrix[currentTokenIndex], conditionalVector));
+						sampled.add(currentTokenIndex);
+						sampleNumerator[currentTokenIndex] += numeratorToken;
+						Z += numeratorToken;
 						//rescale Z
-						Z = Z * instance.model.corpus.corpusVocab.get(0).vocabSize / VOCAB_SAMPLE_SIZE;
+						Z = Z * instance.model.corpus.corpusVocab.get(0).vocabSize / (VOCAB_SAMPLE_SIZE + 1); //+1 for explicitly adding numerator of token at current position
 						for(Integer v : sampled) {
 							gradient[v][j] -= posteriorProb * sampleNumerator[v] / Z * conditionalVector[j];
 						}							
 					}
 				}
-				tokenIndex++;						
 			}
 		}
 		System.out.println("Gradient computation time : " + timing.stop());		

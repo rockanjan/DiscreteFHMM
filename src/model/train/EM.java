@@ -120,7 +120,7 @@ public class EM {
 	}
 
 	public boolean isConverged() {
-
+		
 		double decreaseRatio = (LL - bestOldLL) / Math.abs(bestOldLL);
 		// System.out.println("Decrease Ratio: %.5f " + decreaseRatio);
 		if (precision > decreaseRatio && decreaseRatio > 0) {

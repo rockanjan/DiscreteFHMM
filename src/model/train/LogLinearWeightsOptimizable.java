@@ -11,7 +11,6 @@ public class LogLinearWeightsOptimizable implements Optimizable.ByGradientValue{
 	
 	double[] parameters;
 	double latestValue = 0.0;
-	double[] latestGradient;
 	Corpus corpus;
 	
 	public int gradientCallCount = 0;
@@ -24,7 +23,6 @@ public class LogLinearWeightsOptimizable implements Optimizable.ByGradientValue{
 		for(int i=0; i<initParams.length; i++) {
 			parameters[i] = initParams[i];
 		}
-		latestGradient = new double[parameters.length];
 	}
 	
 	/*
@@ -34,7 +32,8 @@ public class LogLinearWeightsOptimizable implements Optimizable.ByGradientValue{
 	@Override
 	public double getValue() {
 		double[][] weights = MyArray.createMatrix(parameters, corpus.corpusVocab.get(0).vocabSize);
-		double cll = corpus.trainInstanceMStepSampleList.getConditionalLogLikelihoodUsingPosteriorDistribution(weights);
+		//double cll = corpus.trainInstanceMStepSampleList.getConditionalLogLikelihoodUsingPosteriorDistribution(weights);
+		double cll = corpus.trainInstanceMStepSampleList.getApproxConditionalLogLikelihoodUsingPosteriorDistribution(weights);
 		//calculate CLL on larger instances
 		//double cll = corpus.trainInstanceEStepSampleList.getConditionalLogLikelihoodUsingPosteriorDistribution(weights);
 		//add regularizer
@@ -57,17 +56,13 @@ public class LogLinearWeightsOptimizable implements Optimizable.ByGradientValue{
 				newGradients[i][j] -= 2 * c2 *  weights[i][j];
 			}
 		}
-		double[] newGradientsVectorized = MyArray.createVector(newGradients);
 		weights = null;
+		double[] newGradientsVectorized = MyArray.createVector(newGradients);
 		newGradients = null;
-        for(int i=0; i<parameters.length; i++) {
-			latestGradient[i] = newGradientsVectorized[i];
+		for(int i=0; i<parameters.length; i++) {
+			gradient[i] = newGradientsVectorized[i];
 		}
-        newGradientsVectorized = null;
-
-        for(int i=0; i<parameters.length; i++) {
-			gradient[i] = latestGradient[i];
-		}
+		newGradientsVectorized = null;        
 	}
 	
 	@Override

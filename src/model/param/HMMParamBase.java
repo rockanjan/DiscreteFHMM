@@ -129,6 +129,9 @@ public abstract class HMMParamBase {
 		if(! this.initial.get(0).equalsExact(other.initial.get(0)) && this.transition.get(0).equalsExact(other.transition.get(0))) {
 			result = false;
 		}
+		if(! weights.equalsExact(other.weights)) {
+			result = false;
+		}
 		return result;
 	}
 	
@@ -142,6 +145,10 @@ public abstract class HMMParamBase {
 		}
 		
 		if(! this.initial.get(0).equalsApprox(other.initial.get(0)) && this.transition.get(0).equalsApprox(other.transition.get(0))) {
+			result = false;
+		}
+		
+		if(! weights.equalsApprox(other.weights)) {
 			result = false;
 		}
 		return result;

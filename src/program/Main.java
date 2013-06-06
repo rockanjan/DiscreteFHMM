@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Random;
 
+import cc.mallet.grmm.util.Models;
+
 import util.MyArray;
 import model.HMMBase;
 import model.HMMNoFinalStateLog;
@@ -38,25 +40,25 @@ public class Main {
 	static int oneTimeStepObsSize; //number of elements in observation e.g. word|hmm1|hmm2  has 3
 	
 	static int recursionSize = 10;
+	
 	/** user parameters end **/
 	public static void main(String[] args) throws IOException {
 		numStates = 2;
-		recursionSize = 100;
+		recursionSize = 1;
 		train();
-		//String testFilenameBase = "/home/anjan/workspace/HMM/out/decoded/simple_corpus_sorted.txt";
-		//decodeFromPlainText(testFilenameBase, recursionSize);
+		String testFilenameBase = "out/decoded/test.txt.SPL";
+		decodeFromPlainText(testFilenameBase, recursionSize);
 	}
 	
 	public static void train() throws IOException {
 		outFolderPrefix = "out/";
 		numStates = 2;
-		numIter = 30;
+		numIter = 5;
 		String trainFileBase;
 		String testFileBase;
-//		trainFileBase = "out/decoded/train.txt.SPL";
-		
+		trainFileBase = "out/decoded/test.txt.SPL";
+//		trainFileBase = "out/decoded/rcv1.txt.SPL";
 		testFileBase = "out/decoded/test.txt.SPL";
-		trainFileBase = testFileBase;
 		
 		//trainFileBase = "out/decoded/simple_corpus_sorted.txt";
 		//testFileBase = "out/decoded/simple_corpus_sorted.txt";
@@ -65,8 +67,8 @@ public class Main {
 		
 	
 		for(int currentRecursion=0; currentRecursion<recursionSize; currentRecursion++) {
-			sampleSizeEStep = 10000;
-			sampleSizeMStep = 10000;
+			sampleSizeEStep = 230000; //total sentences in RCV1 is 2.2M 
+			sampleSizeMStep = 230;
 			System.out.println("RECURSION: " + currentRecursion);
 			System.out.println("-----------------");
 			trainFile = trainFileBase + "." + currentRecursion;
@@ -93,11 +95,11 @@ public class Main {
 			}
 			EM em = new EM(numIter, corpus, model);
 			em.start();
-			//model.saveModel(currentRecursion);
+			model.saveModel(currentRecursion);
 			//store weights to assign for the next recursion
 			previousRecursionWeights = MyArray.getCloneOfMatrix(model.param.weights.weights);
-			//test(model, corpus.testInstanceList, outFile);		
-			//test(model, corpus.trainInstanceList, outFileTrain);
+			test(model, corpus.testInstanceList, outFile);	
+			test(model, corpus.trainInstanceList, outFileTrain);
 		}	
 	}
 	
@@ -113,6 +115,8 @@ public class Main {
 		}
 	}
 	
+	//TODO: getting different decoded states because of random sampling of vocab for partition fun
+	// use exact observation probability (also in forwardBackward) for decoding 
 	public static void test(HMMBase model, InstanceList instanceList, String outFile) {
 		System.out.println("Decoding Data");
 		Decoder decoder = new Decoder(model);

@@ -25,16 +25,17 @@ public class Corpus {
 	public InstanceList trainInstanceEStepSampleList; //sampled sentences for stochastic training
 	public InstanceList trainInstanceMStepSampleList; //sampled sentences for stochastic training
 
-	public ArrayList<Vocabulary> corpusVocab;
+	static public ArrayList<Vocabulary> corpusVocab;
 
 	int vocabThreshold;
 	
 	public int totalWords; 
 	
-	Random random = new Random(37);
+	static Random random = new Random(37);
 	
 	public List<Double> unigramProbability;
 	static DiscreteSampler vocabSampler;
+	public static int VOCAB_SAMPLE_SIZE = 10000;
 
 	public Corpus(String delimiter, int vocabThreshold) {
 		this.delimiter = delimiter;
@@ -117,7 +118,8 @@ public class Corpus {
 	}
 	
 	public static int getRandomVocabItem() {
-		return vocabSampler.sample();
+		//return vocabSampler.sample();
+		return random.nextInt(corpusVocab.get(0).vocabSize);
 	}
 	
 	public void computeUnigramProbabilities() {

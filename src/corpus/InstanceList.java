@@ -15,9 +15,6 @@ public class InstanceList extends ArrayList<Instance> {
 	private static final long serialVersionUID = -2409272084529539276L;
 	public int numberOfTokens;
 	
-	public static int VOCAB_SAMPLE_SIZE = 1000;
-	public static Random random = new Random(37);
-	
 	public InstanceList() {
 		super();
 	}
@@ -165,25 +162,23 @@ public class InstanceList extends ArrayList<Instance> {
 						double[] conditionalVector = instance.getConditionalVector(t, state);
 						gradient[instance.words[t][0]][j] += posteriorProb * conditionalVector[j];
 						
-						//TODO: efficient sampling
 						double[] sampleNumerator = new double[parameterMatrix.length];
 						double Z = 0;
 						HashSet<Integer> sampled = new HashSet<Integer>();
-						for(int i=0; i<VOCAB_SAMPLE_SIZE; i++) {
-							//int randomV = random.nextInt(instance.model.corpus.corpusVocab.get(0).vocabSize);
-							int randomV = Corpus.getRandomVocabItem();
+						for(int i=0; i<Corpus.VOCAB_SAMPLE_SIZE; i++) {
+							int randomV = Corpus.getRandomVocabItem();							
 							sampled.add(randomV);
 							double numerator = Math.exp(MathUtils.dot(parameterMatrix[randomV], conditionalVector));
-							sampleNumerator[randomV] += numerator; // addition because we might have repeated sampling
 							Z += numerator;
+							sampleNumerator[randomV] = numerator; //don't add even if repeated sampling, will affect gradient below							
 						}
 						int currentTokenIndex = instance.words[t][0];
-						double numeratorToken = Math.exp(MathUtils.dot(parameterMatrix[currentTokenIndex], conditionalVector));
+						double tokenNumerator = Math.exp(MathUtils.dot(parameterMatrix[currentTokenIndex], conditionalVector));
 						sampled.add(currentTokenIndex);
-						sampleNumerator[currentTokenIndex] += numeratorToken;
-						Z += numeratorToken;
+						sampleNumerator[currentTokenIndex] = tokenNumerator; //again, don't add
+						Z += tokenNumerator;
 						//rescale Z
-						Z = Z * instance.model.corpus.corpusVocab.get(0).vocabSize / (VOCAB_SAMPLE_SIZE + 1); //+1 for explicitly adding numerator of token at current position
+						Z = Z * instance.model.corpus.corpusVocab.get(0).vocabSize / (Corpus.VOCAB_SAMPLE_SIZE + 1); //+1 for explicitly adding numerator of token at current position
 						for(Integer v : sampled) {
 							gradient[v][j] -= posteriorProb * sampleNumerator[v] / Z * conditionalVector[j];
 						}							

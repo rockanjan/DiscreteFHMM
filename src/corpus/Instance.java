@@ -106,7 +106,7 @@ public class Instance {
 					double[] weightObservation = model.param.weights.weights[observationIndex];
 					double numerator = Math.exp(MathUtils.dot(conditionalVector, weightObservation));
 					
-					double result = Math.log(numerator / getApproxNormalizer(t, state, model.param.weights.weights)); 
+					double result = Math.log(numerator / getApproxNormalizer(t, s, model.param.weights.weights)); 
 					observationCache[t][s] = result;
 				}				
 			}
@@ -276,25 +276,27 @@ public class Instance {
 	}
 	
 	public double getApproxNormalizer(int position, int state, double[][] weights) {
-		//TODO: efficient sampling
-		double[] sampleNumerator = new double[weights.length];
 		double Z = 0;
-		HashSet<Integer> sampled = new HashSet<Integer>();
 		double[] conditionalVector = getConditionalVector(position, state);
-		
-		//TODO: might have to use logsumexp
-		for(int i=0; i<InstanceList.VOCAB_SAMPLE_SIZE; i++) {
-			//int randomV = InstanceList.random.nextInt(model.corpus.corpusVocab.get(0).vocabSize);
+		for(int i=0; i<Corpus.VOCAB_SAMPLE_SIZE; i++) {
 			int randomV = Corpus.getRandomVocabItem();
-			sampled.add(randomV);
 			double numerator = Math.exp(MathUtils.dot(weights[randomV], conditionalVector));
-			sampleNumerator[randomV] += numerator; // addition because we might have repeated sampling
 			Z += numerator;
 		}
 		//at the token at this position too so that the probability is within [0,1]
-		double numeratorToken = Math.exp(MathUtils.dot(weights[words[position][0]], getConditionalVector(position, state)));
-		Z += numeratorToken;
-		Z = Z * model.corpus.corpusVocab.get(0).vocabSize / (InstanceList.VOCAB_SAMPLE_SIZE + 1);
+		double tokenNumerator = Math.exp(MathUtils.dot(weights[words[position][0]], conditionalVector));
+		Z += tokenNumerator;
+		Z = Z * model.corpus.corpusVocab.get(0).vocabSize / (Corpus.VOCAB_SAMPLE_SIZE + 1);
+		return Z;
+	}
+	
+	public double getExactNormalizer(int position, int state, double[][] weights) {
+		double Z = 0;
+		double[] conditionalVector = getConditionalVector(position, state);
+		for(int i=0; i<model.corpus.corpusVocab.get(0).vocabSize; i++) {
+			double numerator = Math.exp(MathUtils.dot(weights[i], conditionalVector));
+			Z += numerator;
+		}
 		return Z;
 	}
 

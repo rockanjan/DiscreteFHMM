@@ -38,8 +38,8 @@ public class Main {
 	static int oneTimeStepObsSize; //number of elements in observation e.g. word|hmm1|hmm2  has 3
 	
 	static int vocabThreshold = 2; //only above this included
-	static int recursionSize = 2;
-	static int numStates = 20;
+	static int recursionSize = 100;
+	static int numStates = 2;
 	/** user parameters end **/
 	public static void main(String[] args) throws IOException {
 		train();
@@ -49,10 +49,10 @@ public class Main {
 	
 	public static void train() throws IOException {
 		outFolderPrefix = "out/";
-		numIter = 40;
+		numIter = 50;
 		String trainFileBase;
 		String testFileBase;
-		trainFileBase = "out/decoded/test.txt.SPL";
+		trainFileBase = "out/decoded/combined.txt.SPL";
 //		trainFileBase = "out/decoded/rcv1.txt.SPL";
 		testFileBase = "out/decoded/test.txt.SPL";
 		
@@ -63,8 +63,8 @@ public class Main {
 		
 	
 		for(int currentRecursion=0; currentRecursion<recursionSize; currentRecursion++) {
-			sampleSizeEStep = 1000; //total sentences in RCV1 is 2.2M 
-			sampleSizeMStep = 50;
+			sampleSizeEStep = 10000; //total sentences in RCV1 is 2.2M 
+			sampleSizeMStep = 250;
 			System.out.println("RECURSION: " + currentRecursion);
 			System.out.println("-----------------");
 			if(currentRecursion == 0) {

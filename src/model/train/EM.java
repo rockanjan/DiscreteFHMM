@@ -131,7 +131,7 @@ public class EM {
 
 		if (LL < bestOldLL) {
 			//increase the number of examples in M-step
-			Main.sampleSizeMStep += 10;
+			Main.sampleSizeMStep += 100;
 			if (lowerCount == 0) {
 				// cache the best model so far
 				System.out.println("Caching the best model so far");

@@ -16,7 +16,7 @@ public class DiscreteSampler {
 	int[] alias; //stores the alias (other index whose mass is stacked at this position)
 	double[] prob; //stores the remaining prob (can be between [0,1]) of the index after the alias method
 	
-	int N;
+	static int N;
 	
 	public DiscreteSampler(List<Double> distribution) {
 		this.distribution = distribution;

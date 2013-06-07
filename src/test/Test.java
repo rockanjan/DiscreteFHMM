@@ -17,5 +17,10 @@ public class Test {
 			v = null;
 		}
 		System.out.println(vocabList.get(2));
+		int x = 10;
+		int y = 9;
+		double z = x/y * 1.0; //first divides integers
+		//double z = 1.0 * x/y;
+		System.out.println(z);
 	}
 }

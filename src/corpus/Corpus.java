@@ -8,9 +8,11 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.TreeSet;
 
 import util.SmoothWord;
 
@@ -35,7 +37,7 @@ public class Corpus {
 	
 	public List<Double> unigramProbability;
 	static DiscreteSampler vocabSampler;
-	public static int VOCAB_SAMPLE_SIZE = 10000;
+	public static int VOCAB_SAMPLE_SIZE = 1000;
 
 	public Corpus(String delimiter, int vocabThreshold) {
 		this.delimiter = delimiter;
@@ -114,12 +116,23 @@ public class Corpus {
 	
 	public void setupSampler() {
 		computeUnigramProbabilities();
+		System.out.println("Vocab sample size: " + VOCAB_SAMPLE_SIZE);
+		System.out.print("Setting up sampler...");
 		vocabSampler = new DiscreteSampler(unigramProbability);
+		System.out.println("Done");
 	}
 	
 	public static int getRandomVocabItem() {
-		//return vocabSampler.sample();
-		return random.nextInt(corpusVocab.get(0).vocabSize);
+		return vocabSampler.sample();
+		//return random.nextInt(corpusVocab.get(0).vocabSize);
+	}
+	
+	public static TreeSet<Integer> getRandomVocabSet() {
+		TreeSet<Integer> randomVocabSet = new TreeSet<Integer>();
+		for(int i=0; i<VOCAB_SAMPLE_SIZE; i++) {
+			randomVocabSet.add(getRandomVocabItem());
+		}
+		return randomVocabSet;
 	}
 	
 	public void computeUnigramProbabilities() {

@@ -2,9 +2,11 @@ package corpus;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.TreeSet;
 
 import javax.management.RuntimeErrorException;
 
+import util.LogExp;
 import util.MathUtils;
 import util.SmoothWord;
 
@@ -12,6 +14,7 @@ import model.HMMBase;
 import model.HMMType;
 import model.inference.ForwardBackward;
 import model.inference.ForwardBackwardLog;
+import model.inference.ForwardBackwardScaled;
 
 public class Instance {
 	public int[][] words;
@@ -42,10 +45,9 @@ public class Instance {
 		if (model.hmmType == HMMType.LOG_SCALE) {
 			forwardBackward = new ForwardBackwardLog(model, this);
 		} else {
-			System.out.println("ONLY LOG FORWARD BACKWARD IMPLEMENTED");
-			System.exit(-1);
-			//forwardBackward = new ForwardBackwardScaled(model, this);
-			// forwardBackward = new ForwardBackwardNoScaling(model, this);
+//			System.out.println("ONLY LOG FORWARD BACKWARD IMPLEMENTED");
+//			System.exit(-1);
+			forwardBackward = new ForwardBackwardScaled(model, this);
 		}
 		nrStates = model.nrStates;
 		forwardBackward.doInference();
@@ -66,34 +68,6 @@ public class Instance {
 	/*
 	 * returns log(ObservationProb)
 	 */
-	public double getExactObservationProbability(int position, int state) {
-		if (observationCache == null) {
-			observationCache = new double[T][nrStates];
-			for (int t = 0; t < T; t++) {
-				for(int s=0; s<nrStates; s++) {
-					//TODO: store the log of the normalizer and also log of the numerator to avoid overflow
-					double normalizer = 0.0;
-					double[] conditionalVector = getConditionalVector(t, s);
-					//for all vocab items
-					for (int i=0; i<model.corpus.corpusVocab.get(0).vocabSize; i++) {
-						double[] weightIthVocab = model.param.weights.weights[i];
-						normalizer += Math.exp(MathUtils.dot(conditionalVector, weightIthVocab));
-					}
-					
-					//numerator: for this particular observation item at t
-					//System.out.println(this.getWord(t));
-					int observationIndex = this.words[t][0];
-					double[] weightObservation = model.param.weights.weights[observationIndex];
-					double numerator = Math.exp(MathUtils.dot(conditionalVector, weightObservation));
-					
-					double result = Math.log(numerator / normalizer); 
-					observationCache[t][s] = result;
-				}				
-			}
-		}
-		return observationCache[position][state];
-	}
-	
 	public double getObservationProbability(int position, int state) {
 		if (observationCache == null) {
 			observationCache = new double[T][nrStates];
@@ -105,8 +79,10 @@ public class Instance {
 					int observationIndex = this.words[t][0];
 					double[] weightObservation = model.param.weights.weights[observationIndex];
 					double numerator = Math.exp(MathUtils.dot(conditionalVector, weightObservation));
-					
-					double result = Math.log(numerator / getApproxNormalizer(t, s, model.param.weights.weights)); 
+					double result = numerator / getExactNormalizer(t, s, model.param.weights.weights);
+					if(model.hmmType == HMMType.LOG_SCALE) {
+						result = Math.log(result);
+					}
 					observationCache[t][s] = result;
 				}				
 			}
@@ -278,15 +254,16 @@ public class Instance {
 	public double getApproxNormalizer(int position, int state, double[][] weights) {
 		double Z = 0;
 		double[] conditionalVector = getConditionalVector(position, state);
-		for(int i=0; i<Corpus.VOCAB_SAMPLE_SIZE; i++) {
-			int randomV = Corpus.getRandomVocabItem();
+		
+		TreeSet<Integer> randomVocabSet = Corpus.getRandomVocabSet();
+		int currentToken = words[position][0];
+		randomVocabSet.add(currentToken);
+		
+		for(int randomV : randomVocabSet) {
 			double numerator = Math.exp(MathUtils.dot(weights[randomV], conditionalVector));
 			Z += numerator;
 		}
-		//at the token at this position too so that the probability is within [0,1]
-		double tokenNumerator = Math.exp(MathUtils.dot(weights[words[position][0]], conditionalVector));
-		Z += tokenNumerator;
-		Z = Z * model.corpus.corpusVocab.get(0).vocabSize / (Corpus.VOCAB_SAMPLE_SIZE + 1);
+		Z = Z * model.corpus.corpusVocab.get(0).vocabSize / (randomVocabSet.size());
 		return Z;
 	}
 	
@@ -294,7 +271,8 @@ public class Instance {
 		double Z = 0;
 		double[] conditionalVector = getConditionalVector(position, state);
 		for(int i=0; i<model.corpus.corpusVocab.get(0).vocabSize; i++) {
-			double numerator = Math.exp(MathUtils.dot(weights[i], conditionalVector));
+			//double numerator = Math.exp(MathUtils.dot(weights[i], conditionalVector));
+			double numerator = LogExp.expApprox(MathUtils.dot(weights[i], conditionalVector));
 			Z += numerator;
 		}
 		return Z;

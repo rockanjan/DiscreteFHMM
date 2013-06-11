@@ -27,7 +27,7 @@ public class TestGradient {
 	static String testFile;
 	static String outFolderPrefix;
 	static int numStates; 	
-	static int vocabThreshold = 5; //only above this included
+	static int vocabThreshold = 2; //only above this included
 	static HMMBase model;
 	static Corpus corpus;
 	
@@ -47,6 +47,7 @@ public class TestGradient {
 		Corpus.oneTimeStepObsSize = Corpus.findOneTimeStepObsSize(vocabFile);
 		//TRAIN
 		corpus.readVocab(vocabFile);
+		corpus.setupSampler();
 		corpus.readTrain(trainFile);
 		corpus.readTest(testFile);
 		model = new HMMNoFinalStateLog(numStates, corpus);
@@ -61,6 +62,7 @@ public class TestGradient {
 		
 		HMMParamNoFinalStateLog expectedCounts = new HMMParamNoFinalStateLog(model);
 		expectedCounts.initializeZeros();
+		
 		for (int n = 0; n < corpus.trainInstanceList.size(); n++) {
 			Instance instance = corpus.trainInstanceList.get(n);
 			instance.doInference(model);
@@ -69,5 +71,4 @@ public class TestGradient {
 		}
 		optimizable.checkGradientComputation();
 	}
-	
 }

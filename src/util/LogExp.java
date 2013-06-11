@@ -5,6 +5,14 @@ import javax.management.RuntimeErrorException;
 //provides four extended functions for working in log/exp domain
 public class LogExp{
 	
+	/*
+	 * From the paper A Fast, Compact Approximation of the Exponential Function
+	 */
+	public static double expApprox(double val) {
+	    final long tmp = (long) (1512775 * val + (1072693248 - 60801));
+	    return Double.longBitsToDouble(tmp << 32);
+	}
+	
 	//extended exp that can handle log(0)
 	//for x = LOGZERO (NaN), eexp(x) = 0, else eexp(x) = exp(x)
 	public static double exp(double x) {

@@ -32,10 +32,8 @@ public class LogLinearWeightsOptimizable implements Optimizable.ByGradientValue{
 	@Override
 	public double getValue() {
 		double[][] weights = MyArray.createMatrix(parameters, corpus.corpusVocab.get(0).vocabSize);
-		//double cll = corpus.trainInstanceMStepSampleList.getConditionalLogLikelihoodUsingPosteriorDistribution(weights);
-		double cll = corpus.trainInstanceMStepSampleList.getApproxConditionalLogLikelihoodUsingPosteriorDistribution(weights);
-		//calculate CLL on larger instances
-		//double cll = corpus.trainInstanceEStepSampleList.getConditionalLogLikelihoodUsingPosteriorDistribution(weights);
+		double cll = corpus.trainInstanceMStepSampleList.getConditionalLogLikelihoodUsingPosteriorDistribution(weights);
+		//double cll = corpus.trainInstanceMStepSampleList.getApproxConditionalLogLikelihoodUsingPosteriorDistribution(weights);
 		//add regularizer
 		double normSquared = MyArray.getL2NormSquared(parameters);
 		latestValue = cll - c2 * normSquared;
@@ -47,9 +45,8 @@ public class LogLinearWeightsOptimizable implements Optimizable.ByGradientValue{
 	public void getValueGradient(double[] gradient) {
 		gradientCallCount++;
 		double[][] weights = MyArray.createMatrix(parameters, corpus.corpusVocab.get(0).vocabSize);
-		//double[][] newGradients = corpus.trainInstanceMStepSampleList.getGradient(weights);
-		//double[][] newGradients = corpus.trainInstanceMStepSampleList.getGradientModified(weights);
-		double[][] newGradients = corpus.trainInstanceMStepSampleList.getGradientApprox(weights);
+		double[][] newGradients = corpus.trainInstanceMStepSampleList.getGradientModified(weights);
+		//double[][] newGradients = corpus.trainInstanceMStepSampleList.getGradientApprox(weights);
 		//regularizer
 		for(int i=0; i<newGradients.length; i++) {
 			for(int j=0; j<newGradients[0].length; j++) {
@@ -107,7 +104,7 @@ public class LogLinearWeightsOptimizable implements Optimizable.ByGradientValue{
 	private double[][] getFiniteDifferenceGradient() {
 		double[][] weights = MyArray.createMatrix(parameters, corpus.corpusVocab.get(0).vocabSize);
 		double[][] newGradients = new double[weights.length][weights[0].length];
-		double step = 1e-2;
+		double step = 1e-5;
 		for(int i=0; i<weights.length; i++) {
 			for(int j=0; j<weights[0].length; j++) {
 				weights[i][j] = weights[i][j] - step;
@@ -125,7 +122,7 @@ public class LogLinearWeightsOptimizable implements Optimizable.ByGradientValue{
 	
 	private double[][] getGradientByEquation() {
 		double[][] weights = MyArray.createMatrix(parameters, corpus.corpusVocab.get(0).vocabSize);
-		double[][] newGradients = corpus.trainInstanceList.getGradient(weights);		
+		double[][] newGradients = corpus.trainInstanceList.getGradientModified(weights);
 		return newGradients;
 	}
 	
@@ -147,6 +144,5 @@ public class LogLinearWeightsOptimizable implements Optimizable.ByGradientValue{
 		}
 		System.out.format("Gradient Difference: Max %.5f, Min %.5f\n", maxDiff, minDiff);
 	}
-	
 	/*************** Debugging code *********/
 }

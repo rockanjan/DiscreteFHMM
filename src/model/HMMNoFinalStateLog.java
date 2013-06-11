@@ -31,6 +31,7 @@ public class HMMNoFinalStateLog extends HMMBase{
 		param.initializeZeros();
 	}
 	
+	@Override
 	public void initializeZerosToBest() {
 		bestParam = new HMMParamNoFinalState(this);
 		bestParam.initializeZeros();

@@ -28,7 +28,7 @@ public class EM {
 
 	// convergence criteria
 	double precision = 1e-6;
-	int maxConsecutiveDecreaseLimit = 5;
+	int maxConsecutiveDecreaseLimit = 10;
 
 	HMMParamBase expectedCounts;
 
@@ -131,7 +131,9 @@ public class EM {
 
 		if (LL < bestOldLL) {
 			//increase the number of examples in M-step
-			Main.sampleSizeMStep += 100;
+			if(Main.sampleSizeEStep < 2000) {
+				Main.sampleSizeMStep += 50;
+			}
 			if (lowerCount == 0) {
 				// cache the best model so far
 				System.out.println("Caching the best model so far");

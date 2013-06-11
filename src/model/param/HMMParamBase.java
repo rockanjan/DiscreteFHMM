@@ -48,6 +48,29 @@ public abstract class HMMParamBase {
 			//initialize weights for the log-linear model
 			weights = new LogLinearWeights(model.corpus.corpusVocab.get(0).vocabSize, nrStates + zSize);
 			weights.initializeZeros();
+		} else {
+			initial = new ArrayList<MultinomialBase>();
+			transition = new ArrayList<MultinomialBase>();
+			
+			MultinomialRegular initialCurrent = new MultinomialRegular(nrStates, 1);
+			MultinomialRegular transitionCurrent = new MultinomialRegular(nrStates, nrStates); //for current hidden states
+			
+			initial.add(initialCurrent);
+			transition.add(transitionCurrent);
+			for(int i=1; i<model.corpus.oneTimeStepObsSize; i++) {
+				MultinomialLog tempTrans = new MultinomialLog(model.corpus.corpusVocab.get(i).vocabSize, model.corpus.corpusVocab.get(i).vocabSize);
+				MultinomialLog tempInit = new MultinomialLog(model.corpus.corpusVocab.get(i).vocabSize, 1);
+				initial.add(tempInit);
+				transition.add(tempTrans);
+			}
+			//initial random weights
+			int zSize = 0;
+			for(int i=1; i<model.corpus.oneTimeStepObsSize; i++) {
+				zSize += model.corpus.corpusVocab.get(i).vocabSize;
+			}
+			//initialize weights for the log-linear model
+			weights = new LogLinearWeights(model.corpus.corpusVocab.get(0).vocabSize, nrStates + zSize);
+			weights.initializeZeros();
 		}
 	}
 	

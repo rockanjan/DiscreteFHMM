@@ -24,4 +24,13 @@ public class Timing {
 		
 	}
 	
+	public String stopMilliseconds() {
+		//stopT = System.currentTimeMillis();
+		stopT = new Date().getTime();
+		String elapsed = (stopT - startT)  + " milliseconds";
+		stopT = 0; startT = 0;
+		return elapsed;
+		
+	}
+	
 }

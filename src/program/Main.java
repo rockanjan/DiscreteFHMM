@@ -9,6 +9,7 @@ import cc.mallet.grmm.util.Models;
 
 import util.MyArray;
 import model.HMMBase;
+import model.HMMNoFinalState;
 import model.HMMNoFinalStateLog;
 import model.inference.Decoder;
 import model.param.HMMParamBase;
@@ -37,7 +38,7 @@ public class Main {
 	
 	static int oneTimeStepObsSize; //number of elements in observation e.g. word|hmm1|hmm2  has 3
 	
-	static int vocabThreshold = 2; //only above this included
+	static int vocabThreshold = 5; //only above this included
 	static int recursionSize = 100;
 	static int numStates = 2;
 	/** user parameters end **/
@@ -53,7 +54,8 @@ public class Main {
 		String trainFileBase;
 		String testFileBase;
 		trainFileBase = "out/decoded/combined.txt.SPL";
-//		trainFileBase = "out/decoded/rcv1.txt.SPL";
+		//trainFileBase = "out/decoded/rcv1.txt.SPL";
+		//trainFileBase = "out/decoded/test.txt.SPL";
 		testFileBase = "out/decoded/test.txt.SPL";
 		
 		//trainFileBase = "out/decoded/simple_corpus_sorted.txt";
@@ -62,9 +64,9 @@ public class Main {
 		double[][] previousRecursionWeights = null;
 		
 	
-		for(int currentRecursion=0; currentRecursion<recursionSize; currentRecursion++) {
-			sampleSizeEStep = 10000; //total sentences in RCV1 is 2.2M 
-			sampleSizeMStep = 250;
+		for(int currentRecursion=8; currentRecursion<recursionSize; currentRecursion++) {
+			sampleSizeEStep = 2000; //total sentences in RCV1 is 1.3M 
+			sampleSizeMStep = 200;
 			System.out.println("RECURSION: " + currentRecursion);
 			System.out.println("-----------------");
 			if(currentRecursion == 0) {
@@ -86,7 +88,8 @@ public class Main {
 			corpus.setupSampler();
 			corpus.readTrain(trainFile);
 			corpus.readTest(testFile);
-			model = new HMMNoFinalStateLog(numStates, corpus);
+			//model = new HMMNoFinalStateLog(numStates, corpus);
+			model = new HMMNoFinalState(numStates, corpus);
 			Random random = new Random(seed);
 			model.initializeRandom(random);
 			model.computePreviousTransitions();

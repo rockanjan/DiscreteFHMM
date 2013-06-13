@@ -2,6 +2,9 @@ package corpus;
 
 import java.util.ArrayList;
 import java.util.TreeSet;
+
+import model.HMMBase;
+import model.param.HMMParamBase;
 import util.MathUtils;
 import util.Timing;
 
@@ -13,8 +16,28 @@ public class InstanceList extends ArrayList<Instance> {
 		super();
 	}
 
-	
-	
+	/*
+	 * called by the E-step of EM. 
+	 * Does inference, computes posteriors and updates expected counts
+	 * returns LL of the corpus
+	 */
+	public double updateExpectedCounts(HMMBase model, HMMParamBase expectedCounts) {
+		double LL = 0;
+		//cache expWeights for the model
+		model.param.expWeightsCache = MathUtils.expArray(model.param.weights.weights);
+		for (int n = 0; n < this.size(); n++) {
+			Instance instance = this.get(n);
+			instance.doInference(model);
+			instance.forwardBackward.addToCounts(expectedCounts);
+			LL += instance.forwardBackward.logLikelihood;
+			instance.clearInference();
+		}
+		//clear expWeights;
+		model.param.expWeightsCache = null;
+		return LL;
+	}
+
+	/*
 	public double getApproxConditionalLogLikelihoodUsingPosteriorDistribution(double[][] parameterMatrix) {
 		double cll = 0;
 		Timing timing = new Timing();
@@ -26,15 +49,17 @@ public class InstanceList extends ArrayList<Instance> {
 		System.out.println("CLL computation time : " + timing.stop());
 		return cll;
 	}
+	*/
 	
 	public double getConditionalLogLikelihoodUsingPosteriorDistribution(
 			double[][] parameterMatrix) {
 		double cll = 0;
 		Timing timing = new Timing();
 		timing.start();
+		double[][] expWeights = MathUtils.expArray(parameterMatrix);
 		for (int n = 0; n < this.size(); n++) {
 			Instance i = get(n);
-			cll += i.getConditionalLogLikelihoodUsingPosteriorDistribution(parameterMatrix);
+			cll += i.getConditionalLogLikelihoodUsingPosteriorDistribution(expWeights);
 		}
 		System.out.println("CLL computation time : " + timing.stop());
 		return cll;
@@ -95,7 +120,10 @@ public class InstanceList extends ArrayList<Instance> {
 	public double[][] getGradientModified(double[][] parameterMatrix) {
 		Timing timing = new Timing();
 		timing.start();
+		double[][] expParam = MathUtils.expArray(parameterMatrix);
+		System.out.println("Param Exp time : " + timing.stop());
 		
+		timing.start();
 		double[] numeratorCache = new double[parameterMatrix.length];
 		double gradient[][] = new double[parameterMatrix.length][parameterMatrix[0].length];
 		for (int n = 0; n < this.size(); n++) {
@@ -107,9 +135,8 @@ public class InstanceList extends ArrayList<Instance> {
 					//create partition
 					double normalizer = 0.0;
 					for (int v = 0; v < parameterMatrix.length; v++) {
-						double[] weightVector = parameterMatrix[v];
-						//double numerator = Math.exp(MathUtils.dot(weightVector, conditionalVector));
-						double numerator = MathUtils.exp(MathUtils.dot(weightVector, conditionalVector));
+						//double numerator = MathUtils.exp(MathUtils.dot(parameterMatrix[v], conditionalVector));
+						double numerator = MathUtils.expDot(expParam[v], conditionalVector);
 						numeratorCache[v] = numerator;
 						normalizer += numerator;						
 					}

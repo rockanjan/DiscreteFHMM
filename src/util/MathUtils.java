@@ -59,6 +59,29 @@ public class MathUtils {
 		return result;
 	}
 	
+	public static double[][] expArray(double[][] array) {
+		double[][] expArray = new double[array.length][array[0].length];
+		for(int i=0; i<array.length; i++) {
+			for(int j=0; j<array[0].length; j++) {
+				expArray[i][j] = MathUtils.exp(array[i][j]);
+			}
+		}
+		return expArray;
+	}
+	
+	public static double expDot(double[] expWeights, double[] conditional) {
+		double result = 1.0;
+		for(int i=0; i<conditional.length; i++) {
+			if(conditional[i] != 0) {
+				result *= expWeights[i];
+			}
+		}
+		if(Double.isInfinite(result)) {
+			throw new RuntimeException("Error: expDot value is infinite");
+		}
+		return result;
+	}
+	
 	public static void main(String[] args) {
 		double a = 0.12;
 		double b = -20;

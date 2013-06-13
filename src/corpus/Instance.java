@@ -74,9 +74,12 @@ public class Instance {
 				for(int s=0; s<nrStates; s++) {
 					double[] conditionalVector = getConditionalVector(t, s);
 					int observationIndex = this.words[t][0];
-					double[] weightObservation = model.param.weights.weights[observationIndex];
-					double numerator = MathUtils.exp(MathUtils.dot(conditionalVector, weightObservation));
-					double result = numerator / getExactNormalizer(t, s, model.param.weights.weights);
+					//double[] weightObservation = model.param.weights.weights[observationIndex];
+					//double numerator = MathUtils.exp(MathUtils.dot(conditionalVector, weightObservation));
+					double[] expWeightObservation = model.param.expWeightsCache[observationIndex];
+					double numerator = MathUtils.expDot(expWeightObservation, conditionalVector);
+					//double result = numerator / getExactNormalizer(t, s, model.param.weights.weights);
+					double result = numerator / getExactNormalizer(t, s, model.param.expWeightsCache);
 					if(model.hmmType == HMMType.LOG_SCALE) {
 						result = Math.log(result);
 					}
@@ -162,16 +165,16 @@ public class Instance {
 		return cll;
 	}
 	
-	public double getConditionalLogLikelihoodUsingPosteriorDistribution(double[][] weights) {
+	public double getConditionalLogLikelihoodUsingPosteriorDistribution(double[][] expWeights) {
 		double cll = 0.0;
 		for(int t=0; t<T; t++) {
 			for(int state=0; state<nrStates; state++) {
 				double posteriorProb = posteriors[t][state];
-				double normalizer = getExactNormalizer(t, state, weights);
+				double normalizer = getExactNormalizer(t, state, expWeights);
 				int observationIndex = this.words[t][0];
-				double[] weightObservation = weights[observationIndex];
 				double[] conditionalVector = getConditionalVector(t, state);
-				double numerator = MathUtils.exp(MathUtils.dot(conditionalVector, weightObservation));
+				//double numerator = MathUtils.exp(MathUtils.dot(conditionalVector, weightObservation));
+				double numerator = MathUtils.expDot(expWeights[observationIndex], conditionalVector);
 				double result = posteriorProb * Math.log(numerator / normalizer); //expected CLL
 				cll += result;
 			}
@@ -259,12 +262,12 @@ public class Instance {
 		return Z;
 	}
 	
-	public double getExactNormalizer(int position, int state, double[][] weights) {
+	public double getExactNormalizer(int position, int state, double[][] expWeights) {
 		double Z = 0;
 		double[] conditionalVector = getConditionalVector(position, state);
 		for(int i=0; i<model.corpus.corpusVocab.get(0).vocabSize; i++) {
 			//double numerator = Math.exp(MathUtils.dot(weights[i], conditionalVector));
-			double numerator = MathUtils.exp(MathUtils.dot(weights[i], conditionalVector));
+			double numerator = MathUtils.expDot(expWeights[i], conditionalVector);
 			Z += numerator;
 		}
 		return Z;

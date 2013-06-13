@@ -54,15 +54,7 @@ public class EM {
 		}
 		expectedCounts.initializeZeros();
 		System.out.println("Estep #tokens : " + c.trainInstanceEStepSampleList.numberOfTokens);
-		for (int n = 0; n < c.trainInstanceEStepSampleList.size(); n++) {
-			Instance instance = c.trainInstanceEStepSampleList.get(n);
-			instance.doInference(model);
-			instance.forwardBackward.addToCounts(expectedCounts);
-			LL += instance.forwardBackward.logLikelihood;
-			//instance.createDecodedViterbiCache();
-			instance.clearInference();
-		}
-		//MyArray.printExpTable(model.param.transition.get(0).count);
+		LL = c.trainInstanceEStepSampleList.updateExpectedCounts(model, expectedCounts);		
 	}
 
 	public void mStep() {

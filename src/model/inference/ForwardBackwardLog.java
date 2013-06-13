@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import model.HMMBase;
 import model.param.HMMParamBase;
 import model.param.MultinomialBase;
-import util.LogExp;
+import util.MathUtils;
 import corpus.Instance;
 
 public class ForwardBackwardLog extends ForwardBackward{
@@ -47,10 +47,10 @@ public class ForwardBackwardLog extends ForwardBackward{
 				}
 				double obs;
 				obs = instance.getObservationProbability(t, j);
-				alpha[t][j] = LogExp.logsumexp(expParams) + obs; 
+				alpha[t][j] = MathUtils.logsumexp(expParams) + obs; 
 			}			
 		}
-		logLikelihood = LogExp.logsumexp(alpha[T-1]);
+		logLikelihood = MathUtils.logsumexp(alpha[T-1]);
 		//MyArray.printExpTable(alpha, "log alpha");
 		//System.out.println(logLikelihood);
 	}
@@ -71,7 +71,7 @@ public class ForwardBackwardLog extends ForwardBackward{
 					double obs = instance.getObservationProbability(t+1, j);
 					expParams[j] = trans + obs + beta[t+1][j];
 				}
-				beta[t][i] = LogExp.logsumexp(expParams);
+				beta[t][i] = MathUtils.logsumexp(expParams);
 			}
 		}
 		//MyArray.printExpTable(beta, "log beta");
@@ -88,7 +88,7 @@ public class ForwardBackwardLog extends ForwardBackward{
 			for(int i=0; i<nrStates; i++) {
 				expSum[i] = alpha[t][i] + beta[t][i];
 			}
-			double denom = LogExp.logsumexp(expSum);
+			double denom = MathUtils.logsumexp(expSum);
 			for(int i=0; i<nrStates; i++) {
 				//posterior[t][i] = alpha[t][i] + beta[t][i] - logLikelihood; //not working... why?
 				posterior[t][i] = alpha[t][i] + beta[t][i] - denom;

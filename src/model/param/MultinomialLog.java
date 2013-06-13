@@ -1,10 +1,6 @@
 package model.param;
 
 import java.util.Random;
-
-import javax.management.RuntimeErrorException;
-
-import util.LogExp;
 import util.MyArray;
 import util.Stats;
 

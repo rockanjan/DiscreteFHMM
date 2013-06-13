@@ -1,15 +1,7 @@
 package corpus;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Random;
 import java.util.TreeSet;
-
-import cc.mallet.util.CommandOption.Set;
-
-import util.LogExp;
 import util.MathUtils;
 import util.Timing;
 
@@ -103,49 +95,38 @@ public class InstanceList extends ArrayList<Instance> {
 	public double[][] getGradientModified(double[][] parameterMatrix) {
 		Timing timing = new Timing();
 		timing.start();
-		//TODO: can further speed up partitionCache calculation (because for different state in the same timestep, Z's remain fixed)  
-		double[][] partitionCache = new double[this.numberOfTokens][this.get(0).model.nrStates];
-		double[][][] numeratorCache = new double[this.numberOfTokens][this.get(0).model.nrStates][parameterMatrix.length];
-		int tokenIndex = 0;
-		for(int n=0; n<this.size(); n++) {
+		
+		double[] numeratorCache = new double[parameterMatrix.length];
+		double gradient[][] = new double[parameterMatrix.length][parameterMatrix[0].length];
+		for (int n = 0; n < this.size(); n++) {
 			Instance instance = get(n);
-			for(int t=0; t<instance.T; t++) {
-				for(int state=0; state < instance.model.nrStates; state++) {
+			for (int t = 0; t < instance.T; t++) {
+				for (int state = 0; state < instance.model.nrStates; state++) {
+					double posteriorProb = instance.posteriors[t][state];
 					double[] conditionalVector = instance.getConditionalVector(t, state);
+					//create partition
 					double normalizer = 0.0;
 					for (int v = 0; v < parameterMatrix.length; v++) {
 						double[] weightVector = parameterMatrix[v];
 						//double numerator = Math.exp(MathUtils.dot(weightVector, conditionalVector));
-						double numerator = LogExp.expApprox(MathUtils.dot(weightVector, conditionalVector));
-						numeratorCache[tokenIndex][state][v] = numerator;
-						normalizer += numerator;
+						double numerator = MathUtils.exp(MathUtils.dot(weightVector, conditionalVector));
+						numeratorCache[v] = numerator;
+						normalizer += numerator;						
 					}
-					partitionCache[tokenIndex][state] = normalizer;
-				}
-				tokenIndex++;
-			}
-		}
-		System.out.println("Partition Cache creation time : " + timing.stop());
-		timing.start();
-		double gradient[][] = new double[parameterMatrix.length][parameterMatrix[0].length];
-		tokenIndex = 0;
-		for (int n = 0; n < this.size(); n++) {
-			Instance instance = get(n);
-			for (int t = 0; t < instance.T; t++) {
-				for(int j=0; j<parameterMatrix[0].length; j++) {
-					for (int state = 0; state < instance.model.nrStates; state++) {
-						double posteriorProb = instance.posteriors[t][state];
-						double[] conditionalVector = instance.getConditionalVector(t, state);
-						gradient[instance.words[t][0]][j] += posteriorProb * conditionalVector[j];
-						double normalizer = partitionCache[tokenIndex][state];								
-						for(int v=0; v<parameterMatrix.length; v++) {
-							//double numerator = Math.exp(MathUtils.dot(parameterMatrix[v], conditionalVector));
-							double numerator = numeratorCache[tokenIndex][state][v];
-							gradient[v][j] -= posteriorProb * numerator / normalizer * conditionalVector[j];
-						}							
+					
+					for(int j=0; j<parameterMatrix[0].length; j++) {
+						if(conditionalVector[j] != 0) {
+							//this means it's one
+							//gradient[instance.words[t][0]][j] += posteriorProb * conditionalVector[j];
+							gradient[instance.words[t][0]][j] += posteriorProb;
+							for(int v=0; v<parameterMatrix.length; v++) {
+								double numerator = numeratorCache[v];
+								//gradient[v][j] -= posteriorProb * numerator / normalizer * conditionalVector[j];
+								gradient[v][j] -= posteriorProb * numerator / normalizer;
+							}
+						}
 					}
 				}
-				tokenIndex++;						
 			}
 		}
 		System.out.println("Gradient computation time : " + timing.stop());		

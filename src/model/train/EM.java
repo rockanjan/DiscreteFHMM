@@ -35,6 +35,8 @@ public class EM {
 	int lowerCount = 0; // number of times LL could not increase from previous
 						// best
 	int iterCount = 0;
+	
+	int mStepIter = 5; //initial
 
 	public EM(int numIter, Corpus c, HMMBase model) {
 		this.numIter = numIter;
@@ -78,7 +80,7 @@ public class EM {
 		Optimizer optimizer = new LimitedMemoryBFGS(optimizable);
 		boolean converged = false;
 		try {
-			converged = optimizer.optimize(5); //5 iters
+			converged = optimizer.optimize(mStepIter);
 		} catch (IllegalArgumentException e) {
 			System.out.println("optimization threw exception: IllegalArgument");
 		} catch (OptimizationException oe) {
@@ -109,6 +111,7 @@ public class EM {
 			if (isConverged()) {
 				break;
 			}
+			//mStepIter++;
 			// m-step
 			c.generateRandomTrainingMStepSample(Main.sampleSizeMStep);
 			mStep();
@@ -131,8 +134,8 @@ public class EM {
 
 		if (LL < bestOldLL) {
 			//increase the number of examples in M-step
-			if(Main.sampleSizeEStep < 2000) {
-				Main.sampleSizeMStep += 50;
+			if(Main.sampleSizeEStep < 20000) {
+				Main.sampleSizeMStep += 100;
 			}
 			if (lowerCount == 0) {
 				// cache the best model so far

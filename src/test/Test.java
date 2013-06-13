@@ -2,16 +2,12 @@ package test;
 
 import java.util.ArrayList;
 
+import util.MathUtils;
 import util.Timing;
 import corpus.Vocabulary;
 
 public class Test {
 	
-	public static double exp(double val) {
-	    final long tmp = (long) (1512775 * val + (1072693248 - 60801));
-	    return Double.longBitsToDouble(tmp << 32);
-	}
-
 	/**
 	 * @param args
 	 */
@@ -29,20 +25,5 @@ public class Test {
 		//double z = 1.0 * x/y;
 		System.out.println(z);
 		
-		double a = .002342323423423425;
-		Timing t = new Timing();
-		t.start();
-		for(int i=0; i<100000000; i++) {
-			Math.exp(a);
-		}
-		System.out.println(Math.exp(a));
-		System.out.println(t.stopMilliseconds());
-		t.start();
-		
-		for(int i=0; i<100000000; i++) {
-			exp(a);
-		}
-		System.out.println(exp(a));
-		System.out.println(" " + t.stopMilliseconds());
 	}
 }

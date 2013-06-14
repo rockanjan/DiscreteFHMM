@@ -28,7 +28,7 @@ public class EM {
 
 	// convergence criteria
 	double precision = 1e-6;
-	int maxConsecutiveDecreaseLimit = 10;
+	int maxConsecutiveDecreaseLimit = 5;
 
 	HMMParamBase expectedCounts;
 
@@ -36,7 +36,7 @@ public class EM {
 						// best
 	int iterCount = 0;
 	
-	int mStepIter = 5; //initial
+	int mStepIter = 3; //initial
 
 	public EM(int numIter, Corpus c, HMMBase model) {
 		this.numIter = numIter;
@@ -103,7 +103,9 @@ public class EM {
 			if (isConverged()) {
 				break;
 			}
-			//mStepIter++;
+			if(iterCount > 2) {
+				mStepIter = 5;
+			}
 			// m-step
 			c.generateRandomTrainingMStepSample(Main.sampleSizeMStep);
 			mStep();
@@ -126,8 +128,8 @@ public class EM {
 
 		if (LL < bestOldLL) {
 			//increase the number of examples in M-step
-			if(Main.sampleSizeEStep < 20000) {
-				Main.sampleSizeMStep += 100;
+			if(Main.sampleSizeMStep < 5000) {
+				Main.sampleSizeMStep += 250;
 			}
 			if (lowerCount == 0) {
 				// cache the best model so far

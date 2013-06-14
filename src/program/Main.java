@@ -4,16 +4,10 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Random;
-
-import cc.mallet.grmm.util.Models;
-
 import util.MyArray;
 import model.HMMBase;
-import model.HMMNoFinalState;
 import model.HMMNoFinalStateLog;
 import model.inference.Decoder;
-import model.param.HMMParamBase;
-import model.param.HMMParamNoFinalStateLog;
 import model.train.EM;
 import corpus.Corpus;
 import corpus.Instance;
@@ -52,7 +46,7 @@ public class Main {
 	
 	public static void train() throws IOException {
 		outFolderPrefix = "out/";
-		numIter = 50;
+		numIter = 40;
 		String trainFileBase;
 		String testFileBase;
 		trainFileBase = "out/decoded/combined.txt.SPL";
@@ -68,7 +62,7 @@ public class Main {
 	
 		for(int currentRecursion=0; currentRecursion<recursionSize; currentRecursion++) {
 			sampleSizeEStep = 10000; //total sentences in RCV1 is 1.3M 
-			sampleSizeMStep = 250;
+			sampleSizeMStep = 50;
 			System.out.println("RECURSION: " + currentRecursion);
 			System.out.println("-----------------");
 			if(currentRecursion == 0) {
@@ -89,7 +83,7 @@ public class Main {
 			corpus.readVocab(vocabFile);
 			//corpus.setupSampler();
 			corpus.readTrain(trainFile);
-			corpus.readTest(testFile);
+			//corpus.readTest(testFile);
 			model = new HMMNoFinalStateLog(numStates, corpus);
 			//model = new HMMNoFinalState(numStates, corpus);
 			Random random = new Random(seed);
@@ -102,11 +96,11 @@ public class Main {
 			}
 			EM em = new EM(numIter, corpus, model);
 			em.start();
-			//model.saveModel(currentRecursion);
+			model.saveModel(currentRecursion);
 			//store weights to assign for the next recursion
 			previousRecursionWeights = MyArray.getCloneOfMatrix(model.param.weights.weights);
 			//test(model, corpus.testInstanceList, outFile);	
-			//test(model, corpus.trainInstanceList, outFileTrain);
+			test(model, corpus.trainInstanceList, outFileTrain);
 		}	
 	}
 	

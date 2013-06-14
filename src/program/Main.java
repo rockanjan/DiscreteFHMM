@@ -21,6 +21,8 @@ import corpus.InstanceList;
 
 public class Main {
 	
+	public final static int USE_THREAD_COUNT = 7;
+	
 	/** user parameters **/
 	static String delimiter = "\\+";
 	static int numIter;
@@ -85,7 +87,7 @@ public class Main {
 			Corpus.oneTimeStepObsSize = Corpus.findOneTimeStepObsSize(vocabFile);
 			//TRAIN
 			corpus.readVocab(vocabFile);
-			corpus.setupSampler();
+			//corpus.setupSampler();
 			corpus.readTrain(trainFile);
 			corpus.readTest(testFile);
 			model = new HMMNoFinalStateLog(numStates, corpus);

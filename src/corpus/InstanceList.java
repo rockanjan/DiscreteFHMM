@@ -1,7 +1,10 @@
 package corpus;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.TreeSet;
+
+import program.Main;
 
 import model.HMMBase;
 import model.param.HMMParamBase;
@@ -53,16 +56,83 @@ public class InstanceList extends ArrayList<Instance> {
 	
 	public double getConditionalLogLikelihoodUsingPosteriorDistribution(
 			double[][] parameterMatrix) {
+		//return getCLLNoThread(parameterMatrix);
+		return getCLLThreaded(parameterMatrix);
+	}
+	
+	public double getCLLNoThread(double[][] parameterMatrix) {
 		double cll = 0;
 		Timing timing = new Timing();
 		timing.start();
 		double[][] expWeights = MathUtils.expArray(parameterMatrix);
+		
 		for (int n = 0; n < this.size(); n++) {
 			Instance i = get(n);
 			cll += i.getConditionalLogLikelihoodUsingPosteriorDistribution(expWeights);
 		}
 		System.out.println("CLL computation time : " + timing.stop());
 		return cll;
+	}
+	
+	public double getCLLThreaded(double[][] parameterMatrix) {
+		double cll = 0;
+		Timing timing = new Timing();
+		timing.start();
+		double[][] expWeights = MathUtils.expArray(parameterMatrix);
+		
+		//start parallel processing
+		int divideSize = this.size() / Main.USE_THREAD_COUNT;
+		List<CllWorker> threadList = new ArrayList<CllWorker>();
+		int startIndex = 0;
+		int endIndex = divideSize;		
+		for(int i=0; i<Main.USE_THREAD_COUNT; i++) {
+			CllWorker worker = new CllWorker(this, startIndex, endIndex, expWeights);
+			threadList.add(worker);
+			worker.start();
+			startIndex = endIndex;
+			endIndex = endIndex + divideSize;			
+		}
+		//there might be some remaining
+		CllWorker finalWorker = new CllWorker(this, startIndex, this.size(), expWeights);
+		finalWorker.start();
+		threadList.add(finalWorker);
+		//start all threads and wait for them to complete
+		for(CllWorker worker : threadList) {
+			try {
+				worker.join();
+			} catch (InterruptedException e) {				
+				e.printStackTrace();
+			}
+			cll += worker.result;
+		}
+		System.out.println("CLL computation time : " + timing.stop());
+		return cll;
+	}
+	
+	private class CllWorker extends Thread{
+		public double result;
+		
+		InstanceList instanceList;
+		final int startIndex;
+		final int endIndex;
+		final double[][] expWeights;		
+		
+		// [startIndex, endIndex) i.e. last index is not included
+		public CllWorker(InstanceList instanceList, int startIndex, int endIndex, double[][] expWeights) {
+			this.instanceList = instanceList;
+			this.startIndex = startIndex;
+			this.endIndex = endIndex;
+			this.expWeights = expWeights;
+		}
+		
+		@Override
+		public void run() {
+			result = 0.0;
+			for(int n=startIndex; n<endIndex; n++) {
+				Instance instance = instanceList.get(n);
+				result += instance.getConditionalLogLikelihoodUsingPosteriorDistribution(expWeights);
+			}
+		}		
 	}
 
 
@@ -118,13 +188,14 @@ public class InstanceList extends ArrayList<Instance> {
 	}
 	
 	public double[][] getGradientModified(double[][] parameterMatrix) {
+		//return getGradientNoThread(parameterMatrix);
+		return getGradientThreaded(parameterMatrix);
+	}
+	
+	public double[][] getGradientNoThread(double[][] parameterMatrix) {
 		Timing timing = new Timing();
-		timing.start();
 		double[][] expParam = MathUtils.expArray(parameterMatrix);
-		System.out.println("Param Exp time : " + timing.stop());
-		
 		timing.start();
-		double[] numeratorCache = new double[parameterMatrix.length];
 		double gradient[][] = new double[parameterMatrix.length][parameterMatrix[0].length];
 		for (int n = 0; n < this.size(); n++) {
 			Instance instance = get(n);
@@ -134,6 +205,7 @@ public class InstanceList extends ArrayList<Instance> {
 					double[] conditionalVector = instance.getConditionalVector(t, state);
 					//create partition
 					double normalizer = 0.0;
+					double[] numeratorCache = new double[parameterMatrix.length];
 					for (int v = 0; v < parameterMatrix.length; v++) {
 						//double numerator = MathUtils.exp(MathUtils.dot(parameterMatrix[v], conditionalVector));
 						double numerator = MathUtils.expDot(expParam[v], conditionalVector);
@@ -160,11 +232,95 @@ public class InstanceList extends ArrayList<Instance> {
 		return gradient;
 	}
 	
+	public double[][] getGradientThreaded(double[][] parameterMatrix) {
+		Timing timing = new Timing();
+		double[][] expWeights = MathUtils.expArray(parameterMatrix);
+		timing.start();
+		double gradient[][] = new double[parameterMatrix.length][parameterMatrix[0].length];
+		
+		//start parallel processing
+		int divideSize = this.size() / Main.USE_THREAD_COUNT;
+		List<GradientWorker> threadList = new ArrayList<GradientWorker>();
+		int startIndex = 0;
+		int endIndex = divideSize;		
+		for(int i=0; i<Main.USE_THREAD_COUNT; i++) {
+			GradientWorker worker = new GradientWorker(this, startIndex, endIndex, expWeights);
+			threadList.add(worker);
+			worker.start();
+			startIndex = endIndex;
+			endIndex = endIndex + divideSize;			
+		}
+		//there might be some remaining
+		GradientWorker finalWorker = new GradientWorker(this, startIndex, this.size(), expWeights);
+		finalWorker.start();
+		threadList.add(finalWorker);
+		//start all threads and wait for them to complete
+		for(GradientWorker worker : threadList) {
+			try {
+				worker.join();
+			} catch (InterruptedException e) {				
+				e.printStackTrace();
+			}
+			MathUtils.addMatrix(gradient, worker.gradient);
+		}
+		System.out.println("Gradient computation time : " + timing.stop());		
+		return gradient;
+	}
+	
+	private class GradientWorker extends Thread{
+		public double[][] gradient;
+		final int startIndex;
+		final int endIndex;
+		final double[][] expWeights;
+		InstanceList instanceList;
+		
+		// [startIndex, endIndex) i.e. last index is not included
+		public GradientWorker(InstanceList instanceList, int startIndex, int endIndex, double[][] expWeights) {
+			this.startIndex = startIndex;
+			this.endIndex = endIndex;
+			this.expWeights = expWeights;
+			this.instanceList = instanceList;
+		}
+		
+		@Override
+		public void run() {
+			gradient = new double[expWeights.length][expWeights[0].length];
+			for(int n=startIndex; n<endIndex; n++) {
+				Instance instance = instanceList.get(n);
+				for (int t = 0; t < instance.T; t++) {
+					for (int state = 0; state < instance.model.nrStates; state++) {
+						double posteriorProb = instance.posteriors[t][state];
+						double[] conditionalVector = instance.getConditionalVector(t, state);
+						//create partition
+						double normalizer = 0.0;
+						double[] numeratorCache = new double[expWeights.length];
+						for (int v = 0; v < expWeights.length; v++) {
+							//double numerator = MathUtils.exp(MathUtils.dot(parameterMatrix[v], conditionalVector));
+							double numerator = MathUtils.expDot(expWeights[v], conditionalVector);
+							numeratorCache[v] = numerator;
+							normalizer += numerator;						
+						}
+						
+						for(int j=0; j<expWeights[0].length; j++) {
+							if(conditionalVector[j] != 0) {
+								gradient[instance.words[t][0]][j] += posteriorProb;
+								for(int v=0; v<expWeights.length; v++) {
+									double numerator = numeratorCache[v];
+									gradient[v][j] -= posteriorProb * numerator / normalizer;
+								}
+							}
+						}
+					}
+				}
+			}
+		}		
+	}
+	
+	
 	public double[][] getGradientApprox(double[][] parameterMatrix) {
 		Timing timing = new Timing();
 		timing.start();
 
-		timing.start();
 		double gradient[][] = new double[parameterMatrix.length][parameterMatrix[0].length];
 		for (int n = 0; n < this.size(); n++) {
 			Instance instance = get(n);

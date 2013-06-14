@@ -82,6 +82,23 @@ public class MathUtils {
 		return result;
 	}
 	
+	/*
+	 * adds the second matrix's entries to the first
+	 */
+	public static void addMatrix(double[][] target, double[][] source) {
+		int m = target.length;
+		int n = target[0].length;
+		
+		if(source.length != m || source[0].length != n) {
+			throw new RuntimeException("Matrix dimensions mismatch");
+		}
+		for(int i=0; i<m; i++) {
+			for(int j=0; j<n; j++) {
+				target[i][j] += source[i][j];
+			}
+		}
+	}
+	
 	public static void main(String[] args) {
 		double a = 0.12;
 		double b = -20;

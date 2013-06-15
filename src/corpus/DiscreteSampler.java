@@ -7,10 +7,12 @@ import java.util.Random;
 
 import javax.management.RuntimeErrorException;
 
+import program.Main;
+
 import util.MyArray;
 
 public class DiscreteSampler {
-	Random random = new Random(37);
+	Random random = new Random(Main.seed);
 	List<Double> distribution;
 	
 	int[] alias; //stores the alias (other index whose mass is stacked at this position)

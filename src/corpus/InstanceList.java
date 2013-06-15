@@ -164,21 +164,16 @@ public class InstanceList extends ArrayList<Instance> {
 						
 						double[] sampleNumerator = new double[parameterMatrix.length];
 						double Z = 0;
-						HashSet<Integer> sampled = new HashSet<Integer>();
-						for(int i=0; i<Corpus.VOCAB_SAMPLE_SIZE; i++) {
-							int randomV = Corpus.getRandomVocabItem();							
-							sampled.add(randomV);
+						HashSet<Integer> sampled = Corpus.getRandomVocabSet();
+						int currentTokenIndex = instance.words[t][0];
+						sampled.add(currentTokenIndex);
+						for(Integer randomV : sampled) {
 							double numerator = Math.exp(MathUtils.dot(parameterMatrix[randomV], conditionalVector));
 							Z += numerator;
-							sampleNumerator[randomV] = numerator; //don't add even if repeated sampling, will affect gradient below							
+							sampleNumerator[randomV] = numerator;
 						}
-						int currentTokenIndex = instance.words[t][0];
-						double tokenNumerator = Math.exp(MathUtils.dot(parameterMatrix[currentTokenIndex], conditionalVector));
-						sampled.add(currentTokenIndex);
-						sampleNumerator[currentTokenIndex] = tokenNumerator; //again, don't add
-						Z += tokenNumerator;
 						//rescale Z
-						Z = Z * instance.model.corpus.corpusVocab.get(0).vocabSize / (Corpus.VOCAB_SAMPLE_SIZE + 1); //+1 for explicitly adding numerator of token at current position
+						Z = Z * instance.model.corpus.corpusVocab.get(0).vocabSize / (Corpus.VOCAB_SAMPLE_SIZE);
 						for(Integer v : sampled) {
 							gradient[v][j] -= posteriorProb * sampleNumerator[v] / Z * conditionalVector[j];
 						}							

@@ -278,15 +278,14 @@ public class Instance {
 	public double getApproxNormalizer(int position, int state, double[][] weights) {
 		double Z = 0;
 		double[] conditionalVector = getConditionalVector(position, state);
-		for(int i=0; i<Corpus.VOCAB_SAMPLE_SIZE; i++) {
-			int randomV = Corpus.getRandomVocabItem();
+		HashSet<Integer> sampled = Corpus.getRandomVocabSet();
+		int currentTokenIndex = words[position][0];
+		sampled.add(currentTokenIndex);
+		for(int randomV : sampled) {
 			double numerator = Math.exp(MathUtils.dot(weights[randomV], conditionalVector));
 			Z += numerator;
 		}
-		//at the token at this position too so that the probability is within [0,1]
-		double tokenNumerator = Math.exp(MathUtils.dot(weights[words[position][0]], conditionalVector));
-		Z += tokenNumerator;
-		Z = Z * model.corpus.corpusVocab.get(0).vocabSize / (Corpus.VOCAB_SAMPLE_SIZE + 1);
+		Z = Z * model.corpus.corpusVocab.get(0).vocabSize / (Corpus.VOCAB_SAMPLE_SIZE);
 		return Z;
 	}
 	

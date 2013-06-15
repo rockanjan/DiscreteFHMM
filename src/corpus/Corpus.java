@@ -8,9 +8,14 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+
+import program.Main;
+
+import cc.mallet.grmm.learning.ACRF.UnigramTemplate;
 
 import util.SmoothWord;
 
@@ -31,11 +36,11 @@ public class Corpus {
 	
 	public int totalWords; 
 	
-	static Random random = new Random(37);
+	static Random random = new Random(Main.seed);
 	
 	public List<Double> unigramProbability;
 	static DiscreteSampler vocabSampler;
-	public static int VOCAB_SAMPLE_SIZE = 10000;
+	public static int VOCAB_SAMPLE_SIZE = 5000;
 
 	public Corpus(String delimiter, int vocabThreshold) {
 		this.delimiter = delimiter;
@@ -118,8 +123,17 @@ public class Corpus {
 	}
 	
 	public static int getRandomVocabItem() {
-		//return vocabSampler.sample();
-		return random.nextInt(corpusVocab.get(0).vocabSize);
+		return vocabSampler.sample();
+		//return random.nextInt(corpusVocab.get(0).vocabSize);
+	}
+	
+	public static HashSet<Integer> getRandomVocabSet() {
+		HashSet<Integer> vocabSet = new HashSet<Integer>();
+		//number of vocab items will be <= VOCAB_SAMPLE_SIZE
+		for(int i=0; i<VOCAB_SAMPLE_SIZE; i++) {
+			vocabSet.add(vocabSampler.sample());
+		}
+		return vocabSet;
 	}
 	
 	public void computeUnigramProbabilities() {
@@ -292,12 +306,28 @@ public class Corpus {
 		return result;
 	}	
 	
+	public void displayUnigramProb() {
+		for(int i=0; i<unigramProbability.size(); i++) {
+			System.out.format("%s --> %.4f\n", corpusVocab.get(0).indexToWord.get(i), unigramProbability.get(i));
+		}
+	}
+	
 	public static void main(String[] args) throws IOException {
 		String inFile = "/home/anjan/workspace/HMM/data/simple_corpus_sorted.txt";
 		int vocabThreshold = 1;
 		Corpus c = new Corpus("\\s+", vocabThreshold);
 		Corpus.oneTimeStepObsSize = Corpus.findOneTimeStepObsSize(inFile);
 		c.readVocab(inFile);
+		c.corpusVocab.get(0).debug();
+		c.computeUnigramProbabilities();
+		c.setupSampler();
+		c.displayUnigramProb();
+		
+		System.out.println();
+		for(int i=0; i<10; i++) {
+			System.out.println(c.corpusVocab.get(0).indexToWord.get(c.getRandomVocabItem()));
+		}
+		
 		c.saveVocabFile("/tmp/vocab.txt");
 		c.corpusVocab.get(0).readDictionary("/tmp/vocab.txt.0");
 		c.readTest(inFile);

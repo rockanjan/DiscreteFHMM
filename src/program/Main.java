@@ -23,7 +23,7 @@ public class Main {
 	/** user parameters **/
 	static String delimiter = "\\+";
 	static int numIter;
-	static long seed = 37;
+	public static long seed = 4321;
 	
 	static String trainFile;
 	static String vocabFile;
@@ -63,7 +63,7 @@ public class Main {
 		
 	
 		for(int currentRecursion=0; currentRecursion<recursionSize; currentRecursion++) {
-			sampleSizeEStep = 10000; //total sentences in RCV1 is 2.2M 
+			sampleSizeEStep = 10000; //total sentences in combined train,test,muc7 is 24.4K
 			sampleSizeMStep = 250;
 			System.out.println("RECURSION: " + currentRecursion);
 			System.out.println("-----------------");

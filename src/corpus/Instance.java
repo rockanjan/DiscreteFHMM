@@ -249,7 +249,6 @@ public class Instance {
 	public double getApproxNormalizer(int position, int state, double[][] weights) {
 		double Z = 0;
 		double[] conditionalVector = getConditionalVector(position, state);
-		
 		TreeSet<Integer> randomVocabSet = Corpus.getRandomVocabSet();
 		int currentToken = words[position][0];
 		randomVocabSet.add(currentToken);

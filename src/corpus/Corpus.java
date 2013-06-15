@@ -14,6 +14,10 @@ import java.util.Map;
 import java.util.Random;
 import java.util.TreeSet;
 
+import program.Main;
+
+import cc.mallet.grmm.learning.ACRF.UnigramTemplate;
+
 import util.SmoothWord;
 
 public class Corpus {
@@ -33,7 +37,7 @@ public class Corpus {
 	
 	public int totalWords; 
 	
-	static Random random = new Random(37);
+	static Random random = new Random(Main.seed);
 	
 	public List<Double> unigramProbability;
 	static DiscreteSampler vocabSampler;
@@ -305,12 +309,28 @@ public class Corpus {
 		return result;
 	}	
 	
+	public void displayUnigramProb() {
+		for(int i=0; i<unigramProbability.size(); i++) {
+			System.out.format("%s --> %.4f\n", corpusVocab.get(0).indexToWord.get(i), unigramProbability.get(i));
+		}
+	}
+	
 	public static void main(String[] args) throws IOException {
 		String inFile = "/home/anjan/workspace/HMM/data/simple_corpus_sorted.txt";
 		int vocabThreshold = 1;
 		Corpus c = new Corpus("\\s+", vocabThreshold);
 		Corpus.oneTimeStepObsSize = Corpus.findOneTimeStepObsSize(inFile);
 		c.readVocab(inFile);
+		c.corpusVocab.get(0).debug();
+		c.computeUnigramProbabilities();
+		c.setupSampler();
+		c.displayUnigramProb();
+		
+		System.out.println();
+		for(int i=0; i<10; i++) {
+			System.out.println(c.corpusVocab.get(0).indexToWord.get(c.getRandomVocabItem()));
+		}
+		
 		c.saveVocabFile("/tmp/vocab.txt");
 		c.corpusVocab.get(0).readDictionary("/tmp/vocab.txt.0");
 		c.readTest(inFile);

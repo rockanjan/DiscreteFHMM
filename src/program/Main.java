@@ -20,7 +20,7 @@ public class Main {
 	/** user parameters **/
 	static String delimiter = "\\+";
 	static int numIter;
-	static long seed = 37;
+	public static long seed = 4321;
 	
 	static String trainFile;
 	static String vocabFile;

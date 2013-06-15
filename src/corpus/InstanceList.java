@@ -333,6 +333,7 @@ public class InstanceList extends ArrayList<Instance> {
 						
 						double[] sampleNumerator = new double[parameterMatrix.length];
 						double Z = 0;
+
 						TreeSet<Integer> sampled = Corpus.getRandomVocabSet();
 						int currentTokenIndex = instance.words[t][0];
 						sampled.add(currentTokenIndex);

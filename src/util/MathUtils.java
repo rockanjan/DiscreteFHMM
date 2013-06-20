@@ -99,6 +99,22 @@ public class MathUtils {
 		}
 	}
 	
+	public static double matrixDifferenceNorm(double[][] A, double[][] B) {
+		int m = A.length;
+		int n = A[0].length;
+		if(B.length != m || B[0].length != n) {
+			throw new RuntimeException("Matrix dimensions mismatch");
+		}
+		
+		double differenceNorm = 0;
+		for(int i=0; i<m; i++) {
+			for(int j=0; j<n; j++) {
+				double diff = A[i][j] - B[i][j];
+				differenceNorm += diff * diff;
+			}
+		}
+		return differenceNorm;
+	}
 	public static void main(String[] args) {
 		double a = 0.12;
 		double b = -20;

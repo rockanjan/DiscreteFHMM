@@ -36,7 +36,7 @@ public class EM {
 						// best
 	int iterCount = 0;
 	
-	int mStepIter = 3; //initial
+	int mStepIter = 5; //initial
 
 	public EM(int numIter, Corpus c, HMMBase model) {
 		this.numIter = numIter;
@@ -62,9 +62,19 @@ public class EM {
 		// MyArray.printTable(expectedCounts.transition.count);
 		// MyArray.printTable(expectedCounts.observation.count);
 		model.updateFromCounts(expectedCounts);
-
 		System.out.println("Mstep #tokens : " + c.trainInstanceMStepSampleList.numberOfTokens);
 		// also update the log-linear model weights
+		
+		trainPerceptron();
+		//trainLogLinearOptimization();	
+	}
+	
+	public void trainPerceptron() {
+		PerceptronTrainer pt = new PerceptronTrainer(c);
+		pt.train(model.param.weights.weights, 20);
+	}
+	
+	public void trainLogLinearOptimization() {
 		// maximize CLL of the data
 		double[] initParams = MyArray.createVector(model.param.weights.weights);
 		model.param.weights.weights = null;
@@ -79,7 +89,8 @@ public class EM {
 			System.out.println("optimization threw OptimizationException");
 		}
 		System.out.println("Gradient call count: " + optimizable.gradientCallCount);
-		model.param.weights.weights = optimizable.getParameterMatrix();		
+		model.param.weights.weights = optimizable.getParameterMatrix();
+		
 	}
 
 	public void start() {
@@ -103,9 +114,15 @@ public class EM {
 			if (isConverged()) {
 				break;
 			}
+			/*
 			if(iterCount > 2) {
-				mStepIter = 5;
+				mStepIter = 5;			
 			}
+			
+			if(iterCount > 30 && iterCount % 2 == 0) {
+				mStepIter += 1;
+			}
+			*/
 			// m-step
 			c.generateRandomTrainingMStepSample(Main.sampleSizeMStep);
 			mStep();
@@ -128,9 +145,11 @@ public class EM {
 
 		if (LL < bestOldLL) {
 			//increase the number of examples in M-step
+			/*
 			if(Main.sampleSizeMStep < 5000) {
 				Main.sampleSizeMStep += 250;
 			}
+			*/
 			if (lowerCount == 0) {
 				// cache the best model so far
 				System.out.println("Caching the best model so far");

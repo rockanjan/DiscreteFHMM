@@ -1,6 +1,7 @@
 package corpus;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.TreeSet;
 
@@ -197,15 +198,23 @@ public class InstanceList extends ArrayList<Instance> {
 		double[][] expParam = MathUtils.expArray(parameterMatrix);
 		timing.start();
 		double gradient[][] = new double[parameterMatrix.length][parameterMatrix[0].length];
+		long totalPartitionTime = 0;
+		long totalGradientTime = 0;
+		long totalConditionalTime = 0;
 		for (int n = 0; n < this.size(); n++) {
 			Instance instance = get(n);
 			for (int t = 0; t < instance.T; t++) {
 				for (int state = 0; state < instance.model.nrStates; state++) {
 					double posteriorProb = instance.posteriors[t][state];
+					Timing timing2 = new Timing();
+					timing2.start();
 					double[] conditionalVector = instance.getConditionalVector(t, state);
+					totalConditionalTime += timing2.stopGetLong();
 					//create partition
 					double normalizer = 0.0;
 					double[] numeratorCache = new double[parameterMatrix.length];
+					
+					timing2.start();
 					for (int v = 0; v < parameterMatrix.length; v++) {
 						//double numerator = MathUtils.exp(MathUtils.dot(parameterMatrix[v], conditionalVector));
 						double numerator = MathUtils.expDot(expParam[v], conditionalVector);
@@ -213,11 +222,13 @@ public class InstanceList extends ArrayList<Instance> {
 						normalizer += numerator;						
 					}
 					
+					totalPartitionTime += timing2.stopGetLong();
+					timing2.start();
 					for(int j=0; j<parameterMatrix[0].length; j++) {
 						if(conditionalVector[j] != 0) {
 							//this means it's one
 							//gradient[instance.words[t][0]][j] += posteriorProb * conditionalVector[j];
-							gradient[instance.words[t][0]][j] += posteriorProb;
+							gradient[instance.words[t][0]][j] += posteriorProb;							
 							for(int v=0; v<parameterMatrix.length; v++) {
 								double numerator = numeratorCache[v];
 								//gradient[v][j] -= posteriorProb * numerator / normalizer * conditionalVector[j];
@@ -225,9 +236,13 @@ public class InstanceList extends ArrayList<Instance> {
 							}
 						}
 					}
+					totalGradientTime += timing2.stopGetLong();
 				}
 			}
 		}
+		System.out.println("Total conditional time : " + totalConditionalTime);
+		System.out.println("Total partition time : " + totalPartitionTime);
+		System.out.println("Total gradient update time : " + totalGradientTime);
 		System.out.println("Gradient computation time : " + timing.stop());		
 		return gradient;
 	}

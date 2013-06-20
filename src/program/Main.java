@@ -3,8 +3,12 @@ package program;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.Date;
 import java.util.Random;
+
+import util.MathUtils;
 import util.MyArray;
+import util.Timing;
 import model.HMMBase;
 import model.HMMNoFinalStateLog;
 import model.inference.Decoder;
@@ -15,7 +19,7 @@ import corpus.InstanceList;
 
 public class Main {
 	
-	public final static int USE_THREAD_COUNT = 7;
+	public final static int USE_THREAD_COUNT = 14;
 	
 	/** user parameters **/
 	static String delimiter = "\\+";
@@ -34,7 +38,7 @@ public class Main {
 	
 	static int oneTimeStepObsSize; //number of elements in observation e.g. word|hmm1|hmm2  has 3
 	
-	static int vocabThreshold = 2; //only above this included
+	static int vocabThreshold = 1; //only above this included*******
 	static int recursionSize = 100;
 	static int numStates = 2;
 	/** user parameters end **/
@@ -46,7 +50,7 @@ public class Main {
 	
 	public static void train() throws IOException {
 		outFolderPrefix = "out/";
-		numIter = 40;
+		numIter = 50;
 		String trainFileBase;
 		String testFileBase;
 		trainFileBase = "out/decoded/combined.txt.SPL";
@@ -60,9 +64,9 @@ public class Main {
 		double[][] previousRecursionWeights = null;
 		
 	
-		for(int currentRecursion=0; currentRecursion<recursionSize; currentRecursion++) {
-			sampleSizeEStep = 10000; //total sentences in RCV1 is 1.3M 
-			sampleSizeMStep = 50;
+		for(int currentRecursion=24; currentRecursion<recursionSize; currentRecursion++) {
+			sampleSizeEStep = 1000; //total sentences in RCV1 is 1.3M 
+			sampleSizeMStep = 500;
 			System.out.println("RECURSION: " + currentRecursion);
 			System.out.println("-----------------");
 			if(currentRecursion == 0) {
@@ -90,6 +94,7 @@ public class Main {
 			model.initializeRandom(random);
 			model.computePreviousTransitions();
 			model.initializeZerosToBest();
+			model.param.weights.initializeZeros();
 			//initialize weights with previous recursion weights
 			if(previousRecursionWeights != null) {
 				model.param.initializeWeightsFromPreviousRecursion(previousRecursionWeights);
@@ -125,6 +130,10 @@ public class Main {
 	// use exact observation probability (also in forwardBackward) for decoding 
 	public static void test(HMMBase model, InstanceList instanceList, String outFile) {
 		System.out.println("Decoding Data");
+		Timing decodeTiming = new Timing();
+		decodeTiming.start();
+		System.out.println("Decoding started on :" + new Date().toString());
+		model.param.expWeightsCache = MathUtils.expArray(model.param.weights.weights);
 		Decoder decoder = new Decoder(model);
 		try {
 			PrintWriter pw = new PrintWriter(new FileWriter(outFile));
@@ -167,6 +176,7 @@ public class Main {
 			e.printStackTrace();
 		}
 		System.out.println("Finished decoding");
+		System.out.println("Total decoding time : " + decodeTiming.stop());
 	}
 	
 	public static void testPosteriorDistribution(HMMBase model, InstanceList instanceList, String outFile) {

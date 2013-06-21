@@ -113,7 +113,15 @@ public class MathUtils {
 				differenceNorm += diff * diff;
 			}
 		}
-		return differenceNorm;
+		return Math.sqrt(differenceNorm);
+	}
+	
+	public static void matrixElementWiseMultiplication(double[][] A, double value) {
+		for(int i=0; i<A.length; i++) {
+			for(int j=0; j<A[0].length; j++) {
+				A[i][j] *= value;
+			}
+		}
 	}
 	public static void main(String[] args) {
 		double a = 0.12;

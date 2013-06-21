@@ -11,7 +11,7 @@ import model.HMMNoFinalStateLog;
 import model.HMMType;
 import model.param.HMMParamNoFinalStateLog;
 import model.train.EM;
-import model.train.LogLinearWeightsOptimizable;
+import model.train.CLLTrainer;
 import cc.mallet.optimize.LimitedMemoryBFGS;
 import cc.mallet.optimize.OptimizationException;
 import cc.mallet.optimize.Optimizer;
@@ -58,7 +58,7 @@ public class TestGradient {
 		model.initializeZerosToBest();
 		
 		double[] initParams = MyArray.createVector(model.param.weights.weights);
-		LogLinearWeightsOptimizable optimizable = new LogLinearWeightsOptimizable(initParams, corpus);
+		CLLTrainer optimizable = new CLLTrainer(initParams, corpus);
 		
 		HMMParamNoFinalStateLog expectedCounts = new HMMParamNoFinalStateLog(model);
 		expectedCounts.initializeZeros();

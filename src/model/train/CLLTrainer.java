@@ -7,7 +7,7 @@ import cc.mallet.optimize.LimitedMemoryBFGS;
 import cc.mallet.optimize.Optimizable;
 import cc.mallet.optimize.Optimizer;
 
-public class LogLinearWeightsOptimizable implements Optimizable.ByGradientValue{
+public class CLLTrainer implements Optimizable.ByGradientValue{
 	
 	double[] parameters;
 	double latestValue = 0.0;
@@ -17,7 +17,7 @@ public class LogLinearWeightsOptimizable implements Optimizable.ByGradientValue{
 	
 	double c2 = 0.1; //regularizer
 	
-	public LogLinearWeightsOptimizable(double[] initParams, Corpus corpus) {
+	public CLLTrainer(double[] initParams, Corpus corpus) {
 		this.corpus = corpus;
 		parameters = new double[initParams.length];
 		for(int i=0; i<initParams.length; i++) {

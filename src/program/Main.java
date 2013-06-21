@@ -12,7 +12,10 @@ import util.Timing;
 import model.HMMBase;
 import model.HMMNoFinalStateLog;
 import model.inference.Decoder;
+import model.train.AveragedPerceptronTrainerViterbi;
 import model.train.EM;
+import model.train.PerceptronTrainer;
+import model.train.SgdTrainer;
 import corpus.Corpus;
 import corpus.Instance;
 import corpus.InstanceList;
@@ -50,9 +53,10 @@ public class Main {
 	
 	public static void train() throws IOException {
 		outFolderPrefix = "out/";
-		numIter = 50;
+		numIter = 30;
 		String trainFileBase;
 		String testFileBase;
+		//trainFileBase = "out/decoded/combined.txt.SPL.2000";
 		trainFileBase = "out/decoded/combined.txt.SPL";
 		//trainFileBase = "out/decoded/rcv1.txt.SPL";
 		
@@ -63,49 +67,63 @@ public class Main {
 		
 		double[][] previousRecursionWeights = null;
 		
-	
-		for(int currentRecursion=24; currentRecursion<recursionSize; currentRecursion++) {
-			sampleSizeEStep = 1000; //total sentences in RCV1 is 1.3M 
-			sampleSizeMStep = 500;
+		//double[] gridSearch = {0.001, 0.01, 0.1, 1}; 
+		double[] gridSearch = {0.1};
+		
+		for(int currentRecursion=25; currentRecursion<recursionSize; currentRecursion++) {
 			System.out.println("RECURSION: " + currentRecursion);
-			System.out.println("-----------------");
-			if(currentRecursion == 0) {
-				trainFile = trainFileBase;
-				testFile = testFileBase;
-			} else {
-				trainFile = trainFileBase + "." + currentRecursion;
-				testFile = testFileBase + "." + currentRecursion;
+			for(double alpha : gridSearch) {
+				PerceptronTrainer.adaptiveStep = alpha;
+				AveragedPerceptronTrainerViterbi.adaptiveStep = alpha;
+				SgdTrainer.adaptiveStep = alpha;
+				
+				System.out.println("Adaptive Size : " + AveragedPerceptronTrainerViterbi.adaptiveStep);
+				//System.out.println("Adaptive Size : " + PerceptronTrainer.adaptiveStep);
+				//System.out.println("Adaptive Size : " + SgdTrainer.adaptiveStep);
+				sampleSizeEStep = 10000; //total sentences in RCV1 is 1.3M 
+				sampleSizeMStep = 500;
+				
+				System.out.println("-----------------");
+				if(currentRecursion == 0) {
+					trainFile = trainFileBase;
+					testFile = testFileBase;
+				} else {
+					trainFile = trainFileBase + "." + currentRecursion;
+					testFile = testFileBase + "." + currentRecursion;
+				}
+				
+				vocabFile = trainFile;
+				String outFileTrain = trainFileBase + "." + (currentRecursion+1);
+				String outFile = testFileBase + "." + (currentRecursion+1);
+				printParams();
+				corpus = new Corpus("\\s+", vocabThreshold);
+				Corpus.oneTimeStepObsSize = Corpus.findOneTimeStepObsSize(vocabFile);
+				//TRAIN
+				corpus.readVocab(vocabFile);
+				//corpus.setupSampler();
+				corpus.readTrain(trainFile);
+				//corpus.readTest(testFile);
+				model = new HMMNoFinalStateLog(numStates, corpus);
+				//model = new HMMNoFinalState(numStates, corpus);
+				Random random = new Random(seed);
+				model.initializeRandom(random);
+				model.computePreviousTransitions();
+				model.initializeZerosToBest();
+				model.param.weights.initializeZeros();
+				//initialize weights with previous recursion weights
+				/*
+				if(previousRecursionWeights != null) {
+					model.param.initializeWeightsFromPreviousRecursion(previousRecursionWeights);
+				}
+				*/
+				EM em = new EM(numIter, corpus, model);
+				em.start();
+				model.saveModel(currentRecursion);
+				//store weights to assign for the next recursion
+				previousRecursionWeights = MyArray.getCloneOfMatrix(model.param.weights.weights);
+				//test(model, corpus.testInstanceList, outFile);	
+				test(model, corpus.trainInstanceList, outFileTrain);
 			}
-			
-			vocabFile = trainFile;
-			String outFileTrain = trainFileBase + "." + (currentRecursion+1);
-			String outFile = testFileBase + "." + (currentRecursion+1);
-			printParams();
-			corpus = new Corpus("\\s+", vocabThreshold);
-			Corpus.oneTimeStepObsSize = Corpus.findOneTimeStepObsSize(vocabFile);
-			//TRAIN
-			corpus.readVocab(vocabFile);
-			//corpus.setupSampler();
-			corpus.readTrain(trainFile);
-			//corpus.readTest(testFile);
-			model = new HMMNoFinalStateLog(numStates, corpus);
-			//model = new HMMNoFinalState(numStates, corpus);
-			Random random = new Random(seed);
-			model.initializeRandom(random);
-			model.computePreviousTransitions();
-			model.initializeZerosToBest();
-			model.param.weights.initializeZeros();
-			//initialize weights with previous recursion weights
-			if(previousRecursionWeights != null) {
-				model.param.initializeWeightsFromPreviousRecursion(previousRecursionWeights);
-			}
-			EM em = new EM(numIter, corpus, model);
-			em.start();
-			model.saveModel(currentRecursion);
-			//store weights to assign for the next recursion
-			previousRecursionWeights = MyArray.getCloneOfMatrix(model.param.weights.weights);
-			//test(model, corpus.testInstanceList, outFile);	
-			test(model, corpus.trainInstanceList, outFileTrain);
 		}	
 	}
 	

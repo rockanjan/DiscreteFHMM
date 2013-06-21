@@ -11,6 +11,7 @@ import model.param.HMMParamFinalState;
 import model.param.HMMParamNoFinalState;
 import model.param.HMMParamNoFinalStateLog;
 
+import util.MathUtils;
 import util.MyArray;
 import util.Stats;
 import util.Timing;
@@ -36,7 +37,9 @@ public class EM {
 						// best
 	int iterCount = 0;
 	
-	int mStepIter = 5; //initial
+	int mStepIter = 20; //initial
+	
+	
 
 	public EM(int numIter, Corpus c, HMMBase model) {
 		this.numIter = numIter;
@@ -65,20 +68,45 @@ public class EM {
 		System.out.println("Mstep #tokens : " + c.trainInstanceMStepSampleList.numberOfTokens);
 		// also update the log-linear model weights
 		
-		trainPerceptron();
-		//trainLogLinearOptimization();	
+		//trainPerceptron();
+		//trainLogLinearOptimization();
+		trainAveragedPerceptron();
+		//trainSgd();
+	}
+	
+	public void trainSgd() {
+		SgdTrainer sgd = new SgdTrainer(c);
+		sgd.train(model.param.weights.weights, mStepIter);
+	}
+	
+	public void trainAveragedPerceptron() {
+		//first do the viterbi decoding
+		Timing decodeTiming = new Timing();
+		decodeTiming.start();
+		model.param.expWeightsCache = MathUtils.expArray(model.param.weights.weights);
+		for(int n=0; n<c.trainInstanceMStepSampleList.size(); n++) {
+			Instance instance = c.trainInstanceMStepSampleList.get(n);
+			//instance.observationCache = null;
+			//instance.doInference(model);
+			instance.createDecodedViterbiCache();
+		}
+		System.out.println("M-step Decode time : " + decodeTiming.stop());
+		AveragedPerceptronTrainerViterbi pt = new AveragedPerceptronTrainerViterbi(c);
+		pt.train(model.param.weights.weights, mStepIter);
+		model.param.expWeightsCache = null;
 	}
 	
 	public void trainPerceptron() {
 		PerceptronTrainer pt = new PerceptronTrainer(c);
-		pt.train(model.param.weights.weights, 20);
+		pt.train(model.param.weights.weights, mStepIter);
+				
 	}
 	
 	public void trainLogLinearOptimization() {
 		// maximize CLL of the data
 		double[] initParams = MyArray.createVector(model.param.weights.weights);
 		model.param.weights.weights = null;
-		LogLinearWeightsOptimizable optimizable = new LogLinearWeightsOptimizable(initParams, c);
+		CLLTrainer optimizable = new CLLTrainer(initParams, c);
 		Optimizer optimizer = new LimitedMemoryBFGS(optimizable);
 		boolean converged = false;
 		try {

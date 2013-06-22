@@ -11,7 +11,7 @@ import corpus.InstanceList;
 public class AveragedPerceptronTrainerViterbi{
 	Corpus corpus;
 	public static double adaptiveStep = 1; //default
-	double eta = 100;
+	double eta = 10;
 	double t0 = 100;
 	double precision = 1e-2;
 	public AveragedPerceptronTrainerViterbi(Corpus corpus) {
@@ -58,7 +58,7 @@ public class AveragedPerceptronTrainerViterbi{
 			double diffNorm = MathUtils.matrixDifferenceNorm(oldWeights, parameterMatrix);
 			//System.out.println("Diff: " + diffNorm);
 		}
-		int N = instanceList.size();
+		int N = instanceList.numberOfTokens;
 		double total = 1.0 * maxIter * N;
 		MathUtils.matrixElementWiseMultiplication(averagedWeight, 1.0/total);
 		System.out.println("Distance Norm : " + 

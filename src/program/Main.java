@@ -53,7 +53,7 @@ public class Main {
 	
 	public static void train() throws IOException {
 		outFolderPrefix = "out/";
-		numIter = 30;
+		numIter = 20;
 		String trainFileBase;
 		String testFileBase;
 		//trainFileBase = "out/decoded/combined.txt.SPL.2000";
@@ -67,10 +67,10 @@ public class Main {
 		
 		double[][] previousRecursionWeights = null;
 		
-		//double[] gridSearch = {0.001, 0.01, 0.1, 1}; 
-		double[] gridSearch = {0.1};
+		double[] gridSearch = {0.001, 0.01, 0.1, 1}; 
+		//double[] gridSearch = {1};
 		
-		for(int currentRecursion=25; currentRecursion<recursionSize; currentRecursion++) {
+		for(int currentRecursion=14; currentRecursion<recursionSize; currentRecursion++) {
 			System.out.println("RECURSION: " + currentRecursion);
 			for(double alpha : gridSearch) {
 				PerceptronTrainer.adaptiveStep = alpha;

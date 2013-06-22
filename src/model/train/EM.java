@@ -61,17 +61,12 @@ public class EM {
 	}
 
 	public void mStep() {
-		// MyArray.printTable(expectedCounts.initial.count);
-		// MyArray.printTable(expectedCounts.transition.count);
-		// MyArray.printTable(expectedCounts.observation.count);
-		model.updateFromCounts(expectedCounts);
 		System.out.println("Mstep #tokens : " + c.trainInstanceMStepSampleList.numberOfTokens);
-		// also update the log-linear model weights
-		
 		//trainPerceptron();
 		//trainLogLinearOptimization();
 		trainAveragedPerceptron();
 		//trainSgd();
+		model.updateFromCounts(expectedCounts);
 	}
 	
 	public void trainSgd() {

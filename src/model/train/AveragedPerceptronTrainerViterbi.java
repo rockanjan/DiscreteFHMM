@@ -30,28 +30,25 @@ public class AveragedPerceptronTrainerViterbi{
 			for (int n = 0; n < instanceList.size(); n++) {
 				Instance instance = instanceList.get(n);
 				for (int t = 0; t < instance.T; t++) {
-					for (int state = 0; state < instance.model.nrStates; state++) {
-						//double posteriorProb = instance.posteriors[t][state];
-						double[] conditionalVector = instance.getConditionalVectorUsingViterbiDecoded(t);
-						//perceptron training collins: max-margin
-						//find the argmax vocab predicted by the model
-						int maxIndex = -1;
-						double maxProb = -Double.MAX_VALUE;
-						for(int v = 0; v<parameterMatrix.length; v++) { //all vocabs
-							double prob = MathUtils.dot(conditionalVector, parameterMatrix[v]);
-							if(prob > maxProb) {
-								maxIndex = v;
-								maxProb = prob;
-							}
-						}
-						if(maxIndex != instance.words[t][0]) {
-							for(int j=0; j<conditionalVector.length; j++) {
-								parameterMatrix[instance.words[t][0]][j] += adaptiveStep * conditionalVector[j];
-								//incorrect word's feature value
-								parameterMatrix[maxIndex][j] -= adaptiveStep * conditionalVector[j];
-							}
+					double[] conditionalVector = instance.getConditionalVectorUsingViterbiDecoded(t);
+					//perceptron training collins: max-margin
+					//find the argmax vocab predicted by the model
+					int maxIndex = -1;
+					double maxProb = -Double.MAX_VALUE;
+					for(int v = 0; v<parameterMatrix.length; v++) { //all vocabs
+						double prob = MathUtils.dot(conditionalVector, parameterMatrix[v]);
+						if(prob > maxProb) {
+							maxIndex = v;
+							maxProb = prob;
 						}
 					}
+					if(maxIndex != instance.words[t][0]) {
+						for(int j=0; j<conditionalVector.length; j++) {
+							parameterMatrix[instance.words[t][0]][j] += adaptiveStep * conditionalVector[j];
+							//incorrect word's feature value
+							parameterMatrix[maxIndex][j] -= adaptiveStep * conditionalVector[j];
+						}
+					}				
 				}
 			}
 			MathUtils.addMatrix(averagedWeight, parameterMatrix);

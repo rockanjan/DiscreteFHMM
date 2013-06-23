@@ -14,7 +14,7 @@ import model.HMMNoFinalStateLog;
 import model.inference.Decoder;
 import model.train.AveragedPerceptronTrainerViterbi;
 import model.train.EM;
-import model.train.PerceptronTrainer;
+import model.train.AveragedPerceptronTrainerPosterior;
 import model.train.SgdTrainer;
 import corpus.Corpus;
 import corpus.Instance;
@@ -73,7 +73,7 @@ public class Main {
 		for(int currentRecursion=14; currentRecursion<recursionSize; currentRecursion++) {
 			System.out.println("RECURSION: " + currentRecursion);
 			for(double alpha : gridSearch) {
-				PerceptronTrainer.adaptiveStep = alpha;
+				AveragedPerceptronTrainerPosterior.adaptiveStep = alpha;
 				AveragedPerceptronTrainerViterbi.adaptiveStep = alpha;
 				SgdTrainer.adaptiveStep = alpha;
 				

@@ -7,19 +7,20 @@ import corpus.Corpus;
 import corpus.Instance;
 import corpus.InstanceList;
 
-public class PerceptronTrainer {
+public class AveragedPerceptronTrainerPosterior {
 	Corpus corpus;
 	public static double adaptiveStep;
 	double eta = 10;
 	double t0 = 100;
 	double precision = 1e-2;
-	public PerceptronTrainer(Corpus corpus) {
+	public AveragedPerceptronTrainerPosterior(Corpus corpus) {
 		this.corpus = corpus;
 	}
 
 	public void train(double[][] parameterMatrix, int maxIter) {
 		Timing timing = new Timing();
-		InstanceList instanceList = corpus.trainInstanceMStepSampleList;
+		InstanceList instanceList = corpus.trainInstanceMStepSampleList;		
+		double[][] averagedWeight = new double[parameterMatrix.length][parameterMatrix[0].length];
 		for(int i=0; i<maxIter; i++) {
 			double[][] oldWeights = MyArray.getCloneOfMatrix(parameterMatrix);
 			for (int n = 0; n < instanceList.size(); n++) {
@@ -48,6 +49,7 @@ public class PerceptronTrainer {
 						}
 					}
 				}
+				MathUtils.addMatrix(averagedWeight, parameterMatrix);
 			}
 			double differenceNorm = MathUtils.matrixDifferenceNorm(oldWeights, parameterMatrix);
 			//System.out.println("Diff: " + differenceNorm);
@@ -58,6 +60,12 @@ public class PerceptronTrainer {
 			}
 			*/
 		}
+		int N = instanceList.numberOfTokens;
+		double total = 1.0 * maxIter * N;
+		MathUtils.matrixElementWiseMultiplication(averagedWeight, 1.0/total);
+		System.out.println("Distance Norm : " + 
+				MathUtils.matrixDifferenceNorm(parameterMatrix, averagedWeight));
+		parameterMatrix = averagedWeight;
 		System.out.println("Perceptron training time: " + timing.stop());
 	}	
 }

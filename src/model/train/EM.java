@@ -92,7 +92,7 @@ public class EM {
 	}
 	
 	public void trainPerceptron() {
-		PerceptronTrainer pt = new PerceptronTrainer(c);
+		AveragedPerceptronTrainerPosterior pt = new AveragedPerceptronTrainerPosterior(c);
 		pt.train(model.param.weights.weights, mStepIter);
 				
 	}

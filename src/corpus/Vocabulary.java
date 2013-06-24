@@ -69,7 +69,7 @@ public class Vocabulary {
 		if(wordToIndex.containsKey(UNKNOWN)) {
 			indexToFrequencyNew.put(0, indexToFrequency.get(0)); //TODO: decide if this matters
 		} else {
-			indexToFrequencyNew.put(0, 0); //TODO: decide if this matters
+			indexToFrequencyNew.put(0, 0);
 		}
 		indexToWordNew.add(UNKNOWN);
 		

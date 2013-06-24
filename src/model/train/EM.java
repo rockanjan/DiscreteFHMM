@@ -36,11 +36,8 @@ public class EM {
 	int lowerCount = 0; // number of times LL could not increase from previous
 						// best
 	int iterCount = 0;
-	
 	int mStepIter = 5; //initial
 	
-	
-
 	public EM(int numIter, Corpus c, HMMBase model) {
 		this.numIter = numIter;
 		this.c = c;
@@ -62,9 +59,9 @@ public class EM {
 
 	public void mStep() {
 		System.out.println("Mstep #tokens : " + c.trainInstanceMStepSampleList.numberOfTokens);
-		//trainPerceptron();
 		trainLBFGS();
-		//trainAveragedPerceptron();
+		//trainAveragedPerceptronPosterior();
+		//trainAveragedPerceptronViterbi();
 		//trainSgd();
 		model.updateFromCounts(expectedCounts);
 	}
@@ -74,15 +71,13 @@ public class EM {
 		sgd.train(model.param.weights.weights, mStepIter);
 	}
 	
-	public void trainAveragedPerceptron() {
+	public void trainAveragedPerceptronViterbi() {
 		//first do the viterbi decoding
 		Timing decodeTiming = new Timing();
 		decodeTiming.start();
 		model.param.expWeightsCache = MathUtils.expArray(model.param.weights.weights);
 		for(int n=0; n<c.trainInstanceMStepSampleList.size(); n++) {
 			Instance instance = c.trainInstanceMStepSampleList.get(n);
-			//instance.observationCache = null;
-			//instance.doInference(model);
 			instance.createDecodedViterbiCache();
 		}
 		System.out.println("M-step Decode time : " + decodeTiming.stop());
@@ -91,7 +86,7 @@ public class EM {
 		model.param.expWeightsCache = null;
 	}
 	
-	public void trainPerceptron() {
+	public void trainAveragedPerceptronPosterior() {
 		AveragedPerceptronTrainerPosterior pt = new AveragedPerceptronTrainerPosterior(c);
 		pt.train(model.param.weights.weights, mStepIter);
 				
@@ -121,7 +116,6 @@ public class EM {
 		Timing totalEMTime = new Timing();
 		totalEMTime.start();
 		Timing eStepTime = new Timing();
-		//c.trainInstanceSampleList = c.trainInstanceList;
 		for (iterCount = 0; iterCount < numIter; iterCount++) {
 			Timing oneIterEmTime = new Timing();
 			//sample new train instances
@@ -148,7 +142,6 @@ public class EM {
 	}
 
 	public boolean isConverged() {
-		
 		double decreaseRatio = (LL - bestOldLL) / Math.abs(bestOldLL);
 		// System.out.println("Decrease Ratio: %.5f " + decreaseRatio);
 		if (precision > decreaseRatio && decreaseRatio > 0) {
@@ -156,10 +149,7 @@ public class EM {
 			model.saveModel(Main.currentRecursion);
 			return true;
 		}
-
 		if (LL < bestOldLL) {
-			//increase the number of examples in M-step
-			
 			if (lowerCount == 0) {
 				// cache the best model so far
 				System.out.println("Caching the best model so far");

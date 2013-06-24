@@ -25,7 +25,7 @@ public class SgdTrainer {
 		for(int i=0; i<maxIter; i++) {
 			double[][] oldWeights = MyArray.getCloneOfMatrix(parameterMatrix);
 			
-			double[][] gradient = instanceList.getGradientModified(parameterMatrix);
+			double[][] gradient = instanceList.getGradient(parameterMatrix);
 			MathUtils.matrixElementWiseMultiplication(gradient, adaptiveStep);
 			MathUtils.addMatrix(parameterMatrix, gradient);
 			System.out.println("CLL : " + instanceList.getConditionalLogLikelihoodUsingPosteriorDistribution(parameterMatrix));

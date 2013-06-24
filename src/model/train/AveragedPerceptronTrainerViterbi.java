@@ -21,7 +21,6 @@ public class AveragedPerceptronTrainerViterbi{
 	public void train(double[][] parameterMatrix, int maxIter) {
 		Timing timing = new Timing();
 		InstanceList instanceList = corpus.trainInstanceMStepSampleList;
-		
 		//double[][] averagedWeight = MyArray.getCloneOfMatrix(parameterMatrix);
 		double[][] averagedWeight = new double[parameterMatrix.length][parameterMatrix[0].length];
 		for(int i=0; i<maxIter; i++) {
@@ -52,8 +51,7 @@ public class AveragedPerceptronTrainerViterbi{
 				}
 			}
 			MathUtils.addMatrix(averagedWeight, parameterMatrix);
-			double diffNorm = MathUtils.matrixDifferenceNorm(oldWeights, parameterMatrix);
-			//System.out.println("Diff: " + diffNorm);
+			//double diffNorm = MathUtils.matrixDifferenceNorm(oldWeights, parameterMatrix);			
 		}
 		int N = instanceList.numberOfTokens;
 		double total = 1.0 * maxIter * N;

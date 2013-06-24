@@ -163,6 +163,15 @@ public class Corpus {
 		corpusVocab.get(0).indexToFrequency.put(0, 0);
 		corpusVocab.get(0).indexToWord.add(Vocabulary.UNKNOWN);
 		
+		// make all the states from the previous hierarchy available even if they are not observed in the data
+		// will add one more to each of the vocabs' frequency
+		// have to modify this if the number of states change in each hierarchy
+		for(int z=1; z<oneTimeStepObsSize; z++) {
+			for(int i=0; i<Main.numStates; i++) {
+				corpusVocab.get(z).addItem("" + i);
+			}
+		}
+		
 		while( (line = br.readLine()) != null) {
 			line = line.trim();
 			if(! line.isEmpty()) {

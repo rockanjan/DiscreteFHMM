@@ -1,19 +1,12 @@
 package corpus;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.TreeSet;
-
-import javax.management.RuntimeErrorException;
-
-import util.MathUtils;
-import util.SmoothWord;
-
 import model.HMMBase;
 import model.HMMType;
 import model.inference.ForwardBackward;
 import model.inference.ForwardBackwardLog;
 import model.inference.ForwardBackwardScaled;
+import util.MathUtils;
+import util.SmoothWord;
 
 public class Instance {
 	public int[][] words;
@@ -23,6 +16,8 @@ public class Instance {
 	public int nrStates;
 	public int unknownCount;
 	public HMMBase model;
+	
+	public static int FEATURE_PARTITION_CACHE_SIZE = 10000;
 	
 	//store the posteriors (important for training log-linear weights in M-step)
 	public double[][] posteriors;
@@ -40,12 +35,9 @@ public class Instance {
 	
 	public void doInference(HMMBase model) {
 		this.model = model;
-		// forwardBackward = new ForwardBackwardNoScaling(model, this);
 		if (model.hmmType == HMMType.LOG_SCALE) {
 			forwardBackward = new ForwardBackwardLog(model, this);
 		} else {
-//			System.out.println("ONLY LOG FORWARD BACKWARD IMPLEMENTED");
-//			System.exit(-1);
 			forwardBackward = new ForwardBackwardScaled(model, this);
 		}
 		nrStates = model.nrStates;
@@ -59,13 +51,7 @@ public class Instance {
 	}
 	
 	/*
-	public void clearPosteriors() {
-		posteriors = null;
-	}
-	*/
-	
-	/*
-	 * returns log(ObservationProb)
+	 * returns log(ObservationProb) or ObservationProb depending on the model
 	 */
 	public double getObservationProbability(int position, int state) {
 		if (observationCache == null) {
@@ -74,11 +60,8 @@ public class Instance {
 				for(int s=0; s<nrStates; s++) {
 					double[] conditionalVector = getConditionalVector(t, s);
 					int observationIndex = this.words[t][0];
-					//double[] weightObservation = model.param.weights.weights[observationIndex];
-					//double numerator = MathUtils.exp(MathUtils.dot(conditionalVector, weightObservation));
 					double[] expWeightObservation = model.param.expWeightsCache[observationIndex];
 					double numerator = MathUtils.expDot(expWeightObservation, conditionalVector);
-					//double result = numerator / getExactNormalizer(t, s, model.param.weights.weights);
 					double result = numerator / getExactNormalizer(t, s, model.param.expWeightsCache);
 					if(model.hmmType == HMMType.LOG_SCALE) {
 						result = Math.log(result);
@@ -93,7 +76,7 @@ public class Instance {
 	public String getConditionalString(int t, int state) {
 		StringBuffer sb = new StringBuffer();
 		sb.append(state);
-		for(int z=1; z<model.corpus.oneTimeStepObsSize; z++) {
+		for(int z=1; z<Corpus.oneTimeStepObsSize; z++) {
 			sb.append(this.words[t][z]);
 		}
 		return sb.toString();
@@ -113,8 +96,8 @@ public class Instance {
 			}
 			index++;
 		}
-		for(int z=1; z<model.corpus.oneTimeStepObsSize; z++) {
-			for(int i=0; i<model.corpus.corpusVocab.get(z).vocabSize; i++) {
+		for(int z=1; z<Corpus.oneTimeStepObsSize; z++) {
+			for(int i=0; i<Corpus.corpusVocab.get(z).vocabSize; i++) {
 				if( this.words[t][z] == i) {
 					conditionalVector[index] = 1.0;
 				} else {
@@ -142,8 +125,8 @@ public class Instance {
 			}
 			index++;
 		}
-		for(int z=1; z<c.oneTimeStepObsSize; z++) {
-			for(int i=0; i<c.corpusVocab.get(z).vocabSize; i++) {
+		for(int z=1; z<Corpus.oneTimeStepObsSize; z++) {
+			for(int i=0; i<Corpus.corpusVocab.get(z).vocabSize; i++) {
 				if(words[t][z] == i) {
 					conditionalVector[index] = 1.0;
 				} else {
@@ -153,25 +136,6 @@ public class Instance {
 			}
 		}
 		return conditionalVector;
-	}
-	
-	
-	public double getConditionalLogLikelihoodUsingViterbiDecoded(double[][] weights) {
-		double cll = 0.0;
-		for(int t=0; t<T; t++) {
-			double normalizer = 0.0;
-			double[] conditionalVector = getConditionalVectorUsingViterbiDecoded(t);
-			for (int i=0; i<model.corpus.corpusVocab.get(0).vocabSize; i++) {
-				double[] weightIthVocab = weights[i];
-				normalizer += Math.exp(MathUtils.dot(conditionalVector, weightIthVocab));
-			}
-			int observationIndex = this.words[t][0];
-			double[] weightObservation = weights[observationIndex];
-			double numerator = Math.exp(MathUtils.dot(conditionalVector, weightObservation));
-			double result = Math.log(numerator / normalizer);
-			cll += result;
-		}
-		return cll;
 	}
 	
 	public double getConditionalLogLikelihoodUsingPosteriorDistribution(double[][] expWeights) {
@@ -191,26 +155,6 @@ public class Instance {
 		return cll;
 	}
 	
-	public double getApproxConditionalLogLikelihoodUsingPosteriorDistribution(double[][] weights) {
-		double cll = 0.0;
-		for(int t=0; t<T; t++) {
-			for(int state=0; state<nrStates; state++) {
-				double posteriorProb = posteriors[t][state];
-				double normalizer = 0.0;
-				double[] conditionalVector = getConditionalVector(t, state);
-				//
-				
-				int observationIndex = this.words[t][0];
-				double[] weightObservation = weights[observationIndex];
-				double numerator = Math.exp(MathUtils.dot(conditionalVector, weightObservation));
-				//double result = posteriorProb * Math.log(numerator / normalizer); //expected CLL
-				double result = posteriorProb * Math.log(numerator / getApproxNormalizer(t, state, weights)); //expected CLL
-				cll += result;
-			}
-		}
-		return cll;
-	}
-		
 	public void createDecodedViterbiCache(){
 		decoded = new int[T];
 		double[][] probLattice = new double[T][model.nrStates];
@@ -255,41 +199,20 @@ public class Instance {
 		}				
 	}
 	
-	public double getApproxNormalizer(int position, int state, double[][] weights) {
-		double Z = 0;
-		double[] conditionalVector = getConditionalVector(position, state);
-		TreeSet<Integer> randomVocabSet = Corpus.getRandomVocabSet();
-		int currentToken = words[position][0];
-		randomVocabSet.add(currentToken);
-		
-		for(int randomV : randomVocabSet) {
-			double numerator = Math.exp(MathUtils.dot(weights[randomV], conditionalVector));
-			Z += numerator;
-		}
-		Z = Z * model.corpus.corpusVocab.get(0).vocabSize / (randomVocabSet.size());
-		return Z;
-	}
-	
 	public double getExactNormalizer(int position, int state, double[][] expWeights) {
 		double Z = 0;
 		double[] conditionalVector = getConditionalVector(position, state);
-		
 		String conditionalString = getConditionalString(position, state);
 		if(InstanceList.featurePartitionCache.containsKey(conditionalString)) {
 			return InstanceList.featurePartitionCache.get(conditionalString);
 		}
-		
-		
-		for(int i=0; i<model.corpus.corpusVocab.get(0).vocabSize; i++) {
-			//double numerator = Math.exp(MathUtils.dot(weights[i], conditionalVector));
+		for(int i=0; i<Corpus.corpusVocab.get(0).vocabSize; i++) {
 			double numerator = MathUtils.expDot(expWeights[i], conditionalVector);
 			Z += numerator;
 		}
-		
-		if(InstanceList.featurePartitionCache.size() < 10000) {
+		if(InstanceList.featurePartitionCache.size() < FEATURE_PARTITION_CACHE_SIZE) {
 			InstanceList.featurePartitionCache.put(conditionalString, Z);
-		}
-		
+		}		
 		return Z;
 	}
 
@@ -297,33 +220,33 @@ public class Instance {
 	 * returns the original word at the position
 	 */
 	public String getWord(int position) {
-		return c.corpusVocab.get(0).indexToWord.get(words[position][0]);
+		return Corpus.corpusVocab.get(0).indexToWord.get(words[position][0]);
 	}
 
 	public void populateWordArray(String line) {
-		String allTimeSteps[] = line.split(c.delimiter);
+		String allTimeSteps[] = line.split(Corpus.delimiter);
 		T = allTimeSteps.length;
-		words = new int[T][c.oneTimeStepObsSize];
+		words = new int[T][Corpus.oneTimeStepObsSize];
 		for (int i = 0; i < T; i++) {
 			String oneTimeStep = allTimeSteps[i];
-			String[] obsElements = oneTimeStep.split(c.obsDelimiter);
-			if(obsElements.length != c.oneTimeStepObsSize) {
-				throw new RuntimeException("One timestep observation size from vocab : " + c.oneTimeStepObsSize + " from instance: " + obsElements.length);
+			String[] obsElements = oneTimeStep.split(Corpus.obsDelimiter);
+			if(obsElements.length != Corpus.oneTimeStepObsSize) {
+				throw new RuntimeException("One timestep observation size from vocab : " + Corpus.oneTimeStepObsSize + " from instance: " + obsElements.length);
 			}
 			// original word
 			String word = obsElements[0];
-			if (c.corpusVocab.get(0).lower) {
+			if (Corpus.corpusVocab.get(0).lower) {
 				word = word.toLowerCase();
 			}
-			if (c.corpusVocab.get(0).smooth) {
+			if (Corpus.corpusVocab.get(0).smooth) {
 				word = SmoothWord.smooth(word);
 			}
-			int wordId = c.corpusVocab.get(0).getIndex(word);
+			int wordId = Corpus.corpusVocab.get(0).getIndex(word);
 			words[i][0] = wordId;
 			// for hmm states as observations
 			for (int j = 1; j < obsElements.length; j++) {
 				String obsElement = obsElements[j];
-				int obsElementId = c.corpusVocab.get(j).getIndex(obsElement);
+				int obsElementId = Corpus.corpusVocab.get(j).getIndex(obsElement);
 				words[i][j] = obsElementId;
 			}
 		}

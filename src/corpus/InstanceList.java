@@ -2,8 +2,12 @@ package corpus;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.TreeSet;
+import java.util.concurrent.ConcurrentHashMap;
 
 import program.Main;
 
@@ -19,6 +23,8 @@ public class InstanceList extends ArrayList<Instance> {
 	public InstanceList() {
 		super();
 	}
+	
+	static public Map<String, Double> featurePartitionCache;
 
 	/*
 	 * called by the E-step of EM. 
@@ -28,6 +34,7 @@ public class InstanceList extends ArrayList<Instance> {
 	public double updateExpectedCounts(HMMBase model, HMMParamBase expectedCounts) {
 		double LL = 0;
 		//cache expWeights for the model
+		featurePartitionCache = new ConcurrentHashMap<String, Double>();
 		model.param.expWeightsCache = MathUtils.expArray(model.param.weights.weights);
 		for (int n = 0; n < this.size(); n++) {
 			Instance instance = this.get(n);
@@ -38,6 +45,7 @@ public class InstanceList extends ArrayList<Instance> {
 		}
 		//clear expWeights;
 		model.param.expWeightsCache = null;
+		featurePartitionCache = null;
 		return LL;
 	}
 
@@ -62,6 +70,7 @@ public class InstanceList extends ArrayList<Instance> {
 	}
 	
 	public double getCLLNoThread(double[][] parameterMatrix) {
+		featurePartitionCache = new ConcurrentHashMap<String, Double>();
 		double cll = 0;
 		Timing timing = new Timing();
 		timing.start();
@@ -72,10 +81,13 @@ public class InstanceList extends ArrayList<Instance> {
 			cll += i.getConditionalLogLikelihoodUsingPosteriorDistribution(expWeights);
 		}
 		System.out.println("CLL computation time : " + timing.stop());
+		featurePartitionCache = null;
 		return cll;
+		
 	}
 	
 	public double getCLLThreaded(double[][] parameterMatrix) {
+		featurePartitionCache = new ConcurrentHashMap<String, Double>();
 		double cll = 0;
 		Timing timing = new Timing();
 		timing.start();
@@ -107,6 +119,7 @@ public class InstanceList extends ArrayList<Instance> {
 			cll += worker.result;
 		}
 		System.out.println("CLL computation time : " + timing.stop());
+		featurePartitionCache = null;
 		return cll;
 	}
 	
@@ -201,6 +214,8 @@ public class InstanceList extends ArrayList<Instance> {
 		long totalPartitionTime = 0;
 		long totalGradientTime = 0;
 		long totalConditionalTime = 0;
+		long totalSortTime = 0;
+		
 		for (int n = 0; n < this.size(); n++) {
 			Instance instance = get(n);
 			for (int t = 0; t < instance.T; t++) {
@@ -209,40 +224,58 @@ public class InstanceList extends ArrayList<Instance> {
 					Timing timing2 = new Timing();
 					timing2.start();
 					double[] conditionalVector = instance.getConditionalVector(t, state);
+					
 					totalConditionalTime += timing2.stopGetLong();
 					//create partition
 					double normalizer = 0.0;
-					double[] numeratorCache = new double[parameterMatrix.length];
+					final double[] numeratorCache = new double[parameterMatrix.length];
 					
 					timing2.start();
+					int maxIndex = -1;
+					double maxProb = -Double.MAX_VALUE;
 					for (int v = 0; v < parameterMatrix.length; v++) {
 						//double numerator = MathUtils.exp(MathUtils.dot(parameterMatrix[v], conditionalVector));
 						double numerator = MathUtils.expDot(expParam[v], conditionalVector);
+						if(numerator > maxProb) {
+							maxIndex = v;
+							maxProb = numerator;
+						}
 						numeratorCache[v] = numerator;
 						normalizer += numerator;						
 					}
-					
 					totalPartitionTime += timing2.stopGetLong();
+					
+					timing2.start();
+					final Integer[] idx = new Integer[parameterMatrix.length];
+					for(int i=0; i<idx.length; i++) {
+						idx[i] = i;
+					}
+					//numeratorCache remains unsorted
+					Arrays.sort(idx, new Comparator<Integer>() {
+					    @Override public int compare(final Integer o1, final Integer o2) {
+					        return Double.compare(numeratorCache[o2], numeratorCache[o1]);
+					    }
+					});
+					totalSortTime += timing2.stopGetLong();
+					
 					timing2.start();
 					for(int j=0; j<parameterMatrix[0].length; j++) {
 						if(conditionalVector[j] != 0) {
-							//this means it's one
-							//gradient[instance.words[t][0]][j] += posteriorProb * conditionalVector[j];
-							gradient[instance.words[t][0]][j] += posteriorProb;							
-							for(int v=0; v<parameterMatrix.length; v++) {
-								double numerator = numeratorCache[v];
-								//gradient[v][j] -= posteriorProb * numerator / normalizer * conditionalVector[j];
-								gradient[v][j] -= posteriorProb * numerator / normalizer;
+							gradient[instance.words[t][0]][j] += posteriorProb;
+							for(int v=0; v<100; v++) {
+							//for(int v=0; v<parameterMatrix.length; v++) {
+								gradient[idx[v]][j] -= posteriorProb * numeratorCache[idx[v]] / normalizer;
 							}
 						}
-					}
+					}				
 					totalGradientTime += timing2.stopGetLong();
 				}
 			}
-		}
+		}		
 		System.out.println("Total conditional time : " + totalConditionalTime);
 		System.out.println("Total partition time : " + totalPartitionTime);
 		System.out.println("Total gradient update time : " + totalGradientTime);
+		System.out.println("Total sort time : " + totalSortTime);
 		System.out.println("Gradient computation time : " + timing.stop());		
 		return gradient;
 	}
@@ -308,23 +341,40 @@ public class InstanceList extends ArrayList<Instance> {
 						double[] conditionalVector = instance.getConditionalVector(t, state);
 						//create partition
 						double normalizer = 0.0;
-						double[] numeratorCache = new double[expWeights.length];
+						final double[] numeratorCache = new double[expWeights.length];						
+						int maxIndex = -1;
+						double maxProb = -Double.MAX_VALUE;
 						for (int v = 0; v < expWeights.length; v++) {
 							//double numerator = MathUtils.exp(MathUtils.dot(parameterMatrix[v], conditionalVector));
 							double numerator = MathUtils.expDot(expWeights[v], conditionalVector);
+							if(numerator > maxProb) {
+								maxIndex = v;
+								maxProb = numerator;
+							}
 							numeratorCache[v] = numerator;
 							normalizer += numerator;						
 						}
 						
+						final Integer[] idx = new Integer[expWeights.length];
+						for(int i=0; i<idx.length; i++) {
+							idx[i] = i;
+						}
+						//numeratorCache remains unsorted
+						Arrays.sort(idx, new Comparator<Integer>() {
+						    @Override public int compare(final Integer o1, final Integer o2) {
+						        return Double.compare(numeratorCache[o2], numeratorCache[o1]);
+						    }
+						});
+						
 						for(int j=0; j<expWeights[0].length; j++) {
 							if(conditionalVector[j] != 0) {
 								gradient[instance.words[t][0]][j] += posteriorProb;
-								for(int v=0; v<expWeights.length; v++) {
-									double numerator = numeratorCache[v];
-									gradient[v][j] -= posteriorProb * numerator / normalizer;
+								for(int v=0; v<100; v++) {
+								//for(int v=0; v<parameterMatrix.length; v++) {
+									gradient[idx[v]][j] -= posteriorProb * numeratorCache[idx[v]] / normalizer;
 								}
 							}
-						}
+						}						
 					}
 				}
 			}

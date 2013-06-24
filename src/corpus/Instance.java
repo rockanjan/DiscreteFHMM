@@ -90,6 +90,15 @@ public class Instance {
 		return observationCache[position][state];
 	}
 	
+	public String getConditionalString(int t, int state) {
+		StringBuffer sb = new StringBuffer();
+		sb.append(state);
+		for(int z=1; z<model.corpus.oneTimeStepObsSize; z++) {
+			sb.append(this.words[t][z]);
+		}
+		return sb.toString();
+	}
+	
 	
 	public double[] getConditionalVector(int t, int state){
 		double[] conditionalVector = new double[model.param.weights.conditionalSize];
@@ -264,11 +273,23 @@ public class Instance {
 	public double getExactNormalizer(int position, int state, double[][] expWeights) {
 		double Z = 0;
 		double[] conditionalVector = getConditionalVector(position, state);
+		
+		String conditionalString = getConditionalString(position, state);
+		if(InstanceList.featurePartitionCache.containsKey(conditionalString)) {
+			return InstanceList.featurePartitionCache.get(conditionalString);
+		}
+		
+		
 		for(int i=0; i<model.corpus.corpusVocab.get(0).vocabSize; i++) {
 			//double numerator = Math.exp(MathUtils.dot(weights[i], conditionalVector));
 			double numerator = MathUtils.expDot(expWeights[i], conditionalVector);
 			Z += numerator;
 		}
+		
+		if(InstanceList.featurePartitionCache.size() < 10000) {
+			InstanceList.featurePartitionCache.put(conditionalString, Z);
+		}
+		
 		return Z;
 	}
 

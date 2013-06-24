@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Date;
 import java.util.Random;
+import java.util.concurrent.ConcurrentHashMap;
 
 import util.MathUtils;
 import util.MyArray;
@@ -22,7 +23,7 @@ import corpus.InstanceList;
 
 public class Main {
 	
-	public final static int USE_THREAD_COUNT = 14;
+	public final static int USE_THREAD_COUNT = 4;
 	
 	/** user parameters **/
 	static String delimiter = "\\+";
@@ -53,7 +54,7 @@ public class Main {
 	
 	public static void train() throws IOException {
 		outFolderPrefix = "out/";
-		numIter = 20;
+		numIter = 40;
 		String trainFileBase;
 		String testFileBase;
 		//trainFileBase = "out/decoded/combined.txt.SPL.2000";
@@ -67,12 +68,12 @@ public class Main {
 		
 		double[][] previousRecursionWeights = null;
 		
-		double[] gridSearch = {0.001, 0.01, 0.1, 1}; 
-		//double[] gridSearch = {1};
+		//double[] gridSearch = {1, 0.1, 0.01, 0.001}; 
 		
-		for(int currentRecursion=14; currentRecursion<recursionSize; currentRecursion++) {
+		double alpha = 0.01;
+		for(int currentRecursion=20; currentRecursion<recursionSize; currentRecursion++) {
 			System.out.println("RECURSION: " + currentRecursion);
-			for(double alpha : gridSearch) {
+			
 				AveragedPerceptronTrainerPosterior.adaptiveStep = alpha;
 				AveragedPerceptronTrainerViterbi.adaptiveStep = alpha;
 				SgdTrainer.adaptiveStep = alpha;
@@ -80,8 +81,8 @@ public class Main {
 				System.out.println("Adaptive Size : " + AveragedPerceptronTrainerViterbi.adaptiveStep);
 				//System.out.println("Adaptive Size : " + PerceptronTrainer.adaptiveStep);
 				//System.out.println("Adaptive Size : " + SgdTrainer.adaptiveStep);
-				sampleSizeEStep = 10000; //total sentences in RCV1 is 1.3M 
-				sampleSizeMStep = 500;
+				sampleSizeEStep = 1000; //total sentences in RCV1 is 1.3M 
+				sampleSizeMStep = 100;
 				
 				System.out.println("-----------------");
 				if(currentRecursion == 0) {
@@ -123,7 +124,7 @@ public class Main {
 				previousRecursionWeights = MyArray.getCloneOfMatrix(model.param.weights.weights);
 				//test(model, corpus.testInstanceList, outFile);	
 				test(model, corpus.trainInstanceList, outFileTrain);
-			}
+			
 		}	
 	}
 	
@@ -152,6 +153,7 @@ public class Main {
 		decodeTiming.start();
 		System.out.println("Decoding started on :" + new Date().toString());
 		model.param.expWeightsCache = MathUtils.expArray(model.param.weights.weights);
+		InstanceList.featurePartitionCache = new ConcurrentHashMap<String, Double>();
 		Decoder decoder = new Decoder(model);
 		try {
 			PrintWriter pw = new PrintWriter(new FileWriter(outFile));
@@ -193,6 +195,7 @@ public class Main {
 			System.err.format("Could not open file for writing %s\n", outFile);
 			e.printStackTrace();
 		}
+		InstanceList.featurePartitionCache = null;
 		System.out.println("Finished decoding");
 		System.out.println("Total decoding time : " + decodeTiming.stop());
 	}

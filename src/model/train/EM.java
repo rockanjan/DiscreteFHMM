@@ -37,7 +37,7 @@ public class EM {
 						// best
 	int iterCount = 0;
 	
-	int mStepIter = 20; //initial
+	int mStepIter = 1; //initial
 	
 	
 
@@ -63,8 +63,8 @@ public class EM {
 	public void mStep() {
 		System.out.println("Mstep #tokens : " + c.trainInstanceMStepSampleList.numberOfTokens);
 		//trainPerceptron();
-		//trainLogLinearOptimization();
-		trainAveragedPerceptron();
+		trainLBFGS();
+		//trainAveragedPerceptron();
 		//trainSgd();
 		model.updateFromCounts(expectedCounts);
 	}
@@ -97,7 +97,7 @@ public class EM {
 				
 	}
 	
-	public void trainLogLinearOptimization() {
+	public void trainLBFGS() {
 		// maximize CLL of the data
 		double[] initParams = MyArray.createVector(model.param.weights.weights);
 		model.param.weights.weights = null;
@@ -137,15 +137,6 @@ public class EM {
 			if (isConverged()) {
 				break;
 			}
-			/*
-			if(iterCount > 2) {
-				mStepIter = 5;			
-			}
-			
-			if(iterCount > 30 && iterCount % 2 == 0) {
-				mStepIter += 1;
-			}
-			*/
 			// m-step
 			c.generateRandomTrainingMStepSample(Main.sampleSizeMStep);
 			mStep();
@@ -168,11 +159,7 @@ public class EM {
 
 		if (LL < bestOldLL) {
 			//increase the number of examples in M-step
-			/*
-			if(Main.sampleSizeMStep < 5000) {
-				Main.sampleSizeMStep += 250;
-			}
-			*/
+			
 			if (lowerCount == 0) {
 				// cache the best model so far
 				System.out.println("Caching the best model so far");

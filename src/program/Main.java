@@ -23,7 +23,7 @@ import corpus.InstanceList;
 
 public class Main {
 	
-	public final static int USE_THREAD_COUNT = 4;
+	public final static int USE_THREAD_COUNT = 7;
 	
 	/** user parameters **/
 	static String delimiter = "\\+";
@@ -58,8 +58,8 @@ public class Main {
 		String trainFileBase;
 		String testFileBase;
 		//trainFileBase = "out/decoded/combined.txt.SPL.2000";
-		trainFileBase = "out/decoded/combined.txt.SPL";
-		//trainFileBase = "out/decoded/rcv1.txt.SPL";
+		//trainFileBase = "out/decoded/combined.txt.SPL";
+		trainFileBase = "out/decoded/rcv1.txt.SPL";
 		
 		testFileBase = "out/decoded/test.txt.SPL";
 		
@@ -71,7 +71,7 @@ public class Main {
 		//double[] gridSearch = {1, 0.1, 0.01, 0.001}; 
 		
 		double alpha = 0.01;
-		for(int currentRecursion=20; currentRecursion<recursionSize; currentRecursion++) {
+		for(int currentRecursion=0; currentRecursion<recursionSize; currentRecursion++) {
 			System.out.println("RECURSION: " + currentRecursion);
 			
 				AveragedPerceptronTrainerPosterior.adaptiveStep = alpha;
@@ -81,8 +81,8 @@ public class Main {
 				System.out.println("Adaptive Size : " + AveragedPerceptronTrainerViterbi.adaptiveStep);
 				//System.out.println("Adaptive Size : " + PerceptronTrainer.adaptiveStep);
 				//System.out.println("Adaptive Size : " + SgdTrainer.adaptiveStep);
-				sampleSizeEStep = 1000; //total sentences in RCV1 is 1.3M 
-				sampleSizeMStep = 100;
+				sampleSizeEStep = 10000; //total sentences in RCV1 is 1.3M 
+				sampleSizeMStep = 1000;
 				
 				System.out.println("-----------------");
 				if(currentRecursion == 0) {

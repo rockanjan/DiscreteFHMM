@@ -37,7 +37,7 @@ public class EM {
 						// best
 	int iterCount = 0;
 	
-	int mStepIter = 1; //initial
+	int mStepIter = 5; //initial
 	
 	
 

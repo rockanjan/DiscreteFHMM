@@ -42,7 +42,7 @@ public class Main {
 
 	static int vocabThreshold = 1; // only above this included*******
 	static int recursionSize = 100;
-	public static int numStates = 2;
+	public static int numStates = 20;
 
 	/** user parameters end **/
 	public static void main(String[] args) throws IOException {
@@ -59,7 +59,6 @@ public class Main {
 		// trainFileBase = "out/decoded/combined.txt.SPL.2000";
 		trainFileBase = "out/decoded/combined.txt.SPL";
 		//trainFileBase = "out/decoded/rcv1.txt.SPL";
-
 		testFileBase = "out/decoded/test.txt.SPL";
 
 		// trainFileBase = "out/decoded/simple_corpus_sorted.txt";
@@ -68,9 +67,8 @@ public class Main {
 		double[][] previousRecursionWeights = null;
 		for (int currentRecursion = 0; currentRecursion < recursionSize; currentRecursion++) {
 			System.out.println("RECURSION: " + currentRecursion);
-			sampleSizeEStep = 25000; // total sentences in RCV1 is 1.3M
+			sampleSizeEStep = 25000; // total sentences in RCV1 is 1.3M, conll2003 is 25K
 			sampleSizeMStep = 25000;
-
 			System.out.println("-----------------");
 			if (currentRecursion == 0) {
 				trainFile = trainFileBase;

@@ -106,6 +106,8 @@ public class EM {
 			System.out.println("optimization threw exception: IllegalArgument");
 		} catch (OptimizationException oe) {
 			System.out.println("optimization threw OptimizationException");
+			Main.sampleSizeMStep += 5000;
+			
 		}
 		System.out.println("Gradient call count: " + optimizable.gradientCallCount);
 		model.param.weights.weights = optimizable.getParameterMatrix();
@@ -155,9 +157,7 @@ public class EM {
 		}
 		convergeCount = 0;
 		if (LL < bestOldLL) {
-			if(Main.sampleSizeMStep < 5000) {
-				Main.sampleSizeMStep += 200;
-			}
+			Main.sampleSizeMStep += 5000;
 			if (lowerCount == 0) {
 				// cache the best model so far
 				System.out.println("Caching the best model so far");

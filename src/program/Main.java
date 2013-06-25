@@ -69,7 +69,7 @@ public class Main {
 		for (int currentRecursion = 0; currentRecursion < recursionSize; currentRecursion++) {
 			System.out.println("RECURSION: " + currentRecursion);
 			sampleSizeEStep = 25000; // total sentences in RCV1 is 1.3M
-			sampleSizeMStep = 1000;
+			sampleSizeMStep = 25000;
 
 			System.out.println("-----------------");
 			if (currentRecursion == 0) {
@@ -102,6 +102,14 @@ public class Main {
 			if (previousRecursionWeights != null) {
 				model.param
 						.initializeWeightsFromPreviousRecursion(previousRecursionWeights);
+			}
+			if(Corpus.corpusVocab.get(0).vocabSize < InstanceList.VOCAB_UPDATE_COUNT) {
+				InstanceList.VOCAB_UPDATE_COUNT = 0; // <= 0 means exact (no approx gradient)
+			}
+			if(InstanceList.VOCAB_UPDATE_COUNT <= 0) {
+				System.out.println("Using exact gradient for training");
+			} else {
+				System.out.format("Using approx gradient with %d negative evidence vocab items for training\n", InstanceList.VOCAB_UPDATE_COUNT);
 			}
 			EM em = new EM(numIter, corpus, model);
 			em.start();

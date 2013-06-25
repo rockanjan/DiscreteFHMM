@@ -16,7 +16,7 @@ public class InstanceList extends ArrayList<Instance> {
 	private static final long serialVersionUID = -2409272084529539276L;
 	public int numberOfTokens;
 	
-	public static int VOCAB_UPDATE_COUNT = 100;
+	public static int VOCAB_UPDATE_COUNT = 1000;
 	
 	public InstanceList() {
 		super();

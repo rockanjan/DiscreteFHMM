@@ -20,7 +20,7 @@ import corpus.InstanceList;
 
 public class Main {
 
-	public final static int USE_THREAD_COUNT = 7;
+	public final static int USE_THREAD_COUNT = 4;
 
 	/** user parameters **/
 	static String delimiter = "\\+";
@@ -53,12 +53,12 @@ public class Main {
 
 	public static void train() throws IOException {
 		outFolderPrefix = "out/";
-		numIter = 1;
+		numIter = 40;
 		String trainFileBase;
 		String testFileBase;
 		// trainFileBase = "out/decoded/combined.txt.SPL.2000";
-		// trainFileBase = "out/decoded/combined.txt.SPL";
-		trainFileBase = "out/decoded/rcv1.txt.SPL";
+		trainFileBase = "out/decoded/combined.txt.SPL";
+		//trainFileBase = "out/decoded/rcv1.txt.SPL";
 
 		testFileBase = "out/decoded/test.txt.SPL";
 
@@ -68,7 +68,7 @@ public class Main {
 		double[][] previousRecursionWeights = null;
 		for (int currentRecursion = 0; currentRecursion < recursionSize; currentRecursion++) {
 			System.out.println("RECURSION: " + currentRecursion);
-			sampleSizeEStep = 10000; // total sentences in RCV1 is 1.3M
+			sampleSizeEStep = 25000; // total sentences in RCV1 is 1.3M
 			sampleSizeMStep = 1000;
 
 			System.out.println("-----------------");

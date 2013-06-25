@@ -30,9 +30,10 @@ public class EM {
 	// convergence criteria
 	double precision = 1e-6;
 	int maxConsecutiveDecreaseLimit = 20;
-
+	int maxConsecutiveConvergeLimit = 3;
 	HMMParamBase expectedCounts;
 
+	int convergeCount = 0;
 	int lowerCount = 0; // number of times LL could not increase from previous
 						// best
 	int iterCount = 0;
@@ -145,11 +146,18 @@ public class EM {
 		double decreaseRatio = (LL - bestOldLL) / Math.abs(bestOldLL);
 		// System.out.println("Decrease Ratio: %.5f " + decreaseRatio);
 		if (precision > decreaseRatio && decreaseRatio > 0) {
-			System.out.println("Converged. Saving the final model");
-			model.saveModel(Main.currentRecursion);
-			return true;
+			convergeCount++;
+			if(convergeCount > maxConsecutiveConvergeLimit) {
+				System.out.println("Converged. Saving the final model");
+				model.saveModel(Main.currentRecursion);
+				return true;
+			}
 		}
+		convergeCount = 0;
 		if (LL < bestOldLL) {
+			if(Main.sampleSizeMStep < 5000) {
+				Main.sampleSizeMStep += 200;
+			}
 			if (lowerCount == 0) {
 				// cache the best model so far
 				System.out.println("Caching the best model so far");

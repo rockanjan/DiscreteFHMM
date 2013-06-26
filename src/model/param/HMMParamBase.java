@@ -3,6 +3,8 @@ package model.param;
 import java.util.ArrayList;
 import java.util.Random;
 
+import util.MyArray;
+
 import model.HMMBase;
 import model.HMMType;
 
@@ -131,7 +133,7 @@ public abstract class HMMParamBase {
 			initial.get(i).cloneFrom(source.initial.get(i));
 			transition.get(i).cloneFrom(source.transition.get(i));
 		}
-		this.weights = source.weights;
+		this.weights.weights = MyArray.getCloneOfMatrix(source.weights.weights);
 	}
 	
 	public void clear() {

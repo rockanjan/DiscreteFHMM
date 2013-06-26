@@ -1,5 +1,7 @@
 package util;
 
+import program.Main;
+
 public class MathUtils {
 	
 	public static double dot(double[] a, double[] b) {
@@ -75,6 +77,21 @@ public class MathUtils {
 			if(conditional[i] != 0) {
 				result *= expWeights[i];
 			}
+		}
+		if(Double.isInfinite(result)) {
+			throw new RuntimeException("Error: expDot value is infinite");
+		}
+		return result;
+	}
+	
+	public static double expDot(double[] expWeights, int state, int[] z) {
+		double result = 1.0;
+		result *= expWeights[0]; //bias
+		result *= expWeights[1 + state]; //for the current hidden layer state
+		int offset = Main.numStates;
+		for(int i=1; i<=z.length; i++) {
+			//0 in the first z layer has to be in the offset + 1
+			result *= expWeights[ 1 + offset * i + z[i]];
 		}
 		if(Double.isInfinite(result)) {
 			throw new RuntimeException("Error: expDot value is infinite");

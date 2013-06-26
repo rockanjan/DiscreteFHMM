@@ -2,9 +2,12 @@ package test;
 
 import java.io.IOException;
 import java.util.Random;
+import java.util.concurrent.ConcurrentHashMap;
 
 import corpus.Corpus;
 import corpus.Instance;
+import corpus.InstanceList;
+import util.MathUtils;
 import util.MyArray;
 import model.HMMBase;
 import model.HMMNoFinalStateLog;
@@ -34,6 +37,7 @@ public class TestGradient {
 	static int oneTimeStepObsSize; //number of elements in observation e.g. word|hmm1|hmm2  has 3
 	
 	public static void main(String[] args) throws IOException {
+		InstanceList.VOCAB_UPDATE_COUNT = -1;
 		int recursionSize = 1;
 		outFolderPrefix = "out/";
 		numStates = 10;
@@ -63,12 +67,17 @@ public class TestGradient {
 		HMMParamNoFinalStateLog expectedCounts = new HMMParamNoFinalStateLog(model);
 		expectedCounts.initializeZeros();
 		
+		InstanceList.featurePartitionCache = new ConcurrentHashMap<String, Double>();
+		model.param.expWeightsCache = MathUtils.expArray(model.param.weights.weights);
 		for (int n = 0; n < corpus.trainInstanceList.size(); n++) {
 			Instance instance = corpus.trainInstanceList.get(n);
 			instance.doInference(model);
 			instance.forwardBackward.addToCounts(expectedCounts);
 			instance.clearInference();
 		}
+		InstanceList.featurePartitionCache = null;
+		model.param.expWeightsCache = null;
+		
 		optimizable.checkGradientComputation();
 	}
 }

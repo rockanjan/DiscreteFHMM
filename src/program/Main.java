@@ -30,6 +30,8 @@ public class Main {
 	static String trainFile;
 	static String vocabFile;
 	static String testFile;
+	static String devFile;
+	
 	static String outFolderPrefix;
 	static HMMBase model;
 	static Corpus corpus;
@@ -56,10 +58,12 @@ public class Main {
 		numIter = 40;
 		String trainFileBase;
 		String testFileBase;
+		String devFileBase;
 		// trainFileBase = "out/decoded/combined.txt.SPL.2000";
 		trainFileBase = "out/decoded/srl.txt";
 		//trainFileBase = "out/decoded/rcv1.txt.SPL";
 		testFileBase = "out/decoded/test.txt.SPL";
+		devFileBase = "out/decoded/combined.txt.SPL";
 
 		// trainFileBase = "out/decoded/simple_corpus_sorted.txt";
 		// testFileBase = "out/decoded/simple_corpus_sorted.txt";
@@ -73,14 +77,18 @@ public class Main {
 			if (currentRecursion == 0) {
 				trainFile = trainFileBase;
 				testFile = testFileBase;
+				devFile = devFileBase;
 			} else {
 				trainFile = trainFileBase + "." + currentRecursion;
 				testFile = testFileBase + "." + currentRecursion;
+				devFile = devFileBase + "." + currentRecursion;
 			}
 
 			vocabFile = trainFile;
 			String outFileTrain = trainFileBase + "." + (currentRecursion + 1);
-			String outFile = testFileBase + "." + (currentRecursion + 1);
+			String outFileTest = testFileBase + "." + (currentRecursion + 1);
+			String outFileDev = devFileBase + "." + (currentRecursion + 1);
+			
 			printParams();
 			corpus = new Corpus("\\s+", vocabThreshold);
 			Corpus.oneTimeStepObsSize = Corpus
@@ -89,7 +97,9 @@ public class Main {
 			corpus.readVocab(vocabFile);
 			// corpus.setupSampler();
 			corpus.readTrain(trainFile);
-			// corpus.readTest(testFile);
+			corpus.readTest(testFile);
+			corpus.readDev(devFile);
+			
 			model = new HMMNoFinalStateLog(numStates, corpus);
 			Random random = new Random(seed);
 			model.initializeRandom(random);
@@ -117,7 +127,11 @@ public class Main {
 					.getCloneOfMatrix(model.param.weights.weights);
 			if(corpus.testInstanceList != null) {
 				System.out.println("LL of Test Data : " + corpus.testInstanceList.getLL(model));
-				test(model, corpus.testInstanceList, outFile);
+				test(model, corpus.testInstanceList, outFileTest);
+			}
+			if(corpus.devInstanceList != null) {
+				System.out.println("LL of Dev Data : " + corpus.devInstanceList.getLL(model));
+				test(model, corpus.devInstanceList, outFileDev);
 			}
 			test(model, corpus.trainInstanceList, outFileTrain);
 		}

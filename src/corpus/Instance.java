@@ -242,6 +242,9 @@ public class Instance {
 				word = SmoothWord.smooth(word);
 			}
 			int wordId = Corpus.corpusVocab.get(0).getIndex(word);
+			if(wordId == 0) {
+				unknownCount++;
+			}
 			words[i][0] = wordId;
 			// for hmm states as observations
 			for (int j = 1; j < obsElements.length; j++) {

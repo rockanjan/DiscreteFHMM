@@ -20,7 +20,7 @@ import corpus.InstanceList;
 
 public class Main {
 
-	public final static int USE_THREAD_COUNT = 4;
+	public final static int USE_THREAD_COUNT = 7;
 
 	/** user parameters **/
 	static String delimiter = "\\+";
@@ -44,7 +44,7 @@ public class Main {
 
 	static int vocabThreshold = 1; // only above this included*******
 	static int recursionSize = 100;
-	public static int numStates = 80;
+	public static int numStates = 10;
 
 	/** user parameters end **/
 	public static void main(String[] args) throws IOException {
@@ -54,25 +54,21 @@ public class Main {
 	}
 
 	public static void train() throws IOException {
+		InstanceList.VOCAB_UPDATE_COUNT = 1000;
 		outFolderPrefix = "out/";
-		numIter = 40;
+		numIter = 50;
 		String trainFileBase;
 		String testFileBase;
 		String devFileBase;
-		// trainFileBase = "out/decoded/combined.txt.SPL.2000";
-		trainFileBase = "out/decoded/srl.txt";
-		//trainFileBase = "out/decoded/rcv1.txt.SPL";
+		trainFileBase = "out/decoded/combined.txt.SPL";
 		testFileBase = "out/decoded/test.txt.SPL";
-		devFileBase = "out/decoded/combined.txt.SPL";
-
-		// trainFileBase = "out/decoded/simple_corpus_sorted.txt";
-		// testFileBase = "out/decoded/simple_corpus_sorted.txt";
+		devFileBase = "out/decoded/srl.txt";
 
 		double[][] previousRecursionWeights = null;
 		for (int currentRecursion = 0; currentRecursion < recursionSize; currentRecursion++) {
 			System.out.println("RECURSION: " + currentRecursion);
-			sampleSizeEStep = 10000; // total sentences in RCV1 is 1.3M, conll2003 is 25K
-			sampleSizeMStep = 10000;
+			sampleSizeEStep = 25000; // total sentences in RCV1 is 1.3M, conll2003 is 25K
+			sampleSizeMStep = 1000;
 			System.out.println("-----------------");
 			if (currentRecursion == 0) {
 				trainFile = trainFileBase;
@@ -89,7 +85,6 @@ public class Main {
 			String outFileTest = testFileBase + "." + (currentRecursion + 1);
 			String outFileDev = devFileBase + "." + (currentRecursion + 1);
 			
-			printParams();
 			corpus = new Corpus("\\s+", vocabThreshold);
 			Corpus.oneTimeStepObsSize = Corpus
 					.findOneTimeStepObsSize(vocabFile);
@@ -114,11 +109,7 @@ public class Main {
 			if(Corpus.corpusVocab.get(0).vocabSize < InstanceList.VOCAB_UPDATE_COUNT) {
 				InstanceList.VOCAB_UPDATE_COUNT = 0; // <= 0 means exact (no approx gradient)
 			}
-			if(InstanceList.VOCAB_UPDATE_COUNT <= 0) {
-				System.out.println("Using exact gradient for training");
-			} else {
-				System.out.format("Using approx gradient with %d negative evidence vocab items for training\n", InstanceList.VOCAB_UPDATE_COUNT);
-			}
+			printParams();
 			EM em = new EM(numIter, corpus, model);
 			em.start();
 			model.saveModel(currentRecursion);
@@ -258,5 +249,10 @@ public class Main {
 		sb.append("\nIterations : " + numIter);
 		sb.append("\nNumStates : " + numStates);
 		System.out.println(sb.toString());
+		if(InstanceList.VOCAB_UPDATE_COUNT <= 0) {
+			System.out.println("Using exact gradient for training");
+		} else {
+			System.out.format("Using approx gradient with %d negative evidence vocab items for training\n", InstanceList.VOCAB_UPDATE_COUNT);
+		}
 	}
 }

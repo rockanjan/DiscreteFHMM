@@ -42,7 +42,7 @@ public class Main {
 
 	static int vocabThreshold = 1; // only above this included*******
 	static int recursionSize = 100;
-	public static int numStates = 20;
+	public static int numStates = 80;
 
 	/** user parameters end **/
 	public static void main(String[] args) throws IOException {
@@ -57,7 +57,7 @@ public class Main {
 		String trainFileBase;
 		String testFileBase;
 		// trainFileBase = "out/decoded/combined.txt.SPL.2000";
-		trainFileBase = "out/decoded/combined.txt.SPL";
+		trainFileBase = "out/decoded/srl.txt";
 		//trainFileBase = "out/decoded/rcv1.txt.SPL";
 		testFileBase = "out/decoded/test.txt.SPL";
 
@@ -67,8 +67,8 @@ public class Main {
 		double[][] previousRecursionWeights = null;
 		for (int currentRecursion = 0; currentRecursion < recursionSize; currentRecursion++) {
 			System.out.println("RECURSION: " + currentRecursion);
-			sampleSizeEStep = 25000; // total sentences in RCV1 is 1.3M, conll2003 is 25K
-			sampleSizeMStep = 25000;
+			sampleSizeEStep = 10000; // total sentences in RCV1 is 1.3M, conll2003 is 25K
+			sampleSizeMStep = 10000;
 			System.out.println("-----------------");
 			if (currentRecursion == 0) {
 				trainFile = trainFileBase;
@@ -115,12 +115,14 @@ public class Main {
 			// store weights to assign for the next recursion
 			previousRecursionWeights = MyArray
 					.getCloneOfMatrix(model.param.weights.weights);
-			// test(model, corpus.testInstanceList, outFile);
+			if(corpus.testInstanceList != null) {
+				System.out.println("LL of Test Data : " + corpus.testInstanceList.getLL(model));
+				test(model, corpus.testInstanceList, outFile);
+			}
 			test(model, corpus.trainInstanceList, outFileTrain);
-
 		}
 	}
-
+	
 	public static void decodeFromPlainText(String testFileBase,
 			int numberOfRecursions) throws IOException {
 		System.out.println("Decoding from plain text");

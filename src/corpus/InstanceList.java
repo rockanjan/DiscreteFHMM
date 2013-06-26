@@ -25,6 +25,26 @@ public class InstanceList extends ArrayList<Instance> {
 	static public Map<String, Double> featurePartitionCache;
 
 	/*
+	 * just to get the LL of the data
+	 */
+	public double getLL(HMMBase model) {
+		double LL = 0;
+		//cache expWeights for the model
+		featurePartitionCache = new ConcurrentHashMap<String, Double>();
+		model.param.expWeightsCache = MathUtils.expArray(model.param.weights.weights);
+		for (int n = 0; n < this.size(); n++) {
+			Instance instance = this.get(n);
+			instance.doInference(model);
+			LL += instance.forwardBackward.logLikelihood;
+			instance.clearInference();
+		}
+		//clear expWeights;
+		model.param.expWeightsCache = null;
+		featurePartitionCache = null;
+		return LL;		
+	}
+	
+	/*
 	 * called by the E-step of EM. 
 	 * Does inference, computes posteriors and updates expected counts
 	 * returns LL of the corpus

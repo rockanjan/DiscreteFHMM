@@ -37,7 +37,7 @@ public class EM {
 	int lowerCount = 0; // number of times LL could not increase from previous
 						// best
 	int iterCount = 0;
-	int mStepIter = 5; //initial
+	int mStepIter = 10; //initial
 	
 	public EM(int numIter, Corpus c, HMMBase model) {
 		this.numIter = numIter;
@@ -121,11 +121,10 @@ public class EM {
 		Timing totalEMTime = new Timing();
 		totalEMTime.start();
 		Timing eStepTime = new Timing();
+		Timing oneIterEmTime = new Timing();
 		for (iterCount = 0; iterCount < numIter; iterCount++) {
-			Timing oneIterEmTime = new Timing();
 			//sample new train instances
 			c.generateRandomTrainingEStepSample(Main.sampleSizeEStep);
-			oneIterEmTime.start();
 			LL = 0;
 			// e-step
 			eStepTime.start();
@@ -133,15 +132,19 @@ public class EM {
 			eStep();
 			System.out.println("E-step time: " + eStepTime.stop());
 			double diff = LL - bestOldLL;
+			if (iterCount > 0) {
+				System.out.format("LL %.2f Diff %.2f \t Iter %d \t Fixes: %d \t iter time %s\n",LL, diff, iterCount,Stats.totalFixes, oneIterEmTime.stop());
+			}
 			if (isConverged()) {
 				break;
 			}
+			oneIterEmTime.start();
 			// m-step
 			c.generateRandomTrainingMStepSample(Main.sampleSizeMStep);
 			mStep();
-			if (iterCount > 0) {
-				System.out.format("LL %.2f Diff %.2f \t Iter %d \t Fixes: %d \t iter time %s\n",LL, diff, iterCount,Stats.totalFixes, oneIterEmTime.stop());
-			}			
+			if(iterCount % 10 == 0) {
+				System.out.println("Dev LL : " + c.devInstanceList.getLL(model));
+			}
 		}
 		System.out.println("Total EM Time : " + totalEMTime.stop());
 	}

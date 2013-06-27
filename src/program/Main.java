@@ -68,7 +68,7 @@ public class Main {
 		for (int currentRecursion = 0; currentRecursion < recursionSize; currentRecursion++) {
 			System.out.println("RECURSION: " + currentRecursion);
 			sampleSizeEStep = 25000; // total sentences in RCV1 is 1.3M, conll2003 is 25K
-			sampleSizeMStep = 1000;
+			sampleSizeMStep = 10;
 			System.out.println("-----------------");
 			if (currentRecursion == 0) {
 				trainFile = trainFileBase;

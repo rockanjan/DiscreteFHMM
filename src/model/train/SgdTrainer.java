@@ -28,7 +28,7 @@ public class SgdTrainer {
 			double[] stepSizes = new double[10];
 			//set step sizes for backtracking
 			stepSizes[0] = adaptiveStep; //previously found best adaptiveStep
-			for(int j=1; j<stepSizes.length; i++) {
+			for(int j=1; j<stepSizes.length; j++) {
 				stepSizes[j] = stepSizes[j-1] * 0.8; //decrease geometrically 
 			}
 			MyArray.printVector(stepSizes, "Step sizes");

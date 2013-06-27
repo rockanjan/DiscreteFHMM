@@ -20,7 +20,7 @@ import corpus.InstanceList;
 
 public class Main {
 
-	public final static int USE_THREAD_COUNT = 7;
+	public final static int USE_THREAD_COUNT = 4;
 
 	/** user parameters **/
 	static String delimiter = "\\+";
@@ -44,7 +44,7 @@ public class Main {
 
 	static int vocabThreshold = 1; // only above this included*******
 	static int recursionSize = 100;
-	public static int numStates = 10;
+	public static int numStates = 80;
 
 	/** user parameters end **/
 	public static void main(String[] args) throws IOException {
@@ -67,7 +67,7 @@ public class Main {
 		double[][] previousRecursionWeights = null;
 		for (int currentRecursion = 0; currentRecursion < recursionSize; currentRecursion++) {
 			System.out.println("RECURSION: " + currentRecursion);
-			sampleSizeEStep = 25000; // total sentences in RCV1 is 1.3M, conll2003 is 25K
+			sampleSizeEStep = 2500; // total sentences in RCV1 is 1.3M, conll2003 is 25K
 			sampleSizeMStep = 10;
 			System.out.println("-----------------");
 			if (currentRecursion == 0) {
@@ -245,6 +245,7 @@ public class Main {
 		sb.append("Train file : " + trainFile);
 		sb.append("\nVocab file : " + vocabFile);
 		sb.append("\nTest file : " + testFile);
+		sb.append("\nDev file : " + devFile);
 		sb.append("\noutFolderPrefix : " + outFolderPrefix);
 		sb.append("\nIterations : " + numIter);
 		sb.append("\nNumStates : " + numStates);

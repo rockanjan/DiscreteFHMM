@@ -318,8 +318,28 @@ public class Corpus {
 				trainInstanceMStepSampleList.numberOfTokens += instance.T;
 			}			
 		}
+	}
+	/*
+	public InstanceList getRandomSampleFromMStep(int size) {
+		InstanceList list = new InstanceList();
+		if(trainInstanceMStepSampleList.size() <= size) {
+			list.addAll(trainInstanceMStepSampleList);
+			list.numberOfTokens = trainInstanceMStepSampleList.numberOfTokens;
+		} else {
+			ArrayList<Integer> randomInts = new ArrayList<Integer>();			
+			for(int i=0; i<trainInstanceMStepSampleList.size(); i++) {
+				randomInts.add(i);
+			}
+			Collections.shuffle(randomInts,random);
+			for(int i=0; i<size; i++) {
+				Instance instance = trainInstanceMStepSampleList.get(randomInts.get(i));
+				list.add(instance);
+				list.numberOfTokens += instance.T;
+			}			
+		}
+		return list;
 	}	
-	
+	*/
 	
 	public static int findOneTimeStepObsSize(String filename) {
 		int result = -1;

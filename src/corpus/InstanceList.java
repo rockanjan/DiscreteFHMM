@@ -84,7 +84,7 @@ public class InstanceList extends ArrayList<Instance> {
 			Instance i = get(n);
 			cll += i.getConditionalLogLikelihoodUsingPosteriorDistribution(expWeights);
 		}
-		System.out.println("CLL computation time : " + timing.stop());
+		//System.out.println("CLL computation time : " + timing.stop());
 		featurePartitionCache = null;
 		return cll;
 		

@@ -13,6 +13,13 @@ public class MyArray {
 			System.out.println();
 		}
 	}
+	
+	public static void printVector(double[] vector, String title) {
+		System.out.println("Vector: " + title);
+		for(int i=0; i<vector.length; i++) {
+			System.out.print(vector[i] + "\t");
+		}
+	}
 
 	public static void printTable(double[][] table, String title) {
 		System.out.println("Table : " + title);

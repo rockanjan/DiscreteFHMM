@@ -77,7 +77,7 @@ public class Instance {
 		StringBuffer sb = new StringBuffer();
 		sb.append(state);
 		for(int z=1; z<Corpus.oneTimeStepObsSize; z++) {
-			sb.append(this.words[t][z]);
+			sb.append("+" + this.words[t][z]);
 		}
 		return sb.toString();
 	}

@@ -7,32 +7,35 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.PriorityQueue;
 import java.util.Random;
 import java.util.TreeSet;
 
 import program.Main;
-
-import cc.mallet.grmm.learning.ACRF.UnigramTemplate;
-
+import util.MyArray;
 import util.SmoothWord;
 
 public class Corpus {
 	public static String delimiter = "\\s+";
 	public static String obsDelimiter = "\\|"; //separator of multiple observation elements at one timestep
 	public static int oneTimeStepObsSize = -1;
-	public InstanceList trainInstanceList = new InstanceList();
+	public static InstanceList trainInstanceList = new InstanceList();
 	// testInstanceList can be empty
-	public InstanceList testInstanceList;
-	public InstanceList devInstanceList;
+	public static InstanceList testInstanceList;
+	public static InstanceList devInstanceList;
 	
-	public InstanceList trainInstanceEStepSampleList; //sampled sentences for stochastic training
-	public InstanceList trainInstanceMStepSampleList; //sampled sentences for stochastic training
+	public static InstanceList trainInstanceEStepSampleList; //sampled sentences for stochastic training
+	public static InstanceList trainInstanceMStepSampleList; //sampled sentences for stochastic training
 
 	static public ArrayList<Vocabulary> corpusVocab;
+	
+	public static int maxTokensToProcessForFrequentConditionals = 1000000;
+	public static int maxFrequentConditionals = 1000000;
+	public static TreeSet<FrequentConditionalStringVector> frequentConditionals;
 
 	int vocabThreshold;
 	
@@ -143,6 +146,64 @@ public class Corpus {
 			corpusVocab.add(vHmmStates);
 		}
 		readVocabFromCorpus(inFile);
+	}
+	
+	//cache from the training data only
+	public static void cacheFrequentConditionals() {
+		HashMap<FrequentConditionalStringVector, Integer> conditionalCountMap = new HashMap<FrequentConditionalStringVector, Integer>();
+		frequentConditionals = new TreeSet<FrequentConditionalStringVector>(new Comparator<FrequentConditionalStringVector>() {
+			@Override
+			public int compare(FrequentConditionalStringVector o1,
+					FrequentConditionalStringVector o2) {
+				return o1.index.compareTo(o2.index);
+			}
+			
+		});
+		int nrTokensProcessed = 0;
+		//count frequencies
+		for(int state=0; state<Main.numStates; state++) {
+			for(int n=0; n<Corpus.trainInstanceList.size(); n++) {
+				Instance instance = Corpus.trainInstanceList.get(n);
+				for(int t=0; t<instance.T; t++) {
+					String conditionalString = instance.getConditionalString(t, state);
+					double[] conditionalVector = instance.getConditionalVector(t, state);
+					//MyArray.printVector(conditionalVector, "conditiona");
+					FrequentConditionalStringVector fc = new FrequentConditionalStringVector(conditionalString, conditionalVector);
+					if(conditionalCountMap.containsKey(fc)) {
+						int prevFreq = conditionalCountMap.get(fc);
+						conditionalCountMap.put(fc, prevFreq+1);
+					} else {
+						conditionalCountMap.put(fc, 1);
+					}
+					nrTokensProcessed++;
+					if(nrTokensProcessed >= maxTokensToProcessForFrequentConditionals) {
+						break;
+					}
+				}
+			}
+		}
+		FrequentConditionalCountComparator comparator = new FrequentConditionalCountComparator();
+		PriorityQueue<FrequentConditionalStringVector> pq = new PriorityQueue<FrequentConditionalStringVector>(maxFrequentConditionals, comparator);
+		//get top freq items
+		for (Map.Entry<FrequentConditionalStringVector, Integer> entry : conditionalCountMap.entrySet()) {
+			FrequentConditionalStringVector fc = entry.getKey();
+			fc.count = entry.getValue();
+			if(pq.size() < maxFrequentConditionals) {
+				//just add it
+				pq.add(fc);
+			} else {
+				//peek the lowest one, remove if small
+				if(pq.peek().count < fc.count) {
+					pq.remove();
+					pq.add(fc);
+				} 				
+			}
+		}
+		//iterate over pq list and add into the treeset
+		for(FrequentConditionalStringVector f : pq) {
+			frequentConditionals.add(f);
+		}
+		System.out.println("Frequent conditional size : " + frequentConditionals.size());
 	}
 	
 	public void setupSampler() {

@@ -37,7 +37,7 @@ public class EM {
 	int lowerCount = 0; // number of times LL could not increase from previous
 						// best
 	int iterCount = 0;
-	int mStepIter = 100; //initial
+	int mStepIter = 10; //initial
 	
 	public EM(int numIter, Corpus c, HMMBase model) {
 		this.numIter = numIter;
@@ -60,10 +60,10 @@ public class EM {
 
 	public void mStep() {
 		System.out.println("Mstep #tokens : " + c.trainInstanceMStepSampleList.numberOfTokens);
-		//trainLBFGS();
+		trainLBFGS();
 		//trainAveragedPerceptronPosterior();
 		//trainAveragedPerceptronViterbi();
-		trainSgd();
+		//trainSgd();
 		model.updateFromCounts(expectedCounts);
 	}
 	
@@ -106,7 +106,7 @@ public class EM {
 			System.out.println("optimization threw exception: IllegalArgument");
 		} catch (OptimizationException oe) {
 			System.out.println("optimization threw OptimizationException");
-			if(Main.sampleSizeMStep < 10000) {
+			if(Main.sampleSizeMStep < 25000) {
 				Main.sampleSizeMStep += 1000;
 			}
 		}
@@ -162,7 +162,7 @@ public class EM {
 		}
 		convergeCount = 0;
 		if (LL < bestOldLL) {
-			if(Main.sampleSizeMStep < 5000) {
+			if(Main.sampleSizeMStep < 25000) {
 				Main.sampleSizeMStep += 1000;
 			}
 			if (lowerCount == 0) {

@@ -3,6 +3,8 @@ package corpus;
 import java.util.Comparator;
 
 public class VocabItemProbComparator implements Comparator<VocabItemProbability> {
+	
+	//for min-heap
 	@Override
 	public int compare(VocabItemProbability v1, VocabItemProbability v2) {
 		if(v1.prob < v2.prob) {

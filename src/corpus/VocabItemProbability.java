@@ -1,5 +1,7 @@
 package corpus;
 
+import java.util.PriorityQueue;
+
 public class VocabItemProbability {
 	public int index;
 	public double prob;

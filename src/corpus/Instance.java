@@ -1,10 +1,12 @@
 package corpus;
 
+import program.Main;
 import model.HMMBase;
 import model.HMMType;
 import model.inference.ForwardBackward;
 import model.inference.ForwardBackwardLog;
 import model.inference.ForwardBackwardScaled;
+import model.param.LogLinearWeights;
 import util.MathUtils;
 import util.SmoothWord;
 
@@ -13,7 +15,8 @@ public class Instance {
 	public int T; // sentence length
 	Corpus c;
 	public ForwardBackward forwardBackward;
-	public int nrStates;
+	//TODO: might change if we consider finalState hmm
+	public static int nrStates = Main.numStates;
 	public int unknownCount;
 	public HMMBase model;
 	
@@ -40,7 +43,7 @@ public class Instance {
 		} else {
 			forwardBackward = new ForwardBackwardScaled(model, this);
 		}
-		nrStates = model.nrStates;
+		//nrStates = model.nrStates;
 		forwardBackward.doInference();
 	}
 
@@ -84,7 +87,8 @@ public class Instance {
 	
 	
 	public double[] getConditionalVector(int t, int state){
-		double[] conditionalVector = new double[model.param.weights.conditionalSize];
+		//double[] conditionalVector = new double[model.param.weights.conditionalSize];
+		double[] conditionalVector = new double[LogLinearWeights.conditionalSize];
 		//fill the conditionVector
 		conditionalVector[0] = 1.0; //offset
 		int index = 1;

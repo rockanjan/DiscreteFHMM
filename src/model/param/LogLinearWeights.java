@@ -6,7 +6,7 @@ public class LogLinearWeights {
 	public double[][] weights; //weights for the log-linear model
 	
 	public int vocabSize;
-	public int conditionalSize;
+	public static int conditionalSize;
 	
 	/*
 	 * @param vocabSize = number of distinct observation tokens

@@ -44,7 +44,7 @@ public class Main {
 
 	static int vocabThreshold = 1; // only above this included*******
 	static int recursionSize = 100;
-	public static int numStates = 80;
+	public static int numStates = 2;
 
 	/** user parameters end **/
 	public static void main(String[] args) throws IOException {
@@ -56,7 +56,7 @@ public class Main {
 	public static void train() throws IOException {
 		InstanceList.VOCAB_UPDATE_COUNT = 1000;
 		outFolderPrefix = "out/";
-		numIter = 50;
+		numIter = 100;
 		String trainFileBase;
 		String testFileBase;
 		String devFileBase;
@@ -67,8 +67,8 @@ public class Main {
 		double[][] previousRecursionWeights = null;
 		for (int currentRecursion = 0; currentRecursion < recursionSize; currentRecursion++) {
 			System.out.println("RECURSION: " + currentRecursion);
-			sampleSizeEStep = 2500; // total sentences in RCV1 is 1.3M, conll2003 is 25K
-			sampleSizeMStep = 10;
+			sampleSizeEStep = 25000; // total sentences in RCV1 is 1.3M, conll2003 is 25K
+			sampleSizeMStep = 25000;
 			System.out.println("-----------------");
 			if (currentRecursion == 0) {
 				trainFile = trainFileBase;
@@ -92,8 +92,10 @@ public class Main {
 			corpus.readVocab(vocabFile);
 			// corpus.setupSampler();
 			corpus.readTrain(trainFile);
+			
 			corpus.readTest(testFile);
 			corpus.readDev(devFile);
+			
 			
 			model = new HMMNoFinalStateLog(numStates, corpus);
 			Random random = new Random(seed);
@@ -110,6 +112,10 @@ public class Main {
 				InstanceList.VOCAB_UPDATE_COUNT = 0; // <= 0 means exact (no approx gradient)
 			}
 			printParams();
+			
+			//find most frequent conditionals
+			Corpus.cacheFrequentConditionals();
+			
 			EM em = new EM(numIter, corpus, model);
 			em.start();
 			model.saveModel(currentRecursion);

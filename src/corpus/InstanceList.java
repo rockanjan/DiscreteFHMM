@@ -1,6 +1,7 @@
 package corpus;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
@@ -10,6 +11,7 @@ import model.HMMBase;
 import model.param.HMMParamBase;
 import program.Main;
 import util.MathUtils;
+import util.MyArray;
 import util.Timing;
 
 public class InstanceList extends ArrayList<Instance> {
@@ -23,6 +25,7 @@ public class InstanceList extends ArrayList<Instance> {
 	}
 	
 	static public Map<String, Double> featurePartitionCache;
+	static public Map<String, VocabNumeratorArray> featureNumeratorCache;
 
 	/*
 	 * just to get the LL of the data
@@ -252,6 +255,44 @@ public class InstanceList extends ArrayList<Instance> {
 		Timing timing = new Timing();
 		double[][] expWeights = MathUtils.expArray(parameterMatrix);
 		timing.start();
+		//cache for frequent conditonals
+		int vocabSize = Corpus.corpusVocab.get(0).vocabSize;
+		//cache conditional numerators
+		featureNumeratorCache = new HashMap<String, VocabNumeratorArray>();
+		VocabItemProbComparator comparator = new VocabItemProbComparator();
+		for(FrequentConditionalStringVector conditional : Corpus.frequentConditionals) {
+			//initialize
+			VocabNumeratorArray conditionalVocabArrays = new VocabNumeratorArray(vocabSize);
+			double[] conditionalVector = conditional.vector;
+			//MyArray.printVector(conditionalVector, "Conditional vector");
+			double partition = 0.0;
+			PriorityQueue<VocabItemProbability> topProbs = new PriorityQueue<VocabItemProbability>(VOCAB_UPDATE_COUNT, comparator);
+			//fill the arrays
+			for(int v=0; v<vocabSize; v++) {
+				double numerator = MathUtils.expDot(expWeights[v], conditionalVector);
+				if(topProbs.size() < VOCAB_UPDATE_COUNT) {
+					//just insert
+					VocabItemProbability item = new VocabItemProbability(v, numerator);
+					topProbs.add(item);
+				} else {
+					//find the min among the current max
+					VocabItemProbability currentMinItem = topProbs.peek();
+					if(numerator > currentMinItem.prob) {
+						//remove the current min
+						topProbs.poll();
+						//insert the new one
+						topProbs.add(new VocabItemProbability(v, numerator));
+					}
+				}
+				conditionalVocabArrays.array[v] = numerator;
+				partition += numerator;
+			}
+			conditionalVocabArrays.normalizer = partition;
+			conditionalVocabArrays.topProbs = topProbs;
+			featureNumeratorCache.put(conditional.index, conditionalVocabArrays);
+		}
+		
+		
 		double gradient[][] = new double[parameterMatrix.length][parameterMatrix[0].length];
 		
 		//start parallel processing
@@ -279,7 +320,8 @@ public class InstanceList extends ArrayList<Instance> {
 			}
 			MathUtils.addMatrix(gradient, worker.gradient);
 		}
-		System.out.println("Gradient computation time : " + timing.stop());		
+		System.out.println("Gradient computation time : " + timing.stop());
+		featureNumeratorCache = null;
 		return gradient;
 	}
 	
@@ -308,6 +350,7 @@ public class InstanceList extends ArrayList<Instance> {
 					for (int state = 0; state < instance.model.nrStates; state++) {
 						double posteriorProb = instance.posteriors[t][state];
 						double[] conditionalVector = instance.getConditionalVector(t, state);
+						String conditionalString = instance.getConditionalString(t, state);
 						//create partition
 						if(VOCAB_UPDATE_COUNT <= 0) { //exact
 		                    double normalizer = 0.0;
@@ -326,32 +369,44 @@ public class InstanceList extends ArrayList<Instance> {
 								}
 							}				
 						} else {
-							double normalizer = 0.0;
-							PriorityQueue<VocabItemProbability> topProbs = new PriorityQueue<VocabItemProbability>(VOCAB_UPDATE_COUNT, comparator);
-							for (int v = 0; v < expWeights.length; v++) {
-								//double numerator = MathUtils.exp(MathUtils.dot(parameterMatrix[v], conditionalVector));
-								double numerator = MathUtils.expDot(expWeights[v], conditionalVector);
-								if(topProbs.size() < VOCAB_UPDATE_COUNT) {
-									//just insert
-									VocabItemProbability item = new VocabItemProbability(v, numerator);
-									topProbs.add(item);
-								} else {
-									//find the min among the current max
-									VocabItemProbability currentMinItem = topProbs.peek();
-									if(numerator > currentMinItem.prob) {
-										//remove the current min
-										topProbs.poll();
-										//insert the new one
-										topProbs.add(new VocabItemProbability(v, numerator));
+							if(featureNumeratorCache.containsKey(conditionalString)) {
+								for(int j=0; j<expWeights[0].length; j++) {
+									if(conditionalVector[j] != 0) {
+										gradient[instance.words[t][0]][j] += posteriorProb;
+										VocabNumeratorArray vna = featureNumeratorCache.get(conditionalString);
+										for(VocabItemProbability item : vna.topProbs) {
+											gradient[item.index][j] -= posteriorProb * item.prob / vna.normalizer;
+										}
 									}
 								}
-								normalizer += numerator;						
-							}
-							for(int j=0; j<expWeights[0].length; j++) {
-								if(conditionalVector[j] != 0) {
-									gradient[instance.words[t][0]][j] += posteriorProb;
-									for(VocabItemProbability item : topProbs) {
-										gradient[item.index][j] -= posteriorProb * item.prob / normalizer;
+							} else {
+								double normalizer = 0.0;
+								PriorityQueue<VocabItemProbability> topProbs = new PriorityQueue<VocabItemProbability>(VOCAB_UPDATE_COUNT, comparator);
+								for (int v = 0; v < expWeights.length; v++) {
+									double numerator;
+									numerator = MathUtils.expDot(expWeights[v], conditionalVector);
+									if(topProbs.size() < VOCAB_UPDATE_COUNT) {
+										//just insert
+										VocabItemProbability item = new VocabItemProbability(v, numerator);
+										topProbs.add(item);
+									} else {
+										//find the min among the current max
+										VocabItemProbability currentMinItem = topProbs.peek();
+										if(numerator > currentMinItem.prob) {
+											//remove the current min
+											topProbs.poll();
+											//insert the new one
+											topProbs.add(new VocabItemProbability(v, numerator));
+										}
+									}									
+									normalizer += numerator;
+								}
+								for(int j=0; j<expWeights[0].length; j++) {
+									if(conditionalVector[j] != 0) {
+										gradient[instance.words[t][0]][j] += posteriorProb;
+										for(VocabItemProbability item : topProbs) {
+											gradient[item.index][j] -= posteriorProb * item.prob / normalizer;
+										}
 									}
 								}
 							}							

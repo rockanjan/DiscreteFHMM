@@ -23,7 +23,7 @@ public class Corpus {
 	public static String delimiter = "\\s+";
 	public static String obsDelimiter = "\\|"; //separator of multiple observation elements at one timestep
 	public static int oneTimeStepObsSize = -1;
-	public static InstanceList trainInstanceList = new InstanceList();
+	public static InstanceList trainInstanceList;
 	// testInstanceList can be empty
 	public static InstanceList testInstanceList;
 	public static InstanceList devInstanceList;
@@ -110,6 +110,7 @@ public class Corpus {
 		String line = null;
 		totalWords = 0;
 		int totalUnknown = 0;
+		trainInstanceList = new InstanceList();
 		while ((line = br.readLine()) != null) {
 			line = line.trim();
 			if (!line.isEmpty()) {

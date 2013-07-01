@@ -100,6 +100,7 @@ public class Main {
 			model = new HMMNoFinalStateLog(numStates, corpus);
 			Random random = new Random(seed);
 			model.initializeRandom(random);
+			
 			model.computePreviousTransitions();
 			model.initializeZerosToBest();
 			model.param.weights.initializeZeros();

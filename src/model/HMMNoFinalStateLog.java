@@ -41,17 +41,15 @@ public class HMMNoFinalStateLog extends HMMBase{
 	@Override
 	public void computePreviousTransitions() {
 		//for all the training corpus
-		for(int i=0; i<corpus.trainInstanceList.size(); i++) {
-			Instance sentence = corpus.trainInstanceList.get(i);
+		for(int i=0; i<Corpus.trainInstanceList.size(); i++) {
+			Instance sentence = Corpus.trainInstanceList.get(i);
 			//initial
-			for(int z=1; z<corpus.oneTimeStepObsSize; z++) {
-				double prevValue = this.param.initial.get(z).get( sentence.words[0][z], 0);
+			for(int z=1; z<Corpus.oneTimeStepObsSize; z++) {
 				this.param.initial.get(z).addToCounts( sentence.words[0][z], 0, 1);
 			}
 			
 			for(int t=1; t<sentence.T; t++) {
-				for(int z=1; z<corpus.oneTimeStepObsSize; z++) {
-					double prevValue = this.param.transition.get(z).get( sentence.words[t][z], sentence.words[t-1][z]);
+				for(int z=1; z<Corpus.oneTimeStepObsSize; z++) {
 					this.param.transition.get(z).addToCounts( sentence.words[t][z], sentence.words[t-1][z] , 1);
 				}
 			}

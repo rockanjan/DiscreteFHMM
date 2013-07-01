@@ -3,6 +3,8 @@ package model.param;
 import java.util.ArrayList;
 import java.util.Random;
 
+import corpus.Corpus;
+
 import util.MyArray;
 
 import model.HMMBase;
@@ -38,19 +40,19 @@ public abstract class HMMParamBase {
 			
 			initial.add(initialCurrent);
 			transition.add(transitionCurrent);
-			for(int i=1; i<model.corpus.oneTimeStepObsSize; i++) {
-				MultinomialLog tempTrans = new MultinomialLog(model.corpus.corpusVocab.get(i).vocabSize, model.corpus.corpusVocab.get(i).vocabSize);
-				MultinomialLog tempInit = new MultinomialLog(model.corpus.corpusVocab.get(i).vocabSize, 1);
+			for(int i=1; i<Corpus.oneTimeStepObsSize; i++) {
+				MultinomialLog tempTrans = new MultinomialLog(Corpus.corpusVocab.get(i).vocabSize, Corpus.corpusVocab.get(i).vocabSize);
+				MultinomialLog tempInit = new MultinomialLog(Corpus.corpusVocab.get(i).vocabSize, 1);
 				initial.add(tempInit);
 				transition.add(tempTrans);
 			}
 			//initial random weights
 			int zSize = 0;
-			for(int i=1; i<model.corpus.oneTimeStepObsSize; i++) {
-				zSize += model.corpus.corpusVocab.get(i).vocabSize;
+			for(int i=1; i<Corpus.oneTimeStepObsSize; i++) {
+				zSize += Corpus.corpusVocab.get(i).vocabSize;
 			}
 			//initialize weights for the log-linear model
-			weights = new LogLinearWeights(model.corpus.corpusVocab.get(0).vocabSize, nrStates + zSize);
+			weights = new LogLinearWeights(Corpus.corpusVocab.get(0).vocabSize, nrStates + zSize);
 			weights.initializeZeros();
 		} else {
 			initial = new ArrayList<MultinomialBase>();
@@ -61,19 +63,19 @@ public abstract class HMMParamBase {
 			
 			initial.add(initialCurrent);
 			transition.add(transitionCurrent);
-			for(int i=1; i<model.corpus.oneTimeStepObsSize; i++) {
-				MultinomialLog tempTrans = new MultinomialLog(model.corpus.corpusVocab.get(i).vocabSize, model.corpus.corpusVocab.get(i).vocabSize);
-				MultinomialLog tempInit = new MultinomialLog(model.corpus.corpusVocab.get(i).vocabSize, 1);
+			for(int i=1; i<Corpus.oneTimeStepObsSize; i++) {
+				MultinomialLog tempTrans = new MultinomialLog(Corpus.corpusVocab.get(i).vocabSize, Corpus.corpusVocab.get(i).vocabSize);
+				MultinomialLog tempInit = new MultinomialLog(Corpus.corpusVocab.get(i).vocabSize, 1);
 				initial.add(tempInit);
 				transition.add(tempTrans);
 			}
 			//initial random weights
 			int zSize = 0;
-			for(int i=1; i<model.corpus.oneTimeStepObsSize; i++) {
-				zSize += model.corpus.corpusVocab.get(i).vocabSize;
+			for(int i=1; i<Corpus.oneTimeStepObsSize; i++) {
+				zSize += Corpus.corpusVocab.get(i).vocabSize;
 			}
 			//initialize weights for the log-linear model
-			weights = new LogLinearWeights(model.corpus.corpusVocab.get(0).vocabSize, nrStates + zSize);
+			weights = new LogLinearWeights(Corpus.corpusVocab.get(0).vocabSize, nrStates + zSize);
 			weights.initializeZeros();
 		}
 	}
@@ -86,12 +88,12 @@ public abstract class HMMParamBase {
 		
 		//initial random weights
 		int zSize = 0;
-		for(int i=1; i<model.corpus.oneTimeStepObsSize; i++) {
+		for(int i=1; i<Corpus.oneTimeStepObsSize; i++) {
 			initial.get(i).initializeUniformCounts();
 			transition.get(i).initializeUniformCounts();
-			zSize += model.corpus.corpusVocab.get(i).vocabSize;			
+			zSize += Corpus.corpusVocab.get(i).vocabSize;			
 		}
-		weights = new LogLinearWeights(model.corpus.corpusVocab.get(0).vocabSize, nrStates + zSize);
+		weights = new LogLinearWeights(Corpus.corpusVocab.get(0).vocabSize, nrStates + zSize);
 		weights.initializeRandom(r);
 	}
 	
@@ -117,7 +119,7 @@ public abstract class HMMParamBase {
 	}
 	
 	public void check() { 
-		for(int i=0; i<model.corpus.oneTimeStepObsSize; i++) {
+		for(int i=0; i<Corpus.oneTimeStepObsSize; i++) {
 			initial.get(i).checkDistribution();
 			transition.get(i).checkDistribution();
 		}
@@ -129,7 +131,7 @@ public abstract class HMMParamBase {
 	}
 	
 	public void cloneFrom(HMMParamBase source) {
-		for(int i=0; i<model.corpus.oneTimeStepObsSize; i++) {
+		for(int i=0; i<Corpus.oneTimeStepObsSize; i++) {
 			initial.get(i).cloneFrom(source.initial.get(i));
 			transition.get(i).cloneFrom(source.transition.get(i));
 		}
@@ -143,8 +145,7 @@ public abstract class HMMParamBase {
 	
 	@Override
 	public boolean equals(Object other) {
-		System.err.println("NOT IMPLEMENTED");
-		return false;
+		throw new UnsupportedOperationException("Not yet implemented");
 	}
 	
 	public boolean equalsExact(HMMParamBase other) {

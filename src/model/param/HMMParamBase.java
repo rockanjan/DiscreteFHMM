@@ -11,6 +11,7 @@ import model.HMMBase;
 import model.HMMType;
 
 public abstract class HMMParamBase {
+	public int nrLayers;
 	public ArrayList<MultinomialBase> initial;
 	public ArrayList<MultinomialBase> transition;
 	
@@ -28,76 +29,41 @@ public abstract class HMMParamBase {
 	public HMMParamBase(HMMBase model) {
 		this.model = model;
 		nrStates = model.nrStates;
+		this.nrLayers = model.nrLayers;
 	}
 	
 	public void initializeZeros() {
 		if(model.hmmType == HMMType.LOG_SCALE) {
 			initial = new ArrayList<MultinomialBase>();
 			transition = new ArrayList<MultinomialBase>();
-			
-			MultinomialLog initialCurrent = new MultinomialLog(nrStates, 1);
-			MultinomialLog transitionCurrent = new MultinomialLog(nrStates, nrStates); //for current hidden states
-			
-			initial.add(initialCurrent);
-			transition.add(transitionCurrent);
-			for(int i=1; i<Corpus.oneTimeStepObsSize; i++) {
-				MultinomialLog tempTrans = new MultinomialLog(Corpus.corpusVocab.get(i).vocabSize, Corpus.corpusVocab.get(i).vocabSize);
-				MultinomialLog tempInit = new MultinomialLog(Corpus.corpusVocab.get(i).vocabSize, 1);
+			for(int i=0; i<nrLayers; i++) {
+				MultinomialLog tempTrans = new MultinomialLog(nrStates, nrStates);
+				MultinomialLog tempInit = new MultinomialLog(nrStates, 1);
 				initial.add(tempInit);
 				transition.add(tempTrans);
 			}
-			//initial random weights
-			int zSize = 0;
-			for(int i=1; i<Corpus.oneTimeStepObsSize; i++) {
-				zSize += Corpus.corpusVocab.get(i).vocabSize;
-			}
 			//initialize weights for the log-linear model
-			weights = new LogLinearWeights(Corpus.corpusVocab.get(0).vocabSize, nrStates + zSize);
+			weights = new LogLinearWeights(Corpus.corpusVocab.get(0).vocabSize, nrLayers * nrStates);
 			weights.initializeZeros();
 		} else {
-			initial = new ArrayList<MultinomialBase>();
-			transition = new ArrayList<MultinomialBase>();
-			
-			MultinomialRegular initialCurrent = new MultinomialRegular(nrStates, 1);
-			MultinomialRegular transitionCurrent = new MultinomialRegular(nrStates, nrStates); //for current hidden states
-			
-			initial.add(initialCurrent);
-			transition.add(transitionCurrent);
-			for(int i=1; i<Corpus.oneTimeStepObsSize; i++) {
-				MultinomialLog tempTrans = new MultinomialLog(Corpus.corpusVocab.get(i).vocabSize, Corpus.corpusVocab.get(i).vocabSize);
-				MultinomialLog tempInit = new MultinomialLog(Corpus.corpusVocab.get(i).vocabSize, 1);
-				initial.add(tempInit);
-				transition.add(tempTrans);
-			}
-			//initial random weights
-			int zSize = 0;
-			for(int i=1; i<Corpus.oneTimeStepObsSize; i++) {
-				zSize += Corpus.corpusVocab.get(i).vocabSize;
-			}
-			//initialize weights for the log-linear model
-			weights = new LogLinearWeights(Corpus.corpusVocab.get(0).vocabSize, nrStates + zSize);
-			weights.initializeZeros();
+			throw new UnsupportedOperationException("Not implemented");
 		}
 	}
 	
 	public void initialize(Random r) {
 		initializeZeros();
-		initial.get(0).initializeRandom(r);
-		transition.get(0).initializeRandom(r);
-		//others still initialized to zero
-		
-		//initial random weights
-		int zSize = 0;
-		for(int i=1; i<Corpus.oneTimeStepObsSize; i++) {
-			initial.get(i).initializeUniformCounts();
-			transition.get(i).initializeUniformCounts();
-			zSize += Corpus.corpusVocab.get(i).vocabSize;			
+		for(int i=0; i<nrLayers; i++) {
+			initial.get(i).initializeRandom(r);
+			transition.get(i).initializeRandom(r);			
 		}
-		weights = new LogLinearWeights(Corpus.corpusVocab.get(0).vocabSize, nrStates + zSize);
+		weights = new LogLinearWeights(Corpus.corpusVocab.get(0).vocabSize, nrLayers * nrStates);
 		weights.initializeRandom(r);
+		//TODO: normalize observation weights
 	}
 	
 	public void initializeWeightsFromPreviousRecursion(double[][] prev) {
+		throw new UnsupportedOperationException("should not be used in variational case");
+		/*
 		if(prev.length != weights.weights.length) {
 			throw new RuntimeException("Weight initialization from previous recursion found different vocab dimension, prev = " 
 					+ prev.length + " new = " + weights.weights.length);
@@ -116,22 +82,25 @@ public abstract class HMMParamBase {
 				index++;
 			}
 		}
+		*/
 	}
 	
 	public void check() { 
-		for(int i=0; i<Corpus.oneTimeStepObsSize; i++) {
+		for(int i=0; i<nrLayers; i++) {
 			initial.get(i).checkDistribution();
 			transition.get(i).checkDistribution();
 		}
 	}
 	
 	public void normalize() {
-		initial.get(0).normalize();
-		transition.get(0).normalize();		
+		for(int i=0; i<nrLayers; i++) {
+			initial.get(i).normalize();
+			transition.get(i).normalize();
+		}		
 	}
 	
 	public void cloneFrom(HMMParamBase source) {
-		for(int i=0; i<Corpus.oneTimeStepObsSize; i++) {
+		for(int i=0; i<nrLayers; i++) {
 			initial.get(i).cloneFrom(source.initial.get(i));
 			transition.get(i).cloneFrom(source.transition.get(i));
 		}

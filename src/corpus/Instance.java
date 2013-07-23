@@ -1,20 +1,28 @@
 package corpus;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import program.Main;
 import model.HMMBase;
 import model.HMMType;
 import model.inference.ForwardBackward;
 import model.inference.ForwardBackwardLog;
 import model.inference.ForwardBackwardScaled;
+import model.inference.VariationalParam;
+import model.param.HMMParamBase;
 import model.param.LogLinearWeights;
 import util.MathUtils;
 import util.SmoothWord;
 
 public class Instance {
+	//m,t,k
+	public int[][][] variationalPosteriors;
 	public int[][] words;
 	public int T; // sentence length
 	Corpus c;
-	public ForwardBackward forwardBackward;
+	public List<ForwardBackward> forwardBackward;
+	public VariationalParam varParam;
 	//TODO: might change if we consider finalState hmm
 	public static int nrStates = Main.numStates;
 	public int unknownCount;
@@ -38,13 +46,20 @@ public class Instance {
 	
 	public void doInference(HMMBase model) {
 		this.model = model;
+		//optimize variational params by minimizing KL-divergence
+		varParam = new VariationalParam(this);
+		
+		forwardBackward = new ArrayList<ForwardBackward>();
 		if (model.hmmType == HMMType.LOG_SCALE) {
-			forwardBackward = new ForwardBackwardLog(model, this);
+			for(int l=0; l<model.nrLayers; l++) {
+				ForwardBackwardLog tempFB = new ForwardBackwardLog(model, this, l);
+				forwardBackward.add(tempFB);
+				//TODO
+				forwardBackward.doInference();
+			}
 		} else {
-			forwardBackward = new ForwardBackwardScaled(model, this);
-		}
-		//nrStates = model.nrStates;
-		forwardBackward.doInference();
+			throw new UnsupportedOperationException("Not implemented");
+		}		
 	}
 
 	public void clearInference() {

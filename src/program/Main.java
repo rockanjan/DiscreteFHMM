@@ -35,7 +35,6 @@ public class Main {
 	static String outFolderPrefix;
 	static HMMBase model;
 	static Corpus corpus;
-	public static int currentRecursion;
 	public static int sampleSizeEStep;
 	public static int sampleSizeMStep;
 
@@ -43,7 +42,7 @@ public class Main {
 									// word|hmm1|hmm2 has 3
 
 	static int vocabThreshold = 1; // only above this included*******
-	static int recursionSize = 100;
+	static int nrLayers = 10;
 	public static int numStates = 2;
 
 	/** user parameters end **/
@@ -54,106 +53,56 @@ public class Main {
 	}
 
 	public static void train() throws IOException {
-		InstanceList.VOCAB_UPDATE_COUNT = 1000;
+		InstanceList.VOCAB_UPDATE_COUNT = 0;
 		outFolderPrefix = "out/";
 		numIter = 100;
 		String trainFileBase;
 		String testFileBase;
 		String devFileBase;
-		trainFileBase = "out/decoded/combined.txt.SPL";
-		testFileBase = "out/decoded/test.txt.SPL";
+		trainFileBase = "out/decoded/test.txt.SPL";
+		testFileBase = "out/decoded/combined.txt.SPL";
 		devFileBase = "out/decoded/srl.txt";
-
-		double[][] previousRecursionWeights = null;
-		for (int currentRecursion = 0; currentRecursion < recursionSize; currentRecursion++) {
-			System.out.println("RECURSION: " + currentRecursion);
-			sampleSizeEStep = 25000; // total sentences in RCV1 is 1.3M, conll2003 is 25K
-			sampleSizeMStep = 25000;
-			System.out.println("-----------------");
-			if (currentRecursion == 0) {
-				trainFile = trainFileBase;
-				testFile = testFileBase;
-				devFile = devFileBase;
-			} else {
-				trainFile = trainFileBase + "." + currentRecursion;
-				testFile = testFileBase + "." + currentRecursion;
-				devFile = devFileBase + "." + currentRecursion;
-			}
-
-			vocabFile = trainFile;
-			String outFileTrain = trainFileBase + "." + (currentRecursion + 1);
-			String outFileTest = testFileBase + "." + (currentRecursion + 1);
-			String outFileDev = devFileBase + "." + (currentRecursion + 1);
-			
-			corpus = new Corpus("\\s+", vocabThreshold);
-			Corpus.oneTimeStepObsSize = Corpus
-					.findOneTimeStepObsSize(vocabFile);
-			// TRAIN
-			corpus.readVocab(vocabFile);
-			// corpus.setupSampler();
-			corpus.readTrain(trainFile);
-			
-			corpus.readTest(testFile);
-			corpus.readDev(devFile);
-			
-			
-			model = new HMMNoFinalStateLog(numStates, corpus);
-			Random random = new Random(seed);
-			model.initializeRandom(random);
-			
-			model.computePreviousTransitions();
-			model.initializeZerosToBest();
-			model.param.weights.initializeZeros();
-			// initialize weights with previous recursion weights
-			if (previousRecursionWeights != null) {
-				model.param
-						.initializeWeightsFromPreviousRecursion(previousRecursionWeights);
-			}
-			if(Corpus.corpusVocab.get(0).vocabSize < InstanceList.VOCAB_UPDATE_COUNT) {
-				InstanceList.VOCAB_UPDATE_COUNT = 0; // <= 0 means exact (no approx gradient)
-			}
-			printParams();
-			
-			//find most frequent conditionals
-			Corpus.cacheFrequentConditionals();
-			
-			EM em = new EM(numIter, corpus, model);
-			em.start();
-			model.saveModel(currentRecursion);
-			// store weights to assign for the next recursion
-			previousRecursionWeights = MyArray
-					.getCloneOfMatrix(model.param.weights.weights);
-			if(corpus.testInstanceList != null) {
-				System.out.println("LL of Test Data : " + corpus.testInstanceList.getLL(model));
-				test(model, corpus.testInstanceList, outFileTest);
-			}
-			if(corpus.devInstanceList != null) {
-				System.out.println("LL of Dev Data : " + corpus.devInstanceList.getLL(model));
-				test(model, corpus.devInstanceList, outFileDev);
-			}
-			test(model, corpus.trainInstanceList, outFileTrain);
+		trainFile = trainFileBase;
+		testFile = testFileBase;
+		devFile = devFileBase;
+		vocabFile = trainFile;
+		String outFileTrain = trainFileBase + ".decoded";
+		String outFileTest = testFileBase + ".decoded";
+		String outFileDev = devFileBase + ".decoded";
+		corpus = new Corpus("\\s+", vocabThreshold);
+		Corpus.oneTimeStepObsSize = Corpus.findOneTimeStepObsSize(vocabFile);
+		// TRAIN
+		corpus.readVocab(vocabFile);
+		// corpus.setupSampler();
+		corpus.readTrain(trainFile);
+		corpus.readTest(testFile);
+		corpus.readDev(devFile);
+		model = new HMMNoFinalStateLog(nrLayers, numStates, corpus);
+		Random random = new Random(seed);
+		model.initializeRandom(random);
+		//model.param.weights.initializeZeros();
+		model.initializeZerosToBest();
+		printParams();
+		//find most frequent conditionals
+		//Corpus.cacheFrequentConditionals();
+		EM em = new EM(numIter, corpus, model);
+		em.start();
+		
+		model.saveModel(currentRecursion);
+		// store weights to assign for the next recursion
+		previousRecursionWeights = MyArray.getCloneOfMatrix(model.param.weights.weights);
+		if(corpus.testInstanceList != null) {
+			System.out.println("LL of Test Data : " + corpus.testInstanceList.getLL(model));
+			test(model, corpus.testInstanceList, outFileTest);
 		}
+		if(corpus.devInstanceList != null) {
+			System.out.println("LL of Dev Data : " + corpus.devInstanceList.getLL(model));
+			test(model, corpus.devInstanceList, outFileDev);
+		}
+		test(model, corpus.trainInstanceList, outFileTrain);
 	}
 	
-	public static void decodeFromPlainText(String testFileBase,
-			int numberOfRecursions) throws IOException {
-		System.out.println("Decoding from plain text");
-		for (currentRecursion = 0; currentRecursion < numberOfRecursions; currentRecursion++) {
-			corpus = new Corpus("\\s+", vocabThreshold);
-			model = new HMMNoFinalStateLog(numStates, corpus);
-			model.loadModel(currentRecursion); // also reads the vocab
-												// dictionaries
-			if (currentRecursion == 0) {
-				testFile = testFileBase;
-			} else {
-				testFile = testFileBase + "." + currentRecursion;
-			}
-			corpus.readTest(testFile);
-			String outFile = testFileBase + "." + (currentRecursion + 1);
-			test(model, corpus.testInstanceList, outFile);
-		}
-	}
-
+	
 	// use exact observation probability (also in forwardBackward) for decoding
 	public static void test(HMMBase model, InstanceList instanceList,
 			String outFile) {

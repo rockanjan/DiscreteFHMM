@@ -15,7 +15,12 @@ public class LogLinearWeights {
 	 */
 	public LogLinearWeights(int vocabSize, int xzSize) {
 		this.vocabSize = vocabSize;
-		this.conditionalSize = xzSize + 1;		 //1 for offset
+		//this.conditionalSize = xzSize + 1;		 //1 for offset
+		this.conditionalSize = xzSize;
+	}
+	
+	public double get(int m, int k, int v) {
+		return weights[v][m*k + k];
 	}
 	public void initializeZeros() {
 		weights = new double[vocabSize][conditionalSize]; 

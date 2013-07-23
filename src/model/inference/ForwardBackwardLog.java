@@ -9,14 +9,15 @@ import util.MathUtils;
 import corpus.Instance;
 
 public class ForwardBackwardLog extends ForwardBackward{
-	public ForwardBackwardLog(HMMBase model, Instance instance) {
+	public ForwardBackwardLog(HMMBase model, Instance instance, int layer) {
 		super();
 		this.model = model;
 		this.instance = instance;
 		this.nrStates = model.nrStates;
+		this.layer = layer;
 		T = instance.T; 
-		initial = model.param.initial.get(0);
-		transition = model.param.transition.get(0);
+		initial = model.param.initial.get(layer);
+		transition = model.param.transition.get(layer);	
 	}
 	
 	@Override
@@ -29,11 +30,12 @@ public class ForwardBackwardLog extends ForwardBackward{
 	@Override
 	public void forward() {
 		alpha = new double[T][nrStates]; //alphas also stored in log scale
-		logLikelihood = 0;
 		//initialization: for t=0
 		for(int i=0; i<nrStates; i++) {
 			double pi = initial.get(i, 0);
-			double obs = instance.getObservationProbability(0, i);
+			//double obs = instance.getObservationProbability(0, i);
+			//TODO: should we normalize?
+			double obs = instance.varParam.obs.shi[layer][i][0];
 			alpha[0][i] = pi + obs; //these prob are in logscale	
 						
 		}
@@ -46,11 +48,12 @@ public class ForwardBackwardLog extends ForwardBackward{
 					expParams[i] = alpha[t-1][i] + transition.get(j, i); 
 				}
 				double obs;
-				obs = instance.getObservationProbability(t, j);
+				//obs = instance.getObservationProbability(t, j);
+				obs = instance.varParam.obs.shi[layer][j][t];
 				alpha[t][j] = MathUtils.logsumexp(expParams) + obs; 
 			}			
 		}
-		logLikelihood = MathUtils.logsumexp(alpha[T-1]);
+		//logLikelihood = MathUtils.logsumexp(alpha[T-1]);
 		//MyArray.printExpTable(alpha, "log alpha");
 		//System.out.println(logLikelihood);
 	}
@@ -68,7 +71,8 @@ public class ForwardBackwardLog extends ForwardBackward{
 				double[] expParams = new double[nrStates];
 				for(int j=0; j<nrStates; j++) {
 					double trans = transition.get(j, i);
-					double obs = instance.getObservationProbability(t+1, j);
+					//double obs = instance.getObservationProbability(t+1, j);
+					double obs = instance.varParam.obs.shi[layer][j][t+1];
 					expParams[j] = trans + obs + beta[t+1][j];
 				}
 				beta[t][i] = MathUtils.logsumexp(expParams);
@@ -90,7 +94,6 @@ public class ForwardBackwardLog extends ForwardBackward{
 			}
 			double denom = MathUtils.logsumexp(expSum);
 			for(int i=0; i<nrStates; i++) {
-				//posterior[t][i] = alpha[t][i] + beta[t][i] - logLikelihood; //not working... why?
 				posterior[t][i] = alpha[t][i] + beta[t][i] - denom;
 				posterior[t][i] = Math.exp(posterior[t][i]);
 				instance.posteriors[t][i] = posterior[t][i];

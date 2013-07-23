@@ -140,6 +140,8 @@ public class MathUtils {
 			}
 		}
 	}
+	
+	
 	public static void main(String[] args) {
 		double a = 0.12;
 		double b = -20;

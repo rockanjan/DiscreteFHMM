@@ -77,6 +77,14 @@ public class MyArray {
 		}
 		return norm;
 	}
+	
+	public static double getSum(double[] vector) {
+		double sum = 0.0;
+		for (int i = 0; i < vector.length; i++) {
+			sum += vector[i];
+		}
+		return sum;
+	}
 
 	public static double[] getMinMaxOfMatrix(double[][] matrix) {
 		double[] result = { Double.MAX_VALUE, -Double.MAX_VALUE };

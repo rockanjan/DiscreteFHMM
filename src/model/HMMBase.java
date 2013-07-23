@@ -20,6 +20,7 @@ import model.param.MultinomialBase;
 import model.param.MultinomialLog;
 
 public abstract class HMMBase {
+	public int nrLayers;
 	public Corpus corpus;
 	public int nrStatesWithFake = -1; // the extending class should initialize
 										// this (for no fake, equals nrStates)

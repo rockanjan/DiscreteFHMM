@@ -67,32 +67,6 @@ public class EM {
 		model.updateFromCounts(expectedCounts);
 	}
 	
-	public void trainSgd() {
-		SgdTrainer sgd = new SgdTrainer(c);
-		sgd.train(model.param.weights.weights, mStepIter);
-	}
-	
-	public void trainAveragedPerceptronViterbi() {
-		//first do the viterbi decoding
-		Timing decodeTiming = new Timing();
-		decodeTiming.start();
-		model.param.expWeightsCache = MathUtils.expArray(model.param.weights.weights);
-		for(int n=0; n<c.trainInstanceMStepSampleList.size(); n++) {
-			Instance instance = c.trainInstanceMStepSampleList.get(n);
-			instance.createDecodedViterbiCache();
-		}
-		System.out.println("M-step Decode time : " + decodeTiming.stop());
-		AveragedPerceptronTrainerViterbi pt = new AveragedPerceptronTrainerViterbi(c);
-		pt.train(model.param.weights.weights, mStepIter);
-		model.param.expWeightsCache = null;
-	}
-	
-	public void trainAveragedPerceptronPosterior() {
-		AveragedPerceptronTrainerPosterior pt = new AveragedPerceptronTrainerPosterior(c);
-		pt.train(model.param.weights.weights, mStepIter);
-				
-	}
-	
 	public void trainLBFGS() {
 		// maximize CLL of the data
 		double[] initParams = MyArray.createVector(model.param.weights.weights);
@@ -156,7 +130,8 @@ public class EM {
 			convergeCount++;
 			if(convergeCount > maxConsecutiveConvergeLimit) {
 				System.out.println("Converged. Saving the final model");
-				model.saveModel(Main.currentRecursion);
+				//TODO: save model
+				//model.saveModel(Main.currentRecursion);
 				return true;
 			}
 		}

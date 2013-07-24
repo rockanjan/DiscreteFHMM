@@ -19,6 +19,19 @@ public class LogLinearWeights {
 		this.conditionalSize = xzSize;
 	}
 	
+	public double[] getStateVector(int m, int v) {
+		if(conditionalSize % m != 0) {
+			System.out.println("Error, conditional size is not a multiple of number of layers");
+			System.exit(-1);
+		}
+		int k = conditionalSize/m; //states
+		double[] vector = new double[k];
+		for(int i=0; i<k; k++) {
+			vector[i] = weights[v][m*k + i];
+		}
+		return vector;
+	}
+	
 	public double get(int m, int k, int v) {
 		return weights[v][m*k + k];
 	}

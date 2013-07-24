@@ -166,8 +166,8 @@ public class Corpus {
 			for(int n=0; n<Corpus.trainInstanceList.size(); n++) {
 				Instance instance = Corpus.trainInstanceList.get(n);
 				for(int t=0; t<instance.T; t++) {
-					String conditionalString = instance.getConditionalString(t, state);
-					double[] conditionalVector = instance.getConditionalVector(t, state);
+					String conditionalString = instance.getConditionalString(t);
+					double[] conditionalVector = instance.getConditionalVector(t);
 					//MyArray.printVector(conditionalVector, "conditiona");
 					FrequentConditionalStringVector fc = new FrequentConditionalStringVector(conditionalString, conditionalVector);
 					if(conditionalCountMap.containsKey(fc)) {

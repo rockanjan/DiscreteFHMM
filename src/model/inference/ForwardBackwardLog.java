@@ -85,7 +85,7 @@ public class ForwardBackwardLog extends ForwardBackward{
 	@Override
 	public void computePosterior() {
 		posterior = new double[T][nrStates];
-		instance.posteriors = new double[T][nrStates];
+		instance.posteriors[layer] = new double[T][nrStates];
 		
 		for(int t=0; t<T; t++) {
 			double[] expSum = new double[nrStates];
@@ -96,10 +96,9 @@ public class ForwardBackwardLog extends ForwardBackward{
 			for(int i=0; i<nrStates; i++) {
 				posterior[t][i] = alpha[t][i] + beta[t][i] - denom;
 				posterior[t][i] = Math.exp(posterior[t][i]);
-				instance.posteriors[t][i] = posterior[t][i];
+				instance.posteriors[layer][t][i] = posterior[t][i];
 			}
 		}
-		//MyArray.printTable(posterior, "log posterior");
 		checkStatePosterior();		
 	}
 	
@@ -120,8 +119,8 @@ public class ForwardBackwardLog extends ForwardBackward{
 	}
 	
 	public void addToCounts(HMMParamBase param) { 
-		addToInitial(param.initial.get(0));
-		addToTransition(param.transition.get(0));
+		addToInitial(param.initial.get(layer));
+		addToTransition(param.transition.get(layer));
 	}
 	
 	//TODO: check if we can still work in log scale instead of exponents
@@ -134,13 +133,7 @@ public class ForwardBackwardLog extends ForwardBackward{
 	
 	//works in normal scale (not log scale)
 	public void addToObservation(ArrayList<MultinomialBase> observation) {
-		for(int t=0; t<T; t++) {
-			for(int i=0; i<nrStates; i++) {
-				for(int k=0; k<model.corpus.oneTimeStepObsSize;k++) {
-					observation.get(k).addToCounts(instance.words[t][k], i, getStatePosterior(t, i));
-				}
-			}
-		}
+		throw new UnsupportedOperationException("not implemented");		
 	}
 	
 	//works in normal scale (not log scale)
@@ -161,10 +154,11 @@ public class ForwardBackwardLog extends ForwardBackward{
 		//xi in Rabiner Tutorial
 		double alphaValue = alpha[position][currentState];
 		double trans = transition.get(nextState, currentState); //transition to next given current
-		//double obs = model.param.observation.get(instance.words[position+1], nextState);
-		double obs = instance.getObservationProbability(position+1, nextState);
+		double obs = instance.varParam.obs.shi[layer][nextState][position+1];		
 		double betaValue = beta[position+1][nextState];		
-		double value = alphaValue + trans + obs + betaValue - logLikelihood;		
+		//WARNING: important
+		//TODO: decide if we should subtract the log likelihood
+		double value = alphaValue + trans + obs + betaValue;		
 		return value;
 	}
 	

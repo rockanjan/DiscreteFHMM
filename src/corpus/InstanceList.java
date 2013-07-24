@@ -38,13 +38,30 @@ public class InstanceList extends ArrayList<Instance> {
 		for (int n = 0; n < this.size(); n++) {
 			Instance instance = this.get(n);
 			instance.doInference(model);
-			LL += instance.forwardBackward.logLikelihood;
+			LL += getJointLL(instance, model);
 			instance.clearInference();
 		}
 		//clear expWeights;
 		model.param.expWeightsCache = null;
 		featurePartitionCache = null;
 		return LL;		
+	}
+	
+	public double getJointLL(Instance instance, HMMBase model) {
+		double jointLL = 0;
+		//for t=0;
+		for(int l=0; l<model.nrLayers; l++) {
+			jointLL += model.param.initial.get(l).get(instance.decodedStates[l][0], 0);			
+		}
+		jointLL += instance.getObservationProbabilityUsingLLModel(0);
+		
+		for(int t=1; t<instance.T; t++) {
+			for(int l=0; l<model.nrLayers; l++) {
+				jointLL += model.param.transition.get(l).get(instance.decodedStates[l][t], instance.decodedStates[l][t-1]);
+			}
+			jointLL += instance.getObservationProbabilityUsingLLModel(t);
+		}
+		return jointLL;
 	}
 	
 	/*
@@ -60,8 +77,10 @@ public class InstanceList extends ArrayList<Instance> {
 		for (int n = 0; n < this.size(); n++) {
 			Instance instance = this.get(n);
 			instance.doInference(model);
-			instance.forwardBackward.addToCounts(expectedCounts);
-			LL += instance.forwardBackward.logLikelihood;
+			for(int l=0; l<model.nrLayers; l++) {
+				instance.forwardBackwardList.get(l).addToCounts(expectedCounts);
+			}
+			//LL += instance.forwardBackward.logLikelihood;
 			instance.clearInference();
 		}
 		//clear expWeights;
@@ -70,7 +89,7 @@ public class InstanceList extends ArrayList<Instance> {
 		return LL;
 	}
 
-	public double getConditionalLogLikelihoodUsingPosteriorDistribution(
+	public double getConditionalLogLikelihoodUsingViterbi(
 			double[][] parameterMatrix) {
 		return getCLLNoThread(parameterMatrix);
 		//return getCLLThreaded(parameterMatrix);
@@ -85,7 +104,7 @@ public class InstanceList extends ArrayList<Instance> {
 		
 		for (int n = 0; n < this.size(); n++) {
 			Instance i = get(n);
-			cll += i.getConditionalLogLikelihoodUsingPosteriorDistribution(expWeights);
+			cll += i.getConditionalLogLikelihoodUsingViterbi(expWeights);
 		}
 		//System.out.println("CLL computation time : " + timing.stop());
 		featurePartitionCache = null;
@@ -151,14 +170,14 @@ public class InstanceList extends ArrayList<Instance> {
 			result = 0.0;
 			for(int n=startIndex; n<endIndex; n++) {
 				Instance instance = instanceList.get(n);
-				result += instance.getConditionalLogLikelihoodUsingPosteriorDistribution(expWeights);
+				result += instance.getConditionalLogLikelihoodUsingViterbi(expWeights);
 			}
 		}		
 	}
 
 	public double[][] getGradient(double[][] parameterMatrix) {
-		//return getGradientNoThread(parameterMatrix);
-		return getGradientThreaded(parameterMatrix);
+		return getGradientNoThread(parameterMatrix);
+		//return getGradientThreaded(parameterMatrix);
 	}
 	
 	public double[][] getGradientNoThread(double[][] parameterMatrix) {
@@ -174,73 +193,69 @@ public class InstanceList extends ArrayList<Instance> {
 		for (int n = 0; n < this.size(); n++) {
 			Instance instance = get(n);
 			for (int t = 0; t < instance.T; t++) {
-				for (int state = 0; state < instance.model.nrStates; state++) {
-					double posteriorProb = instance.posteriors[t][state];
-					Timing timing2 = new Timing();
-					timing2.start();
-					double[] conditionalVector = instance.getConditionalVector(t, state);
+				Timing timing2 = new Timing();
+				timing2.start();
+				double[] conditionalVector = instance.getConditionalVector(t);					
+				totalConditionalTime += timing2.stopGetLong();
+				//create partition
+				timing2.start();
 					
-					totalConditionalTime += timing2.stopGetLong();
-					//create partition
-					timing2.start();
+				if(VOCAB_UPDATE_COUNT <= 0) { //exact
+                    double normalizer = 0.0;
+					final double[] numeratorCache = new double[parameterMatrix.length];
 					
-					if(VOCAB_UPDATE_COUNT <= 0) { //exact
-	                    double normalizer = 0.0;
-						final double[] numeratorCache = new double[parameterMatrix.length];
-						
-						timing2.start();
-						for (int v = 0; v < parameterMatrix.length; v++) {
-							double numerator = MathUtils.expDot(expParam[v], conditionalVector);
-							numeratorCache[v] = numerator;
-							normalizer += numerator;						
-						}
-						totalPartitionTime += timing2.stopGetLong();
-						
-						timing2.start();
-						for(int j=0; j<parameterMatrix[0].length; j++) {
-							if(conditionalVector[j] != 0) {
-								gradient[instance.words[t][0]][j] += posteriorProb;
-								for(int v=0; v<parameterMatrix.length; v++) {
-									gradient[v][j] -= posteriorProb * numeratorCache[v] / normalizer;
-								}
-							}
-						}				
-					} else {
-						double normalizer = 0.0;
-						// number of items in PQ will not exceed VOCAB_UPDATE_COUNT
-						PriorityQueue<VocabItemProbability> topProbs = new PriorityQueue<VocabItemProbability>(VOCAB_UPDATE_COUNT, comparator);
-						for (int v = 0; v < parameterMatrix.length; v++) {
-							double numerator = MathUtils.expDot(expParam[v], conditionalVector);
-							if(topProbs.size() < VOCAB_UPDATE_COUNT) {
-								//just insert
-								VocabItemProbability item = new VocabItemProbability(v, numerator);
-								topProbs.add(item);
-							} else {
-								//find the min among the current max
-								VocabItemProbability currentMinItem = topProbs.peek();
-								if(numerator > currentMinItem.prob) {
-									//remove the current min
-									topProbs.poll();
-									//insert the new one
-									topProbs.add(new VocabItemProbability(v, numerator));
-								}
-							}
-							normalizer += numerator;						
-						}
-						totalPartitionTime += timing2.stopGetLong();
-						
-						timing2.start();
-						for(int j=0; j<parameterMatrix[0].length; j++) {
-							if(conditionalVector[j] != 0) {
-								gradient[instance.words[t][0]][j] += posteriorProb;
-								for(VocabItemProbability item : topProbs) {
-									gradient[item.index][j] -= posteriorProb * item.prob / normalizer;
-								}
-							}
-						}				
-						totalGradientTime += timing2.stopGetLong();
+					timing2.start();
+					for (int v = 0; v < parameterMatrix.length; v++) {
+						double numerator = MathUtils.expDot(expParam[v], conditionalVector);
+						numeratorCache[v] = numerator;
+						normalizer += numerator;						
 					}
-				}
+					totalPartitionTime += timing2.stopGetLong();
+					
+					timing2.start();
+					for(int j=0; j<parameterMatrix[0].length; j++) {
+						if(conditionalVector[j] != 0) {
+							gradient[instance.words[t][0]][j] += 1;
+							for(int v=0; v<parameterMatrix.length; v++) {
+								gradient[v][j] -= numeratorCache[v] / normalizer;
+							}
+						}
+					}				
+				} else {
+					double normalizer = 0.0;
+					// number of items in PQ will not exceed VOCAB_UPDATE_COUNT
+					PriorityQueue<VocabItemProbability> topProbs = new PriorityQueue<VocabItemProbability>(VOCAB_UPDATE_COUNT, comparator);
+					for (int v = 0; v < parameterMatrix.length; v++) {
+						double numerator = MathUtils.expDot(expParam[v], conditionalVector);
+						if(topProbs.size() < VOCAB_UPDATE_COUNT) {
+							//just insert
+							VocabItemProbability item = new VocabItemProbability(v, numerator);
+							topProbs.add(item);
+						} else {
+							//find the min among the current max
+							VocabItemProbability currentMinItem = topProbs.peek();
+							if(numerator > currentMinItem.prob) {
+								//remove the current min
+								topProbs.poll();
+								//insert the new one
+								topProbs.add(new VocabItemProbability(v, numerator));
+							}
+						}
+						normalizer += numerator;						
+					}
+					totalPartitionTime += timing2.stopGetLong();
+					
+					timing2.start();
+					for(int j=0; j<parameterMatrix[0].length; j++) {
+						if(conditionalVector[j] != 0) {
+							gradient[instance.words[t][0]][j] += 1;
+							for(VocabItemProbability item : topProbs) {
+								gradient[item.index][j] -= item.prob / normalizer;
+							}
+						}
+					}				
+					totalGradientTime += timing2.stopGetLong();
+				}				
 			}
 		}		
 		System.out.println("Total conditional time : " + totalConditionalTime);
@@ -347,69 +362,66 @@ public class InstanceList extends ArrayList<Instance> {
 			for(int n=startIndex; n<endIndex; n++) {
 				Instance instance = instanceList.get(n);
 				for (int t = 0; t < instance.T; t++) {
-					for (int state = 0; state < instance.model.nrStates; state++) {
-						double posteriorProb = instance.posteriors[t][state];
-						double[] conditionalVector = instance.getConditionalVector(t, state);
-						String conditionalString = instance.getConditionalString(t, state);
-						//create partition
-						if(VOCAB_UPDATE_COUNT <= 0) { //exact
-		                    double normalizer = 0.0;
-							final double[] numeratorCache = new double[expWeights.length];
+					double[] conditionalVector = instance.getConditionalVector(t);
+					String conditionalString = instance.getConditionalString(t);
+					//create partition
+					if(VOCAB_UPDATE_COUNT <= 0) { //exact
+	                    double normalizer = 0.0;
+						final double[] numeratorCache = new double[expWeights.length];
+						for (int v = 0; v < expWeights.length; v++) {
+							double numerator = MathUtils.expDot(expWeights[v], conditionalVector);
+							numeratorCache[v] = numerator;
+							normalizer += numerator;						
+						}
+						for(int j=0; j<expWeights[0].length; j++) {
+							if(conditionalVector[j] != 0) {
+								gradient[instance.words[t][0]][j] += 1;
+								for(int v=0; v<expWeights.length; v++) {
+									gradient[v][j] -= numeratorCache[v] / normalizer;
+								}
+							}
+						}				
+					} else {
+						if(featureNumeratorCache.containsKey(conditionalString)) {
+							for(int j=0; j<expWeights[0].length; j++) {
+								if(conditionalVector[j] != 0) {
+									gradient[instance.words[t][0]][j] += 1;
+									VocabNumeratorArray vna = featureNumeratorCache.get(conditionalString);
+									for(VocabItemProbability item : vna.topProbs) {
+										gradient[item.index][j] -= item.prob / vna.normalizer;
+									}
+								}
+							}
+						} else {
+							double normalizer = 0.0;
+							PriorityQueue<VocabItemProbability> topProbs = new PriorityQueue<VocabItemProbability>(VOCAB_UPDATE_COUNT, comparator);
 							for (int v = 0; v < expWeights.length; v++) {
-								double numerator = MathUtils.expDot(expWeights[v], conditionalVector);
-								numeratorCache[v] = numerator;
-								normalizer += numerator;						
+								double numerator;
+								numerator = MathUtils.expDot(expWeights[v], conditionalVector);
+								if(topProbs.size() < VOCAB_UPDATE_COUNT) {
+									//just insert
+									VocabItemProbability item = new VocabItemProbability(v, numerator);
+									topProbs.add(item);
+								} else {
+									//find the min among the current max
+									VocabItemProbability currentMinItem = topProbs.peek();
+									if(numerator > currentMinItem.prob) {
+										//remove the current min
+										topProbs.poll();
+										//insert the new one
+										topProbs.add(new VocabItemProbability(v, numerator));
+									}
+								}									
+								normalizer += numerator;
 							}
 							for(int j=0; j<expWeights[0].length; j++) {
 								if(conditionalVector[j] != 0) {
-									gradient[instance.words[t][0]][j] += posteriorProb;
-									for(int v=0; v<expWeights.length; v++) {
-										gradient[v][j] -= posteriorProb * numeratorCache[v] / normalizer;
+									gradient[instance.words[t][0]][j] += 1;
+									for(VocabItemProbability item : topProbs) {
+										gradient[item.index][j] -= item.prob / normalizer;
 									}
 								}
-							}				
-						} else {
-							if(featureNumeratorCache.containsKey(conditionalString)) {
-								for(int j=0; j<expWeights[0].length; j++) {
-									if(conditionalVector[j] != 0) {
-										gradient[instance.words[t][0]][j] += posteriorProb;
-										VocabNumeratorArray vna = featureNumeratorCache.get(conditionalString);
-										for(VocabItemProbability item : vna.topProbs) {
-											gradient[item.index][j] -= posteriorProb * item.prob / vna.normalizer;
-										}
-									}
-								}
-							} else {
-								double normalizer = 0.0;
-								PriorityQueue<VocabItemProbability> topProbs = new PriorityQueue<VocabItemProbability>(VOCAB_UPDATE_COUNT, comparator);
-								for (int v = 0; v < expWeights.length; v++) {
-									double numerator;
-									numerator = MathUtils.expDot(expWeights[v], conditionalVector);
-									if(topProbs.size() < VOCAB_UPDATE_COUNT) {
-										//just insert
-										VocabItemProbability item = new VocabItemProbability(v, numerator);
-										topProbs.add(item);
-									} else {
-										//find the min among the current max
-										VocabItemProbability currentMinItem = topProbs.peek();
-										if(numerator > currentMinItem.prob) {
-											//remove the current min
-											topProbs.poll();
-											//insert the new one
-											topProbs.add(new VocabItemProbability(v, numerator));
-										}
-									}									
-									normalizer += numerator;
-								}
-								for(int j=0; j<expWeights[0].length; j++) {
-									if(conditionalVector[j] != 0) {
-										gradient[instance.words[t][0]][j] += posteriorProb;
-										for(VocabItemProbability item : topProbs) {
-											gradient[item.index][j] -= posteriorProb * item.prob / normalizer;
-										}
-									}
-								}
-							}							
+							}
 						}
 					}
 				}

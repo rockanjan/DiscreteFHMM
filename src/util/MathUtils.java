@@ -141,6 +141,91 @@ public class MathUtils {
 		}
 	}
 	
+	public static double[][] getOuterProduct(double[] v1, double v2[]) {
+		double result[][] = new double[v1.length][v2.length];
+		for(int i=0; i<v1.length; i++) {
+			for(int j=0; j<v2.length; j++) {
+				result[i][j] = v1[i] * v2[j];
+			}
+		}
+		return result;
+	}
+	/*
+	 * returns result for x'Ay
+	 */
+	public static double vectorTransposeMatrixVector(double[] v1, double[][] matrix, double[] v2) {
+		double result = 0;
+		if(v1.length != matrix.length) {
+			throw new RuntimeException(String.format("vector1 length: %d, matrix row size: %d", v1.length, matrix.length));
+		}
+		if(v2.length != matrix[0].length) {
+			throw new RuntimeException(String.format("vector2 length: %d, matrix column size: %d", v2.length, matrix[0].length));
+		}
+		for(int i=0; i<matrix.length; i++) {
+			for(int j=0; j<matrix[0].length; j++) {
+				result += v1[i] * matrix[i][j] * v2[j]; 
+			}
+		}
+		return result;
+	}
+	
+	public static double trace(double[][] matrix) {
+		int m = matrix.length;
+		int n = matrix[0].length;
+		if(m != n) {
+			throw new RuntimeException(String.format("Trying to find trace of a rectangular matrix: m=%d, n=%d", m, n));
+		}
+		double sum = 0;
+		for(int i=0; i<m; i++) {
+			sum += matrix[i][i];
+		}
+		return sum;
+	}
+	
+	public static double[] getVectorFromMatrixDiagonalEntries(double[][] matrix) {
+		int m = matrix.length;
+		int n = matrix[0].length;
+		if(m != n) {
+			throw new RuntimeException(String.format("Trying to get vector from diagonal entries of a rectangular matrix: m=%d, n=%d", m, n));
+		}
+		double[] vector = new double[m];
+		for(int i=0; i<m; i++) {
+			vector[i] = matrix[i][i];
+		}
+		return vector;
+	}
+	
+	public static double[] addVectors(double[] v1, double[] v2) {
+		int m=v1.length;
+		int n=v2.length;
+		if(n != m) {
+			throw new RuntimeException(String.format("Error in adding vectors, dimension mismatch %d vs %d", m, n));
+		}
+		
+		double result[] = new double[m];
+		for(int i=0; i<m; i++) {
+			result[i] = v1[i] + v2[i];
+		}
+		return result;
+	}
+	
+	/*
+	 * gives a vector formed by the diagonal elements as entries
+	 */
+	public static double[] diag(double[][] matrix) {
+		return getVectorFromMatrixDiagonalEntries(matrix);
+	}
+	
+	/*
+	 * gives a matrix formed by entries of vector in the diagonals of the matrix, will off-diagonal entries zero
+	 */
+	public static double[][] diag(double[] vector) {
+		double[][] matrix = new double[vector.length][vector.length];
+		for(int i=0; i<vector.length; i++) {
+			matrix[i][i] = vector[i];
+		}
+		return matrix;
+	}
 	
 	public static void main(String[] args) {
 		double a = 0.12;

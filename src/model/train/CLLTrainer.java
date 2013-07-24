@@ -32,7 +32,7 @@ public class CLLTrainer implements Optimizable.ByGradientValue{
 	@Override
 	public double getValue() {
 		double[][] weights = MyArray.createMatrix(parameters, corpus.corpusVocab.get(0).vocabSize);
-		double cll = corpus.trainInstanceMStepSampleList.getConditionalLogLikelihoodUsingPosteriorDistribution(weights);
+		double cll = corpus.trainInstanceMStepSampleList.getConditionalLogLikelihoodUsingViterbi(weights);
 		//double cll = corpus.trainInstanceMStepSampleList.getApproxConditionalLogLikelihoodUsingPosteriorDistribution(weights);
 		//add regularizer
 		double normSquared = MyArray.getL2NormSquared(parameters);
@@ -107,9 +107,9 @@ public class CLLTrainer implements Optimizable.ByGradientValue{
 		for(int i=0; i<weights.length; i++) {
 			for(int j=0; j<weights[0].length; j++) {
 				weights[i][j] = weights[i][j] - step;
-				double valueX = corpus.trainInstanceList.getConditionalLogLikelihoodUsingPosteriorDistribution(weights);
+				double valueX = corpus.trainInstanceList.getConditionalLogLikelihoodUsingViterbi(weights);
 				weights[i][j] = weights[i][j] + step + step;
-				double valueXStepped = corpus.trainInstanceList.getConditionalLogLikelihoodUsingPosteriorDistribution(weights);
+				double valueXStepped = corpus.trainInstanceList.getConditionalLogLikelihoodUsingViterbi(weights);
 				newGradients[i][j] =  valueXStepped/ (2*step) - valueX / (2*step);
 				//System.out.println("grad from finitedifference = " + newGradients[i][j]);
 				//reset weights

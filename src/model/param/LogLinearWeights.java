@@ -2,6 +2,8 @@ package model.param;
 
 import java.util.Random;
 
+import program.Main;
+
 public class LogLinearWeights {
 	public double[][] weights; //weights for the log-linear model
 	
@@ -20,14 +22,15 @@ public class LogLinearWeights {
 	}
 	
 	public double[] getStateVector(int m, int v) {
-		if(conditionalSize % m != 0) {
+		/*
+		if((conditionalSize/2) % m != 0) {
 			System.out.println("Error, conditional size is not a multiple of number of layers");
 			System.exit(-1);
 		}
-		int k = conditionalSize/m; //states
-		double[] vector = new double[k];
-		for(int i=0; i<k; k++) {
-			vector[i] = weights[v][m*k + i];
+		*/
+		double[] vector = new double[Main.numStates];
+		for(int i=0; i<Main.numStates; i++) {
+			vector[i] = weights[v][m*Main.numStates + i];
 		}
 		return vector;
 	}

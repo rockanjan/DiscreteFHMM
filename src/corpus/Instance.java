@@ -9,18 +9,20 @@ import model.HMMType;
 import model.inference.ForwardBackward;
 import model.inference.ForwardBackwardLog;
 import model.inference.VariationalParam;
+import model.inference.VariationalParamObservation;
 import model.param.HMMParamBase;
 import model.param.LogLinearWeights;
 import util.MathUtils;
+import util.MyArray;
 import util.SmoothWord;
 
 public class Instance {
-	
+	public VariationalParamObservation varParamObs;
 	public int[][] words;
 	public int T; // sentence length
 	Corpus c;
 	public List<ForwardBackward> forwardBackwardList;
-	public VariationalParam varParam;
+	
 	//TODO: might change if we consider finalState hmm
 	public static int nrStates = Main.numStates;
 	public int unknownCount;
@@ -48,7 +50,7 @@ public class Instance {
 		decodedStates = null;
 		this.model = model;
 		posteriors = new double[model.nrLayers][][];
-		varParam = new VariationalParam(this);
+		
 		forwardBackwardList = new ArrayList<ForwardBackward>();
 		if (model.hmmType == HMMType.LOG_SCALE) {
 			for(int l=0; l<model.nrLayers; l++) {
@@ -59,11 +61,7 @@ public class Instance {
 			}
 		} else {
 			throw new UnsupportedOperationException("Not implemented");
-		}
-		//optimize variational params by minimizing KL-divergence
-		varParam.optimize();
-		//decode viterbi states in each layer
-		decode();
+		}		
 	}
 
 	public void clearInference() {
@@ -90,14 +88,14 @@ public class Instance {
 			int[][] stateLattice = new int[T][model.nrStates];
 			for(int i=0; i<model.nrStates; i++) {
 				double init = model.param.initial.get(l).get(i, 0);
-				double obs = varParam.obs.shi[l][i][0];
+				double obs = varParamObs.shi[l][0][i];
 				probLattice[0][i] = init + obs;			
 			}
 			double maxValue = -Double.MAX_VALUE;
 			int maxIndex = -1;
 			for(int t=1; t<T; t++) {
 				for(int j=0; j<model.nrStates; j++) {
-					double obs = varParam.obs.shi[l][j][t];
+					double obs = varParamObs.shi[l][t][j];
 					maxValue = -Double.MAX_VALUE;
 					maxIndex = -1;
 					for(int i=0; i<model.nrStates; i++) {
@@ -119,6 +117,7 @@ public class Instance {
 					decoded[T-1] = i;
 				}
 			}
+			MyArray.printTable(stateLattice);
 			//backtrack
 			for(int t=T-2; t>=0; t--) {
 				decoded[t] = stateLattice[t+1][decoded[t+1]];			

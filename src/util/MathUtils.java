@@ -7,7 +7,7 @@ public class MathUtils {
 	public static double dot(double[] a, double[] b) {
 		double result = 0.0;
 		if(a.length != b.length) {
-			throw new RuntimeException("Dot product requires two vectors to have same length");
+			throw new RuntimeException(String.format("Dot product requires two vectors to have same length, found %d vs %d", a.length, b.length));
 		}		
 		for(int i=0; i<a.length; i++) {
 			result += a[i] * b[i];			

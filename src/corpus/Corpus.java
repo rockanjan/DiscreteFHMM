@@ -342,8 +342,9 @@ public class Corpus {
 	 * does not make a clone, just the reference
 	 */
 	public void generateRandomTrainingEStepSample(int size) {
+		
 		trainInstanceEStepSampleList = new InstanceList();
-		if(trainInstanceList.size() <= size) {
+		if(trainInstanceList.size() <= size || size < 0) {
 			trainInstanceEStepSampleList.addAll(trainInstanceList);
 			trainInstanceEStepSampleList.numberOfTokens = trainInstanceList.numberOfTokens;
 		} else {
@@ -365,7 +366,7 @@ public class Corpus {
 	 */
 	public void generateRandomTrainingMStepSample(int size) {
 		trainInstanceMStepSampleList = new InstanceList();
-		if(trainInstanceEStepSampleList.size() <= size) {
+		if(trainInstanceEStepSampleList.size() <= size || size < 0) {
 			trainInstanceMStepSampleList.addAll(trainInstanceEStepSampleList);
 			trainInstanceMStepSampleList.numberOfTokens = trainInstanceEStepSampleList.numberOfTokens;
 		} else {

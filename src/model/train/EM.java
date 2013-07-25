@@ -55,7 +55,7 @@ public class EM {
 		}
 		expectedCounts.initializeZeros();
 		System.out.println("Estep #tokens : " + c.trainInstanceEStepSampleList.numberOfTokens);
-		LL = c.trainInstanceEStepSampleList.updateExpectedCounts(model, expectedCounts);		
+		LL = c.trainInstanceEStepSampleList.updateExpectedCounts(model, expectedCounts);
 	}
 
 	public void mStep() {
@@ -116,7 +116,7 @@ public class EM {
 			// m-step
 			c.generateRandomTrainingMStepSample(Main.sampleSizeMStep);
 			mStep();
-			if(iterCount % 10 == 0) {
+			if(iterCount % 10 == 0 && c.devInstanceList != null) {
 				System.out.println("Dev LL : " + c.devInstanceList.getLL(model));
 			}
 		}

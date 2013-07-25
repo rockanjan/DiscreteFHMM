@@ -8,6 +8,8 @@ import java.util.PriorityQueue;
 import java.util.concurrent.ConcurrentHashMap;
 
 import model.HMMBase;
+import model.inference.VariationalParam;
+import model.inference.VariationalParamObservation;
 import model.param.HMMParamBase;
 import program.Main;
 import util.MathUtils;
@@ -18,10 +20,12 @@ public class InstanceList extends ArrayList<Instance> {
 	private static final long serialVersionUID = -2409272084529539276L;
 	public int numberOfTokens;
 	
+	public VariationalParam varParam;
+	
 	public static int VOCAB_UPDATE_COUNT = 1000;
 	
 	public InstanceList() {
-		super();
+		super();		
 	}
 	
 	static public Map<String, Double> featurePartitionCache;
@@ -31,20 +35,7 @@ public class InstanceList extends ArrayList<Instance> {
 	 * just to get the LL of the data
 	 */
 	public double getLL(HMMBase model) {
-		double LL = 0;
-		//cache expWeights for the model
-		featurePartitionCache = new ConcurrentHashMap<String, Double>();
-		model.param.expWeightsCache = MathUtils.expArray(model.param.weights.weights);
-		for (int n = 0; n < this.size(); n++) {
-			Instance instance = this.get(n);
-			instance.doInference(model);
-			LL += getJointLL(instance, model);
-			instance.clearInference();
-		}
-		//clear expWeights;
-		model.param.expWeightsCache = null;
-		featurePartitionCache = null;
-		return LL;		
+		throw new UnsupportedOperationException("Not yet implemented");				
 	}
 	
 	public double getJointLL(Instance instance, HMMBase model) {
@@ -70,17 +61,36 @@ public class InstanceList extends ArrayList<Instance> {
 	 * returns LL of the corpus
 	 */
 	public double updateExpectedCounts(HMMBase model, HMMParamBase expectedCounts) {
+		varParam = new VariationalParam(model);
 		double LL = 0;
 		//cache expWeights for the model
 		featurePartitionCache = new ConcurrentHashMap<String, Double>();
 		model.param.expWeightsCache = MathUtils.expArray(model.param.weights.weights);
+		//optimize variational parameters
+		for(int iter=0; iter < 10; iter++) {
+			//instance level params
+			for (int n = 0; n < this.size(); n++) {
+				Instance instance = this.get(n);
+				if(instance.varParamObs == null) {
+					instance.varParamObs = new VariationalParamObservation(model.nrLayers, instance.T, model.nrStates);
+					instance.varParamObs.initializeRandom();
+				}
+				instance.doInference(model);
+				instance.model = model;
+				varParam.optimizeInstanceParam(instance);			
+			}
+			//corpus level params
+			varParam.optimizeCorpusParam();
+		}
+		
 		for (int n = 0; n < this.size(); n++) {
 			Instance instance = this.get(n);
 			instance.doInference(model);
 			for(int l=0; l<model.nrLayers; l++) {
 				instance.forwardBackwardList.get(l).addToCounts(expectedCounts);
 			}
-			//LL += instance.forwardBackward.logLikelihood;
+			instance.decode();
+			LL += getJointLL(instance, model);
 			instance.clearInference();
 		}
 		//clear expWeights;

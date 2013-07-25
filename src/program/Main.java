@@ -35,8 +35,8 @@ public class Main {
 	static String outFolderPrefix;
 	static HMMBase model;
 	static Corpus corpus;
-	public static int sampleSizeEStep;
-	public static int sampleSizeMStep;
+	public static int sampleSizeEStep = 100;
+	public static int sampleSizeMStep = 100;
 
 	static int oneTimeStepObsSize; // number of elements in observation e.g.
 									// word|hmm1|hmm2 has 3
@@ -59,9 +59,11 @@ public class Main {
 		String trainFileBase;
 		String testFileBase;
 		String devFileBase;
-		trainFileBase = "out/decoded/test.txt.SPL";
-		testFileBase = "out/decoded/combined.txt.SPL";
-		devFileBase = "out/decoded/srl.txt";
+		
+		trainFileBase = "data/simple_corpus_sorted.txt";
+		//trainFileBase = "data/test.txt.SPL";
+		testFileBase = "data/combined.txt.SPL";
+		devFileBase = "data/srl.txt";
 		trainFile = trainFileBase;
 		testFile = testFileBase;
 		devFile = devFileBase;
@@ -75,8 +77,8 @@ public class Main {
 		corpus.readVocab(vocabFile);
 		// corpus.setupSampler();
 		corpus.readTrain(trainFile);
-		corpus.readTest(testFile);
-		corpus.readDev(devFile);
+		//corpus.readTest(testFile);
+		//corpus.readDev(devFile);
 		model = new HMMNoFinalStateLog(nrLayers, numStates, corpus);
 		Random random = new Random(seed);
 		model.initializeRandom(random);

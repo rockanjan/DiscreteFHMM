@@ -35,7 +35,7 @@ public class ForwardBackwardLog extends ForwardBackward{
 			double pi = initial.get(i, 0);
 			//double obs = instance.getObservationProbability(0, i);
 			//TODO: should we normalize?
-			double obs = instance.varParam.obs.shi[layer][i][0];
+			double obs = instance.varParamObs.shi[layer][i][0];
 			alpha[0][i] = pi + obs; //these prob are in logscale	
 						
 		}
@@ -49,7 +49,7 @@ public class ForwardBackwardLog extends ForwardBackward{
 				}
 				double obs;
 				//obs = instance.getObservationProbability(t, j);
-				obs = instance.varParam.obs.shi[layer][j][t];
+				obs = instance.varParamObs.shi[layer][t][j];
 				alpha[t][j] = MathUtils.logsumexp(expParams) + obs; 
 			}			
 		}
@@ -72,7 +72,7 @@ public class ForwardBackwardLog extends ForwardBackward{
 				for(int j=0; j<nrStates; j++) {
 					double trans = transition.get(j, i);
 					//double obs = instance.getObservationProbability(t+1, j);
-					double obs = instance.varParam.obs.shi[layer][j][t+1];
+					double obs = instance.varParamObs.shi[layer][t+1][j];
 					expParams[j] = trans + obs + beta[t+1][j];
 				}
 				beta[t][i] = MathUtils.logsumexp(expParams);
@@ -154,7 +154,7 @@ public class ForwardBackwardLog extends ForwardBackward{
 		//xi in Rabiner Tutorial
 		double alphaValue = alpha[position][currentState];
 		double trans = transition.get(nextState, currentState); //transition to next given current
-		double obs = instance.varParam.obs.shi[layer][nextState][position+1];		
+		double obs = instance.varParamObs.shi[layer][position+1][nextState];		
 		double betaValue = beta[position+1][nextState];		
 		//WARNING: important
 		//TODO: decide if we should subtract the log likelihood

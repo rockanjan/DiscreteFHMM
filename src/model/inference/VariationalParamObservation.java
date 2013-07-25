@@ -25,7 +25,7 @@ public class VariationalParamObservation {
 		for(int m=0; m<M; m++) {
 			for(int t=0; t<T; t++) {
 				for(int k=0; k<K; k++) {
-					shi[m][t][k] = r.nextDouble();
+					shi[m][t][k] = r.nextDouble() * 1e-3;
 				}
 			}
 		}

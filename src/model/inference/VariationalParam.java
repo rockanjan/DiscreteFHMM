@@ -36,7 +36,7 @@ public class VariationalParam {
 					for(int y=0; y<model.param.weights.vocabSize; y++) {
 						sumThetaOverY += model.param.weights.get(m, k, y);
 					}
-					instance.varParamObs.shi[m][t][k] = model.param.weights.get(m, k, instance.words[t][0]) - 0.5 * sumThetaOverY;
+					double updateValue = model.param.weights.get(m, k, instance.words[t][0]) - 0.5 * sumThetaOverY;
 					for(int y=0; y<model.param.weights.vocabSize; y++) {
 						double lambda = zeta.lamdaZeta(y);
 						double sumY = 0;
@@ -56,8 +56,10 @@ public class VariationalParam {
 							sumOverM += model.param.weights.get(m, k, y); 
 						}
 						sumY -= 2 * alpha.alpha * sumOverM;
-						instance.varParamObs.shi[m][t][k] -= lambda * sumY;
+						
+						updateValue -= lambda * sumY;
 					}
+					instance.varParamObs.shi[m][t][k] = updateValue;
 				}
 			}
 			//TODO: decide if computing posteriors in bulk is better or after each layer

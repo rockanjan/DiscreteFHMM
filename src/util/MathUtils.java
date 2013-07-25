@@ -164,6 +164,7 @@ public class MathUtils {
 		for(int i=0; i<matrix.length; i++) {
 			for(int j=0; j<matrix[0].length; j++) {
 				result += v1[i] * matrix[i][j] * v2[j]; 
+				check(result);
 			}
 		}
 		return result;
@@ -225,6 +226,15 @@ public class MathUtils {
 			matrix[i][i] = vector[i];
 		}
 		return matrix;
+	}
+	
+	public static void check(double value) {
+		if(Double.isInfinite(value)) {
+			throw new RuntimeException("Infinite value found");
+		}
+		if(Double.isNaN(value)) {
+			throw new RuntimeException("Nan value found");
+		}
 	}
 	
 	public static void main(String[] args) {

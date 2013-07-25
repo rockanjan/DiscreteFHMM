@@ -6,6 +6,7 @@ import model.HMMBase;
 import model.param.HMMParamBase;
 import model.param.MultinomialBase;
 import util.MathUtils;
+import util.MyArray;
 import corpus.Instance;
 
 public class ForwardBackwardLog extends ForwardBackward{
@@ -54,7 +55,7 @@ public class ForwardBackwardLog extends ForwardBackward{
 			}			
 		}
 		//logLikelihood = MathUtils.logsumexp(alpha[T-1]);
-		//MyArray.printExpTable(alpha, "log alpha");
+		MyArray.printExpTable(alpha, "alpha");
 		//System.out.println(logLikelihood);
 	}
 	
@@ -71,7 +72,6 @@ public class ForwardBackwardLog extends ForwardBackward{
 				double[] expParams = new double[nrStates];
 				for(int j=0; j<nrStates; j++) {
 					double trans = transition.get(j, i);
-					//double obs = instance.getObservationProbability(t+1, j);
 					double obs = instance.varParamObs.shi[layer][t+1][j];
 					expParams[j] = trans + obs + beta[t+1][j];
 				}

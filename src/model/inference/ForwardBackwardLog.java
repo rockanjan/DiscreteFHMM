@@ -55,7 +55,7 @@ public class ForwardBackwardLog extends ForwardBackward{
 			}			
 		}
 		//logLikelihood = MathUtils.logsumexp(alpha[T-1]);
-		MyArray.printExpTable(alpha, "alpha");
+		//MyArray.printExpTable(alpha, "alpha");
 		//System.out.println(logLikelihood);
 	}
 	

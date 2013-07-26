@@ -24,7 +24,8 @@ public class VariationalParam {
 		V = Corpus.corpusVocab.get(0).vocabSize;
 		alpha = new VariationalParamAlpha();
 		alpha.initializeRandom();
-		zeta = new VariationalParamZeta(V);				
+		zeta = new VariationalParamZeta(V);		
+		zeta.initializeRandom();
 	}
 	
 	public void optimizeInstanceParam(Instance instance) {
@@ -45,7 +46,9 @@ public class VariationalParam {
 								continue;
 							}
 							double dotProd = MathUtils.dot(model.param.weights.getStateVector(n, y), instance.posteriors[m][t]);
+							MathUtils.check(dotProd);
 							sumY += model.param.weights.getStateVector(m, y)[k] * dotProd;
+							MathUtils.check(sumY);
 						}
 						double[] thetaMY = model.param.weights.getStateVector(m, y);
 						double delta = MathUtils.diag(MathUtils.getOuterProduct(thetaMY, thetaMY))[k];
@@ -53,11 +56,13 @@ public class VariationalParam {
 						
 						double sumOverM = 0;
 						for(int n=0; n<M; n++) {
-							sumOverM += model.param.weights.get(m, k, y); 
+							sumOverM += model.param.weights.get(m, k, y);
+							MathUtils.check(sumOverM);
 						}
 						sumY -= 2 * alpha.alpha * sumOverM;
-						
+						MathUtils.check(sumY);
 						updateValue -= lambda * sumY;
+						MathUtils.check(updateValue);
 					}
 					instance.varParamObs.shi[m][t][k] = updateValue;
 				}
@@ -69,17 +74,19 @@ public class VariationalParam {
 	}
 	
 	public void optimizeCorpusParam() {
-		int maxIter = 10;
+		int maxIter = 1;
 		for(int iter=0; iter<maxIter; iter++) {
 			//optimize zetas
-			//force the expression to be zero for each timestep
-			for(int i=0; i<Corpus.trainInstanceEStepSampleList.size(); i++) {
-				Instance inst = Corpus.trainInstanceEStepSampleList.get(i);
-				//WARNING: do not use instance from above here. 
-				//TODO: refactor the code
-				for(int t=0; t<inst.T; t++) {
-					for(int y=0; y<model.param.weights.vocabSize; y++) {
-						zeta.zeta[y] = Math.pow(alpha.alpha, 2);
+			for(int y=0; y<model.param.weights.vocabSize; y++) {
+				zeta.zeta[y] = 0;
+				int totalT = 0;
+				for(int i=0; i<Corpus.trainInstanceEStepSampleList.size(); i++) {
+					Instance inst = Corpus.trainInstanceEStepSampleList.get(i);
+					//WARNING: do not use instance from above here. 
+					//TODO: refactor the code
+					for(int t=0; t<inst.T; t++) {
+						totalT++;
+						zeta.zeta[y] += Math.pow(alpha.alpha, 2);
 						for(int m=0; m<M; m++) {
 							for(int n=0; n<M; n++) {
 								if(m==n) continue;
@@ -105,8 +112,12 @@ public class VariationalParam {
 						}
 					}
 				}
+				//value should not be negative because we still have to take squareroot
+				if(zeta.zeta[y] < 0) {
+					System.err.println("zeta value negative found : " + zeta.zeta[y]);
+				}
+				zeta.zeta[y] = Math.sqrt(zeta.zeta[y]);
 			}
-		
 		
 			//optimize alpha
 			double sumTMY = 0;

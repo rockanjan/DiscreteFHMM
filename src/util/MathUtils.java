@@ -233,7 +233,7 @@ public class MathUtils {
 			throw new RuntimeException("Infinite value found");
 		}
 		if(Double.isNaN(value)) {
-			throw new RuntimeException("Nan value found");
+			throw new RuntimeException("NaN value found");
 		}
 	}
 	

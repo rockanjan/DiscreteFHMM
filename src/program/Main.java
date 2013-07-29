@@ -35,14 +35,14 @@ public class Main {
 	static String outFolderPrefix;
 	static HMMBase model;
 	static Corpus corpus;
-	public static int sampleSizeEStep = 100;
-	public static int sampleSizeMStep = 100;
+	public static int sampleSizeEStep = -1;
+	public static int sampleSizeMStep = -1;
 
 	static int oneTimeStepObsSize; // number of elements in observation e.g.
 									// word|hmm1|hmm2 has 3
 
 	static int vocabThreshold = 1; // only above this included*******
-	static int nrLayers = 10;
+	static int nrLayers = 2;
 	public static int numStates = 2;
 
 	/** user parameters end **/
@@ -60,8 +60,8 @@ public class Main {
 		String testFileBase;
 		String devFileBase;
 		
-		trainFileBase = "data/simple_corpus_sorted.txt";
-		//trainFileBase = "data/test.txt.SPL";
+		//trainFileBase = "data/simple_corpus_sorted.txt";
+		trainFileBase = "data/test.txt.SPL";
 		testFileBase = "data/combined.txt.SPL";
 		devFileBase = "data/srl.txt";
 		trainFile = trainFileBase;

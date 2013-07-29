@@ -17,6 +17,8 @@ public class VariationalParam {
 	int K;
 	int V;
 	
+	public static double shiL1NormAll=0;
+	
 	public VariationalParam(HMMBase model) {
 		this.model = model;
 		M = model.nrLayers;
@@ -30,14 +32,17 @@ public class VariationalParam {
 	
 	public void optimizeInstanceParam(Instance instance) {
 		//optimize shi's
+		double shiL1NormInstance = 0;
 		for(int m=0; m<M; m++) {
 			for(int t=0; t<instance.T; t++) {
+				double maxOverK = -Double.MAX_VALUE;
+				double[] updateValue = new double[K]; 
 				for(int k=0; k<K; k++) {
 					double sumThetaOverY = 0;
 					for(int y=0; y<model.param.weights.vocabSize; y++) {
 						sumThetaOverY += model.param.weights.get(m, k, y);
 					}
-					double updateValue = model.param.weights.get(m, k, instance.words[t][0]) - 0.5 * sumThetaOverY;
+					updateValue[k] = model.param.weights.get(m, k, instance.words[t][0]) - 0.5 * sumThetaOverY;
 					for(int y=0; y<model.param.weights.vocabSize; y++) {
 						double lambda = zeta.lamdaZeta(y);
 						double sumY = 0;
@@ -54,36 +59,41 @@ public class VariationalParam {
 						double delta = MathUtils.diag(MathUtils.getOuterProduct(thetaMY, thetaMY))[k];
 						sumY += delta;
 						
-						double sumOverM = 0;
-						for(int n=0; n<M; n++) {
-							sumOverM += model.param.weights.get(m, k, y);
-							MathUtils.check(sumOverM);
-						}
-						sumY -= 2 * alpha.alpha * sumOverM;
+						sumY -= 2 * alpha.alpha * model.param.weights.get(m, k, y);
 						MathUtils.check(sumY);
-						updateValue -= lambda * sumY;
-						MathUtils.check(updateValue);
+						updateValue[k] -= lambda * sumY;
+						MathUtils.check(updateValue[k]);
 					}
-					instance.varParamObs.shi[m][t][k] = updateValue;
+					if(updateValue[k] > maxOverK) {
+						maxOverK = updateValue[k];
+					}
+					
+				}
+				//normalize: or rather fix (also done in original fHMM), subtract the max
+				for(int k=0; k<K; k++) {
+					double oldValue = instance.varParamObs.shi[m][t][k];
+					instance.varParamObs.shi[m][t][k] = updateValue[k] - maxOverK;
+					shiL1NormInstance += Math.abs(oldValue - instance.varParamObs.shi[m][t][k]);
 				}
 			}
 			//TODO: decide if computing posteriors in bulk is better or after each layer
 			//re-estimate state posteriors for this layer
-			instance.forwardBackwardList.get(m).doInference();				
-		}
+			//instance.forwardBackwardList.get(m).doInference();				
+		}		
+		shiL1NormAll += shiL1NormInstance;
 	}
 	
 	public void optimizeCorpusParam() {
 		int maxIter = 1;
 		for(int iter=0; iter<maxIter; iter++) {
 			//optimize zetas
+			double zetaL1Norm = 0;
 			for(int y=0; y<model.param.weights.vocabSize; y++) {
+				double oldZeta = zeta.zeta[y];
 				zeta.zeta[y] = 0;
 				int totalT = 0;
 				for(int i=0; i<Corpus.trainInstanceEStepSampleList.size(); i++) {
 					Instance inst = Corpus.trainInstanceEStepSampleList.get(i);
-					//WARNING: do not use instance from above here. 
-					//TODO: refactor the code
 					for(int t=0; t<inst.T; t++) {
 						totalT++;
 						zeta.zeta[y] += Math.pow(alpha.alpha, 2);
@@ -112,12 +122,17 @@ public class VariationalParam {
 						}
 					}
 				}
+				zeta.zeta[y] = zeta.zeta[y]/totalT;
 				//value should not be negative because we still have to take squareroot
-				if(zeta.zeta[y] < 0) {
-					System.err.println("zeta value negative found : " + zeta.zeta[y]);
+				if(zeta.zeta[y] <= 0) {
+					System.err.println("zeta value <= 0 found, value=" + zeta.zeta[y]);
+					//fix it
+					zeta.zeta[y] = 1e-100;
 				}
 				zeta.zeta[y] = Math.sqrt(zeta.zeta[y]);
+				zetaL1Norm += Math.abs(zeta.zeta[y] - oldZeta);
 			}
+			System.out.println("zetaL1Norm : " + zetaL1Norm);
 		
 			//optimize alpha
 			double sumTMY = 0;
@@ -142,8 +157,10 @@ public class VariationalParam {
 			for(int y=0; y<model.param.weights.vocabSize; y++) {
 				denominator += zeta.lamdaZeta(y);
 			}
-			denominator = 2 * Corpus.trainInstanceEStepSampleList.numberOfTokens * denominator;		
+			denominator = 2 * Corpus.trainInstanceEStepSampleList.numberOfTokens * denominator;
+			double oldAlpha = alpha.alpha;
 			alpha.alpha = numerator / denominator;
+			System.out.println("alphaL1Norm : " + Math.abs(oldAlpha - alpha.alpha));
 		}
 	}
 }

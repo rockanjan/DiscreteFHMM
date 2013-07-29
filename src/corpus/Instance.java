@@ -117,7 +117,7 @@ public class Instance {
 					decoded[T-1] = i;
 				}
 			}
-			MyArray.printTable(stateLattice);
+			//MyArray.printTable(stateLattice);
 			//backtrack
 			for(int t=T-2; t>=0; t--) {
 				decoded[t] = stateLattice[t+1][decoded[t+1]];			

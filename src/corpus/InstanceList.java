@@ -61,14 +61,21 @@ public class InstanceList extends ArrayList<Instance> {
 	 * returns LL of the corpus
 	 */
 	public double updateExpectedCounts(HMMBase model, HMMParamBase expectedCounts) {
-		varParam = new VariationalParam(model);
+		if(varParam == null) {
+			varParam = new VariationalParam(model);
+		}
 		double LL = 0;
 		//cache expWeights for the model
 		featurePartitionCache = new ConcurrentHashMap<String, Double>();
 		model.param.expWeightsCache = MathUtils.expArray(model.param.weights.weights);
 		//optimize variational parameters
-		for(int iter=0; iter < 10; iter++) {
+		
+		for(int iter=0; iter < 5; iter++) {
+			System.out.println("Variation iter : " + iter);
 			//instance level params
+			Timing timeInstance = new Timing();
+			timeInstance.start();
+			VariationalParam.shiL1NormAll = 0;
 			for (int n = 0; n < this.size(); n++) {
 				Instance instance = this.get(n);
 				if(instance.varParamObs == null) {
@@ -77,10 +84,16 @@ public class InstanceList extends ArrayList<Instance> {
 				}
 				instance.doInference(model);
 				instance.model = model;
-				varParam.optimizeInstanceParam(instance);			
+				varParam.optimizeInstanceParam(instance);
 			}
+			System.out.println("shiL1Norm : " + VariationalParam.shiL1NormAll);
+			System.out.println("Instance Level optimization time: " + timeInstance.stop());
+			
 			//corpus level params
+			Timing timeCorpus = new Timing();
+			timeCorpus.start();
 			varParam.optimizeCorpusParam();
+			System.out.println("Corpus level optimization time: " + timeCorpus.stop());
 		}
 		
 		for (int n = 0; n < this.size(); n++) {

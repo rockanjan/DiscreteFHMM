@@ -30,13 +30,17 @@ public class ForwardBackwardLog extends ForwardBackward{
 	
 	@Override
 	public void forward() {
+		logLikelihood =0;
 		alpha = new double[T][nrStates]; //alphas also stored in log scale
 		//initialization: for t=0
 		for(int i=0; i<nrStates; i++) {
 			double pi = initial.get(i, 0);
 			//double obs = instance.getObservationProbability(0, i);
 			//TODO: should we normalize?
-			double obs = instance.varParamObs.shi[layer][i][0];
+			double obs = instance.varParamObs.shi[layer][0][i];
+			if(obs > 1) {
+				System.err.println("Obs prob greater than 1");
+			}
 			alpha[0][i] = pi + obs; //these prob are in logscale	
 						
 		}
@@ -49,12 +53,14 @@ public class ForwardBackwardLog extends ForwardBackward{
 					expParams[i] = alpha[t-1][i] + transition.get(j, i); 
 				}
 				double obs;
-				//obs = instance.getObservationProbability(t, j);
 				obs = instance.varParamObs.shi[layer][t][j];
+				if(obs > 1) {
+					System.err.println("Obs prob greater than 1");
+				}
 				alpha[t][j] = MathUtils.logsumexp(expParams) + obs; 
 			}			
 		}
-		//logLikelihood = MathUtils.logsumexp(alpha[T-1]);
+		logLikelihood = MathUtils.logsumexp(alpha[T-1]);
 		//MyArray.printExpTable(alpha, "alpha");
 		//System.out.println(logLikelihood);
 	}
@@ -73,6 +79,9 @@ public class ForwardBackwardLog extends ForwardBackward{
 				for(int j=0; j<nrStates; j++) {
 					double trans = transition.get(j, i);
 					double obs = instance.varParamObs.shi[layer][t+1][j];
+					if(obs > 1) {
+						System.err.println("Obs prob greater than 1");
+					}
 					expParams[j] = trans + obs + beta[t+1][j];
 				}
 				beta[t][i] = MathUtils.logsumexp(expParams);
@@ -158,7 +167,7 @@ public class ForwardBackwardLog extends ForwardBackward{
 		double betaValue = beta[position+1][nextState];		
 		//WARNING: important
 		//TODO: decide if we should subtract the log likelihood
-		double value = alphaValue + trans + obs + betaValue;		
+		double value = alphaValue + trans + obs + betaValue - logLikelihood;		
 		return value;
 	}
 	

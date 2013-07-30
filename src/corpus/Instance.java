@@ -37,6 +37,8 @@ public class Instance {
 	public int[][] decodedStates;
 
 	public double[] observationCache;
+	
+	public double logLikelihood;
 
 	public Instance(Corpus c, String line) {
 		this.c = c;
@@ -49,15 +51,16 @@ public class Instance {
 		//TODO: to save memory free this right after its use
 		decodedStates = null;
 		this.model = model;
-		posteriors = new double[model.nrLayers][][];
-		
+		posteriors = new double[model.nrLayers][][];		
 		forwardBackwardList = new ArrayList<ForwardBackward>();
 		if (model.hmmType == HMMType.LOG_SCALE) {
+			logLikelihood = 0;
 			for(int l=0; l<model.nrLayers; l++) {
 				ForwardBackwardLog tempFB = new ForwardBackwardLog(model, this, l);
 				//find initial posteriors
 				tempFB.doInference();
 				forwardBackwardList.add(tempFB);
+				logLikelihood += tempFB.logLikelihood;
 			}
 		} else {
 			throw new UnsupportedOperationException("Not implemented");

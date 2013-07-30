@@ -61,17 +61,43 @@ public class InstanceList extends ArrayList<Instance> {
 	 * returns LL of the corpus
 	 */
 	public double updateExpectedCounts(HMMBase model, HMMParamBase expectedCounts) {
+		doVariationalInference(model);
+		
+		double jointLL = 0;
+		double LL = 0;
+		for (int n = 0; n < this.size(); n++) {
+			Instance instance = this.get(n);
+			instance.doInference(model);
+			LL += instance.logLikelihood;
+			for(int l=0; l<model.nrLayers; l++) {
+				instance.forwardBackwardList.get(l).addToCounts(expectedCounts);
+			}
+			instance.decode();
+			jointLL += getJointLL(instance, model);
+			instance.clearInference();
+		}
+		//clear expWeights;
+		model.param.expWeightsCache = null;
+		featurePartitionCache = null;
+		return jointLL;
+	}
+	
+	public void doVariationalInference(HMMBase model) {
 		if(varParam == null) {
 			varParam = new VariationalParam(model);
 		}
-		double LL = 0;
+		
 		//cache expWeights for the model
 		featurePartitionCache = new ConcurrentHashMap<String, Double>();
 		model.param.expWeightsCache = MathUtils.expArray(model.param.weights.weights);
 		//optimize variational parameters
 		
 		for(int iter=0; iter < 5; iter++) {
-			System.out.println("Variation iter : " + iter);
+			double LL = 0;
+			Timing varIterTime = new Timing();
+			varIterTime.start();
+			StringBuffer updateString = new StringBuffer();
+			updateString.append("\tvar iter=" + iter);
 			//instance level params
 			Timing timeInstance = new Timing();
 			timeInstance.start();
@@ -83,33 +109,59 @@ public class InstanceList extends ArrayList<Instance> {
 					instance.varParamObs.initializeRandom();
 				}
 				instance.doInference(model);
+				LL += instance.logLikelihood;
 				instance.model = model;
 				varParam.optimizeInstanceParam(instance);
 			}
-			System.out.println("shiL1Norm : " + VariationalParam.shiL1NormAll);
-			System.out.println("Instance Level optimization time: " + timeInstance.stop());
+			//System.out.println("shiL1Norm : " + VariationalParam.shiL1NormAll);
+			//System.out.println("Instance Level optimization time: " + timeInstance.stop());
 			
 			//corpus level params
 			Timing timeCorpus = new Timing();
 			timeCorpus.start();
 			varParam.optimizeCorpusParam();
-			System.out.println("Corpus level optimization time: " + timeCorpus.stop());
+			//System.out.println("Corpus level optimization time: " + timeCorpus.stop());
+			updateString.append(" LL=" + LL + " time=" + varIterTime.stop());
+			System.out.println(updateString.toString());
+		}
+	}
+	/*
+	 * Does not modify corpus level variational params zeta and alpha
+	 */
+	public void doVariationalInferenceDecoding(HMMBase model) {
+		if(varParam == null) {
+			varParam = new VariationalParam(model);
 		}
 		
-		for (int n = 0; n < this.size(); n++) {
-			Instance instance = this.get(n);
-			instance.doInference(model);
-			for(int l=0; l<model.nrLayers; l++) {
-				instance.forwardBackwardList.get(l).addToCounts(expectedCounts);
+		//cache expWeights for the model
+		featurePartitionCache = new ConcurrentHashMap<String, Double>();
+		model.param.expWeightsCache = MathUtils.expArray(model.param.weights.weights);
+		//optimize variational parameters
+		
+		for(int iter=0; iter < 5; iter++) {
+			double LL = 0;
+			Timing varIterTime = new Timing();
+			varIterTime.start();
+			StringBuffer updateString = new StringBuffer();
+			updateString.append("\tvar iter=" + iter);
+			//instance level params
+			Timing timeInstance = new Timing();
+			timeInstance.start();
+			VariationalParam.shiL1NormAll = 0;
+			for (int n = 0; n < this.size(); n++) {
+				Instance instance = this.get(n);
+				if(instance.varParamObs == null) {
+					instance.varParamObs = new VariationalParamObservation(model.nrLayers, instance.T, model.nrStates);
+					instance.varParamObs.initializeRandom();
+				}
+				instance.doInference(model);
+				LL += instance.logLikelihood;
+				instance.model = model;
+				varParam.optimizeInstanceParam(instance);
 			}
-			instance.decode();
-			LL += getJointLL(instance, model);
-			instance.clearInference();
+			updateString.append(" LL=" + LL + " time=" + varIterTime.stop());
+			System.out.println(updateString.toString());
 		}
-		//clear expWeights;
-		model.param.expWeightsCache = null;
-		featurePartitionCache = null;
-		return LL;
 	}
 
 	public double getConditionalLogLikelihoodUsingViterbi(

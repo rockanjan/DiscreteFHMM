@@ -33,6 +33,7 @@ public class VariationalParam {
 	public void optimizeInstanceParam(Instance instance) {
 		//optimize shi's
 		double shiL1NormInstance = 0;
+		zeta.clearLambdaCache();
 		for(int m=0; m<M; m++) {
 			for(int t=0; t<instance.T; t++) {
 				double maxOverK = -Double.MAX_VALUE;
@@ -66,10 +67,9 @@ public class VariationalParam {
 					}
 					if(updateValue[k] > maxOverK) {
 						maxOverK = updateValue[k];
-					}
-					
+					}					
 				}
-				//normalize: or rather fix (also done in original fHMM), subtract the max
+				//normalize: or rather fix, subtract the max
 				for(int k=0; k<K; k++) {
 					double oldValue = instance.varParamObs.shi[m][t][k];
 					instance.varParamObs.shi[m][t][k] = updateValue[k] - maxOverK;
@@ -78,8 +78,9 @@ public class VariationalParam {
 			}
 			//TODO: decide if computing posteriors in bulk is better or after each layer
 			//re-estimate state posteriors for this layer
-			//instance.forwardBackwardList.get(m).doInference();				
-		}		
+			instance.forwardBackwardList.get(m).doInference();				
+		}	
+		zeta.clearLambdaCache();
 		shiL1NormAll += shiL1NormInstance;
 	}
 	
@@ -132,9 +133,10 @@ public class VariationalParam {
 				zeta.zeta[y] = Math.sqrt(zeta.zeta[y]);
 				zetaL1Norm += Math.abs(zeta.zeta[y] - oldZeta);
 			}
-			System.out.println("zetaL1Norm : " + zetaL1Norm);
+			//System.out.println("zetaL1Norm : " + zetaL1Norm);
 		
 			//optimize alpha
+			zeta.createLambdaCache();
 			double sumTMY = 0;
 			for(int i=0; i<Corpus.trainInstanceEStepSampleList.size(); i++) {
 				Instance inst = Corpus.trainInstanceEStepSampleList.get(i);
@@ -157,10 +159,11 @@ public class VariationalParam {
 			for(int y=0; y<model.param.weights.vocabSize; y++) {
 				denominator += zeta.lamdaZeta(y);
 			}
+			zeta.clearLambdaCache();
 			denominator = 2 * Corpus.trainInstanceEStepSampleList.numberOfTokens * denominator;
 			double oldAlpha = alpha.alpha;
 			alpha.alpha = numerator / denominator;
-			System.out.println("alphaL1Norm : " + Math.abs(oldAlpha - alpha.alpha));
+			//System.out.println("alphaL1Norm : " + Math.abs(oldAlpha - alpha.alpha));
 		}
 	}
 }

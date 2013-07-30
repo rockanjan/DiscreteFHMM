@@ -105,6 +105,46 @@ public class Main {
 		}
 		test(model, corpus.trainInstanceList, outFileTrain);
 		*/
+		
+		testVariational(model, corpus.trainInstanceEStepSampleList, outFileTrain);
+	}
+	
+	public static void testVariational(HMMBase model, InstanceList instanceList, String outFile) {
+		System.out.println("Decoding variational");
+		Timing decodeTiming = new Timing();
+		decodeTiming.start();
+		System.out.println("Decoding started on :" + new Date().toString());
+		model.param.expWeightsCache = MathUtils
+				.expArray(model.param.weights.weights);
+		InstanceList.featurePartitionCache = new ConcurrentHashMap<String, Double>();
+		instanceList.doVariationalInferenceDecoding(model);
+		try{
+			PrintWriter pw = new PrintWriter(outFile);
+			for (int n = 0; n < instanceList.size(); n++) {
+				Instance i = instanceList.get(n);
+				i.decode();
+				for (int t = 0; t < i.T; t++) {
+					String word = i.getWord(t);
+					StringBuffer sb = new StringBuffer();
+					sb.append(word);
+					for(int m=0; m<model.nrLayers; m++) {
+						int state = i.decodedStates[m][t];
+						sb.append("|" + state);
+					}
+					pw.println(sb.toString());
+					pw.flush();
+				}
+				i.clearInference();
+			}
+			pw.close();
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+		}
+		model.param.expWeightsCache = null;
+		InstanceList.featurePartitionCache = null;
+		System.out.println("Finished decoding");
+		System.out.println("Total decoding time : " + decodeTiming.stop());
 	}
 	
 	
@@ -166,6 +206,7 @@ public class Main {
 			System.err.format("Could not open file for writing %s\n", outFile);
 			e.printStackTrace();
 		}
+		model.param.expWeightsCache = null;
 		InstanceList.featurePartitionCache = null;
 		System.out.println("Finished decoding");
 		System.out.println("Total decoding time : " + decodeTiming.stop());

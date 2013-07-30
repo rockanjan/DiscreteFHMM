@@ -38,9 +38,6 @@ public class ForwardBackwardLog extends ForwardBackward{
 			//double obs = instance.getObservationProbability(0, i);
 			//TODO: should we normalize?
 			double obs = instance.varParamObs.shi[layer][0][i];
-			if(obs > 1) {
-				System.err.println("Obs prob greater than 1");
-			}
 			alpha[0][i] = pi + obs; //these prob are in logscale	
 						
 		}
@@ -54,9 +51,11 @@ public class ForwardBackwardLog extends ForwardBackward{
 				}
 				double obs;
 				obs = instance.varParamObs.shi[layer][t][j];
+				/*
 				if(obs > 1) {
 					System.err.println("Obs prob greater than 1");
 				}
+				*/
 				alpha[t][j] = MathUtils.logsumexp(expParams) + obs; 
 			}			
 		}
@@ -150,7 +149,7 @@ public class ForwardBackwardLog extends ForwardBackward{
 		for(int t=0; t<T-1; t++) {
 			for(int i=0; i<nrStates; i++) {
 				for(int j=0; j<nrStates; j++) {
-					transition.addToCounts(i, j, Math.exp(getTransitionPosterior(i, j, t)));
+					transition.addToCounts(j, i, Math.exp(getTransitionPosterior(i, j, t)));
 				}
 			}
 		}

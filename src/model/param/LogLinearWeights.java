@@ -36,7 +36,8 @@ public class LogLinearWeights {
 	}
 	
 	public double get(int m, int k, int v) {
-		return weights[v][m*k + k];
+		//return weights[v][m*k + k];
+		return weights[v][m*Main.numStates + k];	
 	}
 	public void initializeZeros() {
 		weights = new double[vocabSize][conditionalSize]; 

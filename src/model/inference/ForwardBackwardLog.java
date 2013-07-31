@@ -36,7 +36,7 @@ public class ForwardBackwardLog extends ForwardBackward{
 		for(int i=0; i<nrStates; i++) {
 			double pi = initial.get(i, 0);
 			if(pi == 0) {
-				System.out.println("initial prob one");
+				//System.out.println("initial prob one");
 			}
 			double obs = instance.varParam.varParamObs.shi[layer][0][i];
 			alpha[0][i] = pi + obs; //these prob are in logscale	
@@ -57,8 +57,8 @@ public class ForwardBackwardLog extends ForwardBackward{
 		}
 		logLikelihood = MathUtils.logsumexp(alpha[T-1]);
 		if(logLikelihood >= 0) {
-			MyArray.printExpTable(alpha, "alpha");
-			throw new RuntimeException("loglikelihood is greater or equal to zero for layer " + layer);
+			//MyArray.printExpTable(alpha, "alpha");
+			//throw new RuntimeException("loglikelihood is greater or equal to zero for layer " + layer);
 		}
 	}
 	

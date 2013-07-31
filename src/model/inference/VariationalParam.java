@@ -85,8 +85,8 @@ public class VariationalParam {
 				//normalize
 				for(int k=0; k<K; k++) {
 					double oldValue = varParamObs.shi[m][t][k];
-					varParamObs.shi[m][t][k] = updateValue[k] - maxOverK;
-					//instance.varParamObs.shi[m][t][k] = updateValue[k] - Math.log(normalizer);
+					//varParamObs.shi[m][t][k] = updateValue[k] - maxOverK;
+					varParamObs.shi[m][t][k] = updateValue[k] - Math.log(normalizer);
 					MathUtils.check(varParamObs.shi[m][t][k]);
 					shiL1NormInstance += Math.abs(oldValue - varParamObs.shi[m][t][k]);
 				}

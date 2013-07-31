@@ -65,7 +65,9 @@ public class InstanceList extends ArrayList<Instance> {
 		model.param.expWeightsCache = MathUtils.expArray(model.param.weights.weights);
 		//cache expWeights for the model
 		featurePartitionCache = new ConcurrentHashMap<String, Double>();
-		doVariationalInference(model);		
+		doVariationalInference(model);
+		
+		//decode the most likely states and compute joint likelihood to return
 		double jointLL = 0;
 		double LL = 0;
 		for (int n = 0; n < this.size(); n++) {
@@ -108,8 +110,11 @@ public class InstanceList extends ArrayList<Instance> {
 				instance.doInference(model);
 				LL += instance.logLikelihood;				
 			}
-			updateString.append(" LL=" + LL + " time=" + varIterTime.stop());
-			updateString.append(String.format("shiNorm=%.2f zetaNorm=%.2f alphaNorm=%.2f", shiL1NormAll, zetaL1NormAll, alphaL1NormAll));
+			shiL1NormAll = shiL1NormAll/(model.nrLayers * this.numberOfTokens * model.nrStates); //difference per variable
+			zetaL1NormAll = zetaL1NormAll/(this.numberOfTokens * model.corpus.corpusVocab.get(0).vocabSize);
+			alphaL1NormAll = alphaL1NormAll/this.numberOfTokens;
+			updateString.append(String.format(" LL=%.2f time=%s", LL, varIterTime.stop()));
+			updateString.append(String.format(" shiNorm=%.2f zetaNorm=%.2f alphaNorm=%.2f", shiL1NormAll, zetaL1NormAll, alphaL1NormAll));
 			System.out.println(updateString.toString());			
 		}		
 	}

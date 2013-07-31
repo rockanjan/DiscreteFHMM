@@ -42,7 +42,7 @@ public class Main {
 									// word|hmm1|hmm2 has 3
 
 	static int vocabThreshold = 1; // only above this included*******
-	static int nrLayers = 2;
+	static int nrLayers = 3;
 	public static int numStates = 2;
 
 	/** user parameters end **/

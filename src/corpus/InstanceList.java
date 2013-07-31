@@ -61,8 +61,10 @@ public class InstanceList extends ArrayList<Instance> {
 	 * returns LL of the corpus
 	 */
 	public double updateExpectedCounts(HMMBase model, HMMParamBase expectedCounts) {
-		doVariationalInference(model);
-		
+		model.param.expWeightsCache = MathUtils.expArray(model.param.weights.weights);
+		//cache expWeights for the model
+		featurePartitionCache = new ConcurrentHashMap<String, Double>();
+		doVariationalInference(model);		
 		double jointLL = 0;
 		double LL = 0;
 		for (int n = 0; n < this.size(); n++) {
@@ -76,7 +78,7 @@ public class InstanceList extends ArrayList<Instance> {
 			jointLL += getJointLL(instance, model);
 			instance.clearInference();
 		}
-		//clear expWeights;
+		//clear expWeights;				
 		model.param.expWeightsCache = null;
 		featurePartitionCache = null;
 		return jointLL;
@@ -87,9 +89,6 @@ public class InstanceList extends ArrayList<Instance> {
 			varParam = new VariationalParam(model);
 		}
 		
-		//cache expWeights for the model
-		featurePartitionCache = new ConcurrentHashMap<String, Double>();
-		model.param.expWeightsCache = MathUtils.expArray(model.param.weights.weights);
 		//optimize variational parameters
 		
 		for(int iter=0; iter < 5; iter++) {
@@ -123,7 +122,8 @@ public class InstanceList extends ArrayList<Instance> {
 			//System.out.println("Corpus level optimization time: " + timeCorpus.stop());
 			updateString.append(" LL=" + LL + " time=" + varIterTime.stop());
 			System.out.println(updateString.toString());
-		}
+		}		
+		
 	}
 	/*
 	 * Does not modify corpus level variational params zeta and alpha

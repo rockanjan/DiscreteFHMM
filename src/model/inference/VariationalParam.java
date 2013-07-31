@@ -37,8 +37,9 @@ public class VariationalParam {
 		for(int m=0; m<M; m++) {
 			for(int t=0; t<instance.T; t++) {
 				double maxOverK = -Double.MAX_VALUE;
-				double[] updateValue = new double[K]; 
-				for(int k=0; k<K; k++) {
+				double[] updateValue = new double[K];
+				double normalizer = 0;
+				for(int k=0; k<K; k++) {					
 					double sumThetaOverY = 0;
 					for(int y=0; y<model.param.weights.vocabSize; y++) {
 						sumThetaOverY += model.param.weights.get(m, k, y);
@@ -65,20 +66,23 @@ public class VariationalParam {
 						updateValue[k] -= lambda * sumY;
 						MathUtils.check(updateValue[k]);
 					}
+					normalizer += Math.exp(updateValue[k]);
 					if(updateValue[k] > maxOverK) {
 						maxOverK = updateValue[k];
 					}					
 				}
-				//normalize: or rather fix, subtract the max
+				//normalize
 				for(int k=0; k<K; k++) {
 					double oldValue = instance.varParamObs.shi[m][t][k];
 					instance.varParamObs.shi[m][t][k] = updateValue[k] - maxOverK;
+					//instance.varParamObs.shi[m][t][k] = updateValue[k] - Math.log(normalizer);
+					MathUtils.check(instance.varParamObs.shi[m][t][k]);
 					shiL1NormInstance += Math.abs(oldValue - instance.varParamObs.shi[m][t][k]);
 				}
 			}
 			//TODO: decide if computing posteriors in bulk is better or after each layer
 			//re-estimate state posteriors for this layer
-			instance.forwardBackwardList.get(m).doInference();				
+			//instance.forwardBackwardList.get(m).doInference();				
 		}	
 		zeta.clearLambdaCache();
 		shiL1NormAll += shiL1NormInstance;
@@ -131,6 +135,7 @@ public class VariationalParam {
 					zeta.zeta[y] = 1e-100;
 				}
 				zeta.zeta[y] = Math.sqrt(zeta.zeta[y]);
+				MathUtils.check(zeta.zeta[y]);
 				zetaL1Norm += Math.abs(zeta.zeta[y] - oldZeta);
 			}
 			//System.out.println("zetaL1Norm : " + zetaL1Norm);
@@ -163,6 +168,7 @@ public class VariationalParam {
 			denominator = 2 * Corpus.trainInstanceEStepSampleList.numberOfTokens * denominator;
 			double oldAlpha = alpha.alpha;
 			alpha.alpha = numerator / denominator;
+			MathUtils.check(alpha.alpha);
 			//System.out.println("alphaL1Norm : " + Math.abs(oldAlpha - alpha.alpha));
 		}
 	}

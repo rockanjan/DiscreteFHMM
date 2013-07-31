@@ -17,11 +17,12 @@ import util.MyArray;
 import util.Timing;
 
 public class InstanceList extends ArrayList<Instance> {
+	public static double shiL1NormAll=0;
+	public static double zetaL1NormAll=0;
+	public static double alphaL1NormAll=0;
+	
 	private static final long serialVersionUID = -2409272084529539276L;
-	public int numberOfTokens;
-	
-	public VariationalParam varParam;
-	
+	public int numberOfTokens;	
 	public static int VOCAB_UPDATE_COUNT = 1000;
 	
 	public InstanceList() {
@@ -85,85 +86,42 @@ public class InstanceList extends ArrayList<Instance> {
 	}
 	
 	public void doVariationalInference(HMMBase model) {
-		if(varParam == null) {
-			varParam = new VariationalParam(model);
-		}
-		
 		//optimize variational parameters
-		
 		for(int iter=0; iter < 5; iter++) {
+			shiL1NormAll = 0;
+			zetaL1NormAll = 0;
+			alphaL1NormAll = 0;
 			double LL = 0;
 			Timing varIterTime = new Timing();
 			varIterTime.start();
 			StringBuffer updateString = new StringBuffer();
 			updateString.append("\tvar iter=" + iter);
 			//instance level params
-			Timing timeInstance = new Timing();
-			timeInstance.start();
-			VariationalParam.shiL1NormAll = 0;
 			for (int n = 0; n < this.size(); n++) {
 				Instance instance = this.get(n);
-				if(instance.varParamObs == null) {
-					instance.varParamObs = new VariationalParamObservation(model.nrLayers, instance.T, model.nrStates);
-					instance.varParamObs.initializeRandom();
-				}
-				instance.doInference(model);
-				LL += instance.logLikelihood;
 				instance.model = model;
-				varParam.optimizeInstanceParam(instance);
+				if(instance.varParam == null) {
+					instance.varParam = new VariationalParam(model, instance);
+				}
+				instance.varParam.optimize();
+				instance.doInference(model);
+				LL += instance.logLikelihood;				
 			}
-			//System.out.println("shiL1Norm : " + VariationalParam.shiL1NormAll);
-			//System.out.println("Instance Level optimization time: " + timeInstance.stop());
-			
-			//corpus level params
-			Timing timeCorpus = new Timing();
-			timeCorpus.start();
-			varParam.optimizeCorpusParam();
-			//System.out.println("Corpus level optimization time: " + timeCorpus.stop());
 			updateString.append(" LL=" + LL + " time=" + varIterTime.stop());
-			System.out.println(updateString.toString());
+			updateString.append(String.format("shiNorm=%.2f zetaNorm=%.2f alphaNorm=%.2f", shiL1NormAll, zetaL1NormAll, alphaL1NormAll));
+			System.out.println(updateString.toString());			
 		}		
-		
 	}
-	/*
-	 * Does not modify corpus level variational params zeta and alpha
-	 */
-	public void doVariationalInferenceDecoding(HMMBase model) {
-		if(varParam == null) {
-			varParam = new VariationalParam(model);
-		}
-		
-		//cache expWeights for the model
-		featurePartitionCache = new ConcurrentHashMap<String, Double>();
-		model.param.expWeightsCache = MathUtils.expArray(model.param.weights.weights);
-		//optimize variational parameters
-		
-		for(int iter=0; iter < 5; iter++) {
-			double LL = 0;
-			Timing varIterTime = new Timing();
-			varIterTime.start();
-			StringBuffer updateString = new StringBuffer();
-			updateString.append("\tvar iter=" + iter);
-			//instance level params
-			Timing timeInstance = new Timing();
-			timeInstance.start();
-			VariationalParam.shiL1NormAll = 0;
-			for (int n = 0; n < this.size(); n++) {
-				Instance instance = this.get(n);
-				if(instance.varParamObs == null) {
-					instance.varParamObs = new VariationalParamObservation(model.nrLayers, instance.T, model.nrStates);
-					instance.varParamObs.initializeRandom();
-				}
-				instance.doInference(model);
-				LL += instance.logLikelihood;
-				instance.model = model;
-				varParam.optimizeInstanceParam(instance);
-			}
-			updateString.append(" LL=" + LL + " time=" + varIterTime.stop());
-			System.out.println(updateString.toString());
-		}
+	
+	public void decode(HMMBase model) {
+		//decode
+		for (int n = 0; n < this.size(); n++) {
+			Instance instance = this.get(n);
+			instance.model = model;
+			instance.decode();							
+		}		
 	}
-
+	
 	public double getConditionalLogLikelihoodUsingViterbi(
 			double[][] parameterMatrix) {
 		return getCLLNoThread(parameterMatrix);

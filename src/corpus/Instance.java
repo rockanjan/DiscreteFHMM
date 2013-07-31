@@ -17,7 +17,7 @@ import util.MyArray;
 import util.SmoothWord;
 
 public class Instance {
-	public VariationalParamObservation varParamObs;
+	public VariationalParam varParam;
 	public int[][] words;
 	public int T; // sentence length
 	Corpus c;
@@ -91,14 +91,14 @@ public class Instance {
 			int[][] stateLattice = new int[T][model.nrStates];
 			for(int i=0; i<model.nrStates; i++) {
 				double init = model.param.initial.get(l).get(i, 0);
-				double obs = varParamObs.shi[l][0][i];
+				double obs = varParam.varParamObs.shi[l][0][i];
 				probLattice[0][i] = init + obs;			
 			}
 			double maxValue = -Double.MAX_VALUE;
 			int maxIndex = -1;
 			for(int t=1; t<T; t++) {
 				for(int j=0; j<model.nrStates; j++) {
-					double obs = varParamObs.shi[l][t][j];
+					double obs = varParam.varParamObs.shi[l][t][j];
 					maxValue = -Double.MAX_VALUE;
 					maxIndex = -1;
 					for(int i=0; i<model.nrStates; i++) {

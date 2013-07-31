@@ -117,7 +117,8 @@ public class Main {
 		model.param.expWeightsCache = MathUtils
 				.expArray(model.param.weights.weights);
 		InstanceList.featurePartitionCache = new ConcurrentHashMap<String, Double>();
-		instanceList.doVariationalInferenceDecoding(model);
+		instanceList.doVariationalInference(model);
+		instanceList.decode(model);
 		try{
 			PrintWriter pw = new PrintWriter(outFile);
 			for (int n = 0; n < instanceList.size(); n++) {

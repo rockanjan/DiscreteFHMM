@@ -6,46 +6,34 @@ import util.MathUtils;
 
 public class VariationalParamZeta {
 	int V; //vocab size
-	double zeta[];
-	double lambdaCache[];
-	public VariationalParamZeta(int V) {
+	int T; //timestep size
+	double zeta[][];
+	public VariationalParamZeta(int V, int T) {
 		this.V = V;
-		zeta = new double[V];
+		this.T = T;
+		zeta = new double[V][T];
 	}
 	
 	public void initializeRandom() {
 		Random r = new Random();
 		double small = 1e-100;
 		for(int i=0; i<zeta.length; i++) {
-			zeta[i] = r.nextDouble() + small;
+			for(int t=0; t<zeta.length; t++) {
+				zeta[i][t] = r.nextDouble() + small;
+			}
 		}
 	}
 
 	/*
-	 * returns the value for the function lambda(zeta_k);
+	 * returns the value for the function lambda(zeta_y_t);
 	 */
-	public double lamdaZeta(int index) {
-		if(lambdaCache == null) {
-			createLambdaCache();
+	public double lambdaZeta(int index, int t) {
+		double value = 0.5/zeta[index][t] * (1/(1+Math.exp(-zeta[index][t])) - 0.5);
+		try{
+			MathUtils.check(value);
+		} catch (Exception e) {
+			System.err.println("zeta : " + zeta[index]);
 		}
-		return lambdaCache[index];
-	}
-	
-	public void createLambdaCache() {
-		lambdaCache = new double[V];
-		//create cache
-		for(int index=0; index<V; index++) {
-			double value = 0.5/zeta[index] * (1/(1+Math.exp(-zeta[index])) - 0.5);
-			try{
-				MathUtils.check(value);
-			} catch (Exception e) {
-				System.err.println("zeta : " + zeta[index]);
-			}
-			lambdaCache[index] = value;
-		}
-	}
-	
-	public void clearLambdaCache() {
-		lambdaCache = null;
+		return value;
 	}
 }

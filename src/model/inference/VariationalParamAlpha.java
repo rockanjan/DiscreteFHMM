@@ -5,10 +5,18 @@ import java.util.Random;
 import program.Main;
 
 public class VariationalParamAlpha {
-	double alpha;
+	double[] alpha;
+	int T;
+	
+	public VariationalParamAlpha(int T) {
+		this.T = T;
+		alpha = new double[T];
+	}
 	
 	public void initializeRandom() {
 		Random r = new Random(Main.seed);
-		alpha = r.nextDouble();
+		for(int i=0; i<T; i++) {
+			alpha[i] = r.nextDouble();
+		}
 	}
 }

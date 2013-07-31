@@ -18,7 +18,7 @@ public class VariationalParamZeta {
 		Random r = new Random();
 		double small = 1e-100;
 		for(int i=0; i<zeta.length; i++) {
-			for(int t=0; t<zeta.length; t++) {
+			for(int t=0; t<T; t++) {
 				zeta[i][t] = r.nextDouble() + small;
 			}
 		}

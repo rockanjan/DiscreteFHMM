@@ -103,6 +103,7 @@ public class InstanceList extends ArrayList<Instance> {
 				if(instance.varParam == null) {
 					instance.varParam = new VariationalParam(model, instance);
 				}
+				instance.doInference(model); //get expected states with unoptimized params
 				instance.varParam.optimize();
 				instance.doInference(model);
 				LL += instance.logLikelihood;				

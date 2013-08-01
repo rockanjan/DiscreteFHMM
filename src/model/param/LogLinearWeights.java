@@ -43,11 +43,20 @@ public class LogLinearWeights {
 		weights = new double[vocabSize][conditionalSize]; 
 	}
 	
+	public void initializeUniform(double value) {
+		weights = new double[vocabSize][conditionalSize];
+		for(int y=0; y<vocabSize; y++) {
+			for(int u=0; u<conditionalSize; u++) {
+				weights[y][u] = value;
+			}
+		}
+	}
+	
 	public void initializeRandom(Random r) {
 		weights = new double[vocabSize][conditionalSize];
 		for(int y=0; y<vocabSize; y++) {
 			for(int u=0; u<conditionalSize; u++) {
-				weights[y][u] = r.nextGaussian();
+				weights[y][u] = r.nextGaussian() * 1e-100;
 			}
 		}
 	}

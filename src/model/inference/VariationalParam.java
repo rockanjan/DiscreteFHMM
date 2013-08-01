@@ -43,6 +43,8 @@ public class VariationalParam {
 	}
 	
 	public void optimizeParamObs() {
+		double minExtreme = Double.MAX_VALUE;
+		double maxExtreme = -Double.MAX_VALUE;
 		//optimize shi's
 		double shiL1NormInstance = 0;
 		for(int m=0; m<M; m++) {
@@ -63,7 +65,7 @@ public class VariationalParam {
 							if(n==m) {
 								continue;
 							}
-							double dotProd = MathUtils.dot(model.param.weights.getStateVector(n, y), instance.posteriors[m][t]);
+							double dotProd = MathUtils.dot(model.param.weights.getStateVector(n, y), instance.posteriors[n][t]);
 							MathUtils.check(dotProd);
 							sumY += model.param.weights.getStateVector(m, y)[k] * dotProd;
 							MathUtils.check(sumY);
@@ -88,7 +90,7 @@ public class VariationalParam {
 					//varParamObs.shi[m][t][k] = updateValue[k] - maxOverK;
 					varParamObs.shi[m][t][k] = updateValue[k] - Math.log(normalizer);
 					MathUtils.check(varParamObs.shi[m][t][k]);
-					shiL1NormInstance += Math.abs(oldValue - varParamObs.shi[m][t][k]);
+					shiL1NormInstance += Math.abs(oldValue - varParamObs.shi[m][t][k]);					
 				}
 			}
 			//TODO: decide if computing posteriors in bulk is better or after each layer

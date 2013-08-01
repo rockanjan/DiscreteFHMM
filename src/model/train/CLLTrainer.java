@@ -15,7 +15,7 @@ public class CLLTrainer implements Optimizable.ByGradientValue{
 	
 	public int gradientCallCount = 0;
 	
-	double c2 = 0.001; //regularizer
+	double c2 = 0.1; //regularizer
 	
 	public CLLTrainer(double[] initParams, Corpus corpus) {
 		this.corpus = corpus;

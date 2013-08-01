@@ -84,12 +84,13 @@ public class InstanceList extends ArrayList<Instance> {
 		//clear expWeights;				
 		model.param.expWeightsCache = null;
 		featurePartitionCache = null;
-		return jointLL;
+		System.out.println("Joint LL = " + jointLL);
+		return LL;
 	}
 	
 	public void doVariationalInference(HMMBase model) {
 		//optimize variational parameters
-		for(int iter=0; iter < 5; iter++) {
+		for(int iter=0; iter < 2; iter++) {
 			shiL1NormAll = 0;
 			zetaL1NormAll = 0;
 			alphaL1NormAll = 0;
@@ -108,7 +109,9 @@ public class InstanceList extends ArrayList<Instance> {
 				instance.doInference(model); //get expected states with unoptimized params
 				instance.varParam.optimize();
 				instance.doInference(model);
-				LL += instance.logLikelihood;				
+				instance.decode();
+				//LL += instance.logLikelihood;				
+				LL += getJointLL(instance, model);
 			}
 			shiL1NormAll = shiL1NormAll/(model.nrLayers * this.numberOfTokens * model.nrStates); //difference per variable
 			zetaL1NormAll = zetaL1NormAll/(this.numberOfTokens * model.corpus.corpusVocab.get(0).vocabSize);

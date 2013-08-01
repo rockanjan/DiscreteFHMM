@@ -82,6 +82,7 @@ public class Main {
 		Random random = new Random(seed);
 		model.initializeRandom(random);
 		//model.param.weights.initializeZeros();
+		model.param.weights.initializeUniform(0.01);
 		model.initializeZerosToBest();
 		printParams();
 		//find most frequent conditionals

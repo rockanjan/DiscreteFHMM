@@ -11,6 +11,7 @@ import model.HMMBase;
 import model.inference.VariationalParam;
 import model.inference.VariationalParamObservation;
 import model.param.HMMParamBase;
+import model.param.LogLinearWeights;
 import program.Main;
 import util.MathUtils;
 import util.MyArray;
@@ -62,7 +63,9 @@ public class InstanceList extends ArrayList<Instance> {
 	 * returns LL of the corpus
 	 */
 	public double updateExpectedCounts(HMMBase model, HMMParamBase expectedCounts) {
+		//TODO: refactor
 		model.param.expWeightsCache = MathUtils.expArray(model.param.weights.weights);
+		model.param.expWeights = model.param.weights.getCloneExp();
 		//cache expWeights for the model
 		featurePartitionCache = new ConcurrentHashMap<String, Double>();
 		doVariationalInference(model);
@@ -83,6 +86,7 @@ public class InstanceList extends ArrayList<Instance> {
 		}
 		//clear expWeights;				
 		model.param.expWeightsCache = null;
+		model.param.expWeights = null;
 		featurePartitionCache = null;
 		System.out.println("Joint LL = " + jointLL);
 		return LL;

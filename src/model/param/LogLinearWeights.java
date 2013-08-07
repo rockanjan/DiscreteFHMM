@@ -61,6 +61,28 @@ public class LogLinearWeights {
 		}
 	}
 	
+	public LogLinearWeights getClone() {
+		LogLinearWeights clone = new LogLinearWeights(vocabSize, conditionalSize);
+		for(int i=0; i<vocabSize; i++) {
+			for(int j=0; j<conditionalSize; j++) {
+				this.weights[i][j] = this.weights[i][j];
+			}
+		}
+		return clone;
+	}
+	/*
+	 * Clone with weights exp
+	 */
+	public LogLinearWeights getCloneExp() {
+		LogLinearWeights clone = new LogLinearWeights(vocabSize, conditionalSize);
+		for(int i=0; i<vocabSize; i++) {
+			for(int j=0; j<conditionalSize; j++) {
+				this.weights[i][j] = Math.exp(this.weights[i][j]);
+			}
+		}
+		return clone;
+	}
+	
 	public void cloneFrom(LogLinearWeights source) {
 		for(int i=0; i<vocabSize; i++) {
 			for(int j=0; j<conditionalSize; j++) {

@@ -16,6 +16,7 @@ public abstract class HMMParamBase {
 	public ArrayList<MultinomialBase> transition;
 	
 	public LogLinearWeights weights;
+	public LogLinearWeights expWeights;
 	
 	public double[][] expWeightsCache;
 	

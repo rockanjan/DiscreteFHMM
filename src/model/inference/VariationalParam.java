@@ -11,7 +11,6 @@ import model.param.HMMParamBase;
 public class VariationalParam {
 	public VariationalParamObservation varParamObs;
 	public VariationalParamAlpha alpha;
-	public VariationalParamZeta zeta;
 	public HMMBase model;
 	public Instance instance;
 	
@@ -31,14 +30,11 @@ public class VariationalParam {
 		varParamObs = new VariationalParamObservation(M, T, K);
 		varParamObs.initializeRandom();
 		alpha = new VariationalParamAlpha(T);
-		alpha.initializeRandom();
-		zeta = new VariationalParamZeta(V, T);		
-		zeta.initializeRandom();
+		alpha.initializeRandom();		
 	}
 	
 	public void optimize() {
-		optimizeParamObs();
-		optimizeZeta();
+		optimizeParamObs();		
 		optimizeAlpha();		
 	}
 	
@@ -49,42 +45,50 @@ public class VariationalParam {
 		double shiL1NormInstance = 0;
 		for(int m=0; m<M; m++) {
 			for(int t=0; t<instance.T; t++) {
-				double maxOverK = -Double.MAX_VALUE;
 				double[] updateValue = new double[K];
-				double normalizer = 0;
-				for(int k=0; k<K; k++) {					
-					double sumThetaOverY = 0;
-					for(int y=0; y<model.param.weights.vocabSize; y++) {
-						sumThetaOverY += model.param.weights.get(m, k, y);
+				double[] sumOverNYt = new double[K];
+				for(int k=0; k<K; k++) {
+					for(int n=0; n<M; n++) {				
+						sumOverNYt[k] += model.param.weights.get(n, k, instance.words[t][0]);
 					}
-					updateValue[k] = model.param.weights.get(m, k, instance.words[t][0]) - 0.5 * sumThetaOverY;
-					for(int y=0; y<model.param.weights.vocabSize; y++) {
-						double lambda = zeta.lambdaZeta(y, t);
-						double sumY = 0;
-						for(int n=0; n<M; n++) {
-							if(n==m) {
-								continue;
-							}
-							double dotProd = MathUtils.dot(model.param.weights.getStateVector(n, y), instance.posteriors[n][t]);
-							MathUtils.check(dotProd);
-							sumY += model.param.weights.getStateVector(m, y)[k] * dotProd;
-							MathUtils.check(sumY);
+				}
+				double[] sumOverNnotM = new double[K];
+				for(int k=0; k<K; k++) {
+					for(int n=0; n<M; n++) {
+						if(n != m) {
+							sumOverNnotM[k] += varParamObs.shi[n][t][k];
 						}
-						double[] thetaMY = model.param.weights.getStateVector(m, y);
-						double delta = MathUtils.diag(MathUtils.getOuterProduct(thetaMY, thetaMY))[k];
-						sumY += delta;
-						
-						sumY -= 2 * alpha.alpha[t] * model.param.weights.get(m, k, y);
-						MathUtils.check(sumY);
-						updateValue[k] -= lambda * sumY;
-						MathUtils.check(updateValue[k]);
 					}
+				}
+				
+				//TODO: might underflow
+				double[] sumOverY = new double[K];
+				for(int y=0; y<V; y++) {
+					double prod = 1.0;
+					for(int n=0; n<M; n++) {
+						if(n != m) {
+							prod *= MathUtils.dot(model.param.expWeights.getStateVector(n, y), 
+									instance.forwardBackwardList.get(n).posterior[t]);
+							if(prod == 0) {
+								throw new RuntimeException("Underflow");
+							}
+						}
+					}
+					for(int k=0; k<K; k++) {
+						sumOverY[k] += prod * model.param.expWeights.getStateVector(m, y)[k];
+					}
+				}
+				double normalizer = 0;
+				double maxOverK = -Double.MAX_VALUE;
+				for(int k=0; k<K; k++) {
+					updateValue[k] = sumOverNYt[k] - sumOverNnotM[k] - alpha.alpha[t] * sumOverY[k];
 					normalizer += Math.exp(updateValue[k]);
 					if(updateValue[k] > maxOverK) {
 						maxOverK = updateValue[k];
-					}					
+					}
 				}
-				//normalize
+				
+				//normalize and update
 				for(int k=0; k<K; k++) {
 					double oldValue = varParamObs.shi[m][t][k];
 					//varParamObs.shi[m][t][k] = updateValue[k] - maxOverK;
@@ -92,76 +96,35 @@ public class VariationalParam {
 					MathUtils.check(varParamObs.shi[m][t][k]);
 					shiL1NormInstance += Math.abs(oldValue - varParamObs.shi[m][t][k]);					
 				}
-			}
-			//TODO: decide if computing posteriors in bulk is better or after each layer
-			//re-estimate state posteriors for this layer
-			//instance.forwardBackwardList.get(m).doInference();				
+			}							
 		}	
 		InstanceList.shiL1NormAll += shiL1NormInstance;		
-	}
-	
-	public void optimizeZeta() {
-		double zetaL1Norm = 0;
-		for(int y=0; y<model.param.weights.vocabSize; y++) {
-			for(int t=0; t<T; t++) {
-				double oldZeta = zeta.zeta[y][t];
-				zeta.zeta[y][t] = Math.pow(alpha.alpha[t],2);
-				for(int m=0; m<M; m++) {
-					for(int n=0; n<M; n++) {
-						if(m==n) continue;
-						double dotThetaMStateM = MathUtils.dot(model.param.weights.getStateVector(m, y),
-								instance.forwardBackwardList.get(m).posterior[t]);
-						double dotThetaNStateN =  MathUtils.dot(model.param.weights.getStateVector(n, y),
-								instance.forwardBackwardList.get(n).posterior[t]);
-						zeta.zeta[y][t] += dotThetaMStateM * dotThetaNStateN;
-					}
-					double thetaMDiagStateMthetaM = MathUtils.vectorTransposeMatrixVector(
-							model.param.weights.getStateVector(m, y), 
-							MathUtils.diag(instance.forwardBackwardList.get(m).posterior[t]), 
-							model.param.weights.getStateVector(m, y));
-					zeta.zeta[y][t] += thetaMDiagStateMthetaM;
-					double dotStateMThetaM = MathUtils.dot(
-							instance.forwardBackwardList.get(m).posterior[t],
-							model.param.weights.getStateVector(m, y)
-							);
-					zeta.zeta[y][t] -= 2 * alpha.alpha[t] * dotStateMThetaM;				
-				}
-				//value should not be negative because we still have to take squareroot
-				if(zeta.zeta[y][t] <= 0) {
-					System.err.println("zeta value <= 0 found, value=" + zeta.zeta[y][t]);
-					//fix it
-					zeta.zeta[y][t] = 1e-100;
-				}
-				zeta.zeta[y][t] = Math.sqrt(zeta.zeta[y][t]);
-				MathUtils.check(zeta.zeta[y][t]);
-				zetaL1Norm += Math.abs(zeta.zeta[y][t] - oldZeta);
-			}
-		}
-		InstanceList.zetaL1NormAll += zetaL1Norm;
 	}
 	
 	public void optimizeAlpha() {
 		double alphaL1Norm = 0;
 		for(int t=0; t<T; t++) {
 			double sumY = 0;
-			double sumLambdaY = 0;
-			for(int y=0; y<model.param.weights.vocabSize; y++) {
-				double sumM = 0;
+			for(int y=0; y<V; y++) {
+				double prodM = 1.0;
 				for(int m=0; m<M; m++) {
-					double dotStateMThetaM = MathUtils.dot(
+					double dotStateMExpThetaM = MathUtils.dot(
 							instance.forwardBackwardList.get(m).posterior[t],
-							model.param.weights.getStateVector(m, y)
+							model.param.expWeights.getStateVector(m, y)
 							);
-					sumM += dotStateMThetaM; 
+					prodM = prodM * dotStateMExpThetaM;
+					if(prodM == 0) {
+						throw new RuntimeException("Underflow");
+					}
 				}
-				double lambda = zeta.lambdaZeta(y, t); 
-				sumY += lambda * sumM;
-				sumLambdaY += lambda;
+				sumY += prodM;
 			}	
-			double numerator = 0.5 * V - 1 + 2 * sumY;
-			double denominator = 2 * sumLambdaY;
 			double oldAlpha = alpha.alpha[t];
-			alpha.alpha[t] = numerator / denominator;
+			if(sumY == 0) {
+				System.err.println("sumY is zero, setting small value");
+				sumY = 1e-200;
+			}
+			alpha.alpha[t] = 1/sumY;
 			alphaL1Norm += Math.abs(alpha.alpha[t] - oldAlpha);
 			MathUtils.check(alpha.alpha[t]);
 		}

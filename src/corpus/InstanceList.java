@@ -19,7 +19,6 @@ import util.Timing;
 
 public class InstanceList extends ArrayList<Instance> {
 	public static double shiL1NormAll=0;
-	public static double zetaL1NormAll=0;
 	public static double alphaL1NormAll=0;
 	
 	private static final long serialVersionUID = -2409272084529539276L;
@@ -96,7 +95,6 @@ public class InstanceList extends ArrayList<Instance> {
 		//optimize variational parameters
 		for(int iter=0; iter < 2; iter++) {
 			shiL1NormAll = 0;
-			zetaL1NormAll = 0;
 			alphaL1NormAll = 0;
 			double LL = 0;
 			Timing varIterTime = new Timing();
@@ -118,10 +116,9 @@ public class InstanceList extends ArrayList<Instance> {
 				LL += getJointLL(instance, model);
 			}
 			shiL1NormAll = shiL1NormAll/(model.nrLayers * this.numberOfTokens * model.nrStates); //difference per variable
-			zetaL1NormAll = zetaL1NormAll/(this.numberOfTokens * model.corpus.corpusVocab.get(0).vocabSize);
 			alphaL1NormAll = alphaL1NormAll/this.numberOfTokens;
 			updateString.append(String.format(" LL=%.2f time=%s", LL, varIterTime.stop()));
-			updateString.append(String.format(" shiNorm=%.2f zetaNorm=%.2f alphaNorm=%.2f", shiL1NormAll, zetaL1NormAll, alphaL1NormAll));
+			updateString.append(String.format(" shiNorm=%.2f alphaNorm=%.2f", shiL1NormAll, alphaL1NormAll));
 			System.out.println(updateString.toString());			
 		}		
 	}

@@ -91,8 +91,8 @@ public class VariationalParam {
 				//normalize and update
 				for(int k=0; k<K; k++) {
 					double oldValue = varParamObs.shi[m][t][k];
-					//varParamObs.shi[m][t][k] = updateValue[k] - maxOverK;
-					varParamObs.shi[m][t][k] = updateValue[k] - Math.log(normalizer);
+					varParamObs.shi[m][t][k] = updateValue[k] - maxOverK;
+					//varParamObs.shi[m][t][k] = updateValue[k] - Math.log(normalizer);
 					MathUtils.check(varParamObs.shi[m][t][k]);
 					shiL1NormInstance += Math.abs(oldValue - varParamObs.shi[m][t][k]);					
 				}
@@ -120,8 +120,8 @@ public class VariationalParam {
 				sumY += prodM;
 			}	
 			double oldAlpha = alpha.alpha[t];
-			if(sumY == 0) {
-				System.err.println("sumY is zero, setting small value");
+			if(sumY <= 0) {
+				System.err.println(String.format("sumY = %f, setting small value", sumY));
 				sumY = 1e-200;
 			}
 			alpha.alpha[t] = 1/sumY;

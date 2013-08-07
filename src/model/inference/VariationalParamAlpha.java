@@ -16,7 +16,7 @@ public class VariationalParamAlpha {
 	public void initializeRandom() {
 		Random r = new Random(Main.seed);
 		for(int i=0; i<T; i++) {
-			alpha[i] = r.nextDouble();
+			alpha[i] = r.nextDouble() + 1e-200;
 		}
 	}
 }

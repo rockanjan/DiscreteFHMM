@@ -75,9 +75,10 @@ public class LogLinearWeights {
 	 */
 	public LogLinearWeights getCloneExp() {
 		LogLinearWeights clone = new LogLinearWeights(vocabSize, conditionalSize);
+		clone.initializeZeros();
 		for(int i=0; i<vocabSize; i++) {
 			for(int j=0; j<conditionalSize; j++) {
-				this.weights[i][j] = Math.exp(this.weights[i][j]);
+				clone.weights[i][j] = Math.exp(this.weights[i][j]);
 			}
 		}
 		return clone;

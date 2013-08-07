@@ -75,7 +75,7 @@ public class EM {
 		Optimizer optimizer = new LimitedMemoryBFGS(optimizable);
 		boolean converged = false;
 		try {
-			converged = optimizer.optimize();
+			converged = optimizer.optimize(mStepIter);
 		} catch (IllegalArgumentException e) {
 			System.out.println("optimization threw exception: IllegalArgument");
 		} catch (OptimizationException oe) {

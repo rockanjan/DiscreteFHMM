@@ -20,6 +20,7 @@ import util.Timing;
 public class InstanceList extends ArrayList<Instance> {
 	public static double shiL1NormAll=0;
 	public static double alphaL1NormAll=0;
+	public static double expectationL1NormAll=0;
 	
 	private static final long serialVersionUID = -2409272084529539276L;
 	public int numberOfTokens;	
@@ -263,7 +264,8 @@ public class InstanceList extends ArrayList<Instance> {
 								gradient[v][j] -= numeratorCache[v] / normalizer;
 							}
 						}
-					}				
+					}		
+					totalGradientTime += timing2.stopGetLong();
 				} else {
 					double normalizer = 0.0;
 					// number of items in PQ will not exceed VOCAB_UPDATE_COUNT

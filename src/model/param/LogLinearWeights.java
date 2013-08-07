@@ -22,12 +22,6 @@ public class LogLinearWeights {
 	}
 	
 	public double[] getStateVector(int m, int v) {
-		/*
-		if((conditionalSize/2) % m != 0) {
-			System.out.println("Error, conditional size is not a multiple of number of layers");
-			System.exit(-1);
-		}
-		*/
 		double[] vector = new double[Main.numStates];
 		for(int i=0; i<Main.numStates; i++) {
 			vector[i] = weights[v][m*Main.numStates + i];
@@ -56,20 +50,25 @@ public class LogLinearWeights {
 		weights = new double[vocabSize][conditionalSize];
 		for(int y=0; y<vocabSize; y++) {
 			for(int u=0; u<conditionalSize; u++) {
-				weights[y][u] = r.nextGaussian() * 1e-100;
+				//weights[y][u] = r.nextGaussian();
+				weights[y][u] = r.nextDouble() * .1;
 			}
 		}
 	}
 	
+	/*
 	public LogLinearWeights getClone() {
 		LogLinearWeights clone = new LogLinearWeights(vocabSize, conditionalSize);
+		clone.initializeZeros();
 		for(int i=0; i<vocabSize; i++) {
 			for(int j=0; j<conditionalSize; j++) {
-				this.weights[i][j] = this.weights[i][j];
+				clone.weights[i][j] = this.weights[i][j];
 			}
 		}
 		return clone;
 	}
+	*/
+	
 	/*
 	 * Clone with weights exp
 	 */

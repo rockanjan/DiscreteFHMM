@@ -34,8 +34,8 @@ public class VariationalParam {
 	}
 	
 	public void optimize() {
-		optimizeParamObs();		
-		optimizeAlpha();		
+		optimizeAlpha();
+		optimizeParamObs();
 	}
 	
 	public void optimizeParamObs() {
@@ -45,13 +45,13 @@ public class VariationalParam {
 		double shiL1NormInstance = 0;
 		for(int m=0; m<M; m++) {
 			for(int t=0; t<instance.T; t++) {
-				double[] updateValue = new double[K];
 				double[] sumOverNYt = new double[K];
 				for(int k=0; k<K; k++) {
 					for(int n=0; n<M; n++) {				
 						sumOverNYt[k] += model.param.weights.get(n, k, instance.words[t][0]);
 					}
 				}
+				
 				double[] sumOverNnotM = new double[K];
 				for(int k=0; k<K; k++) {
 					for(int n=0; n<M; n++) {
@@ -80,19 +80,25 @@ public class VariationalParam {
 				}
 				double normalizer = 0;
 				double maxOverK = -Double.MAX_VALUE;
+				double[] updateValue = new double[K];
 				for(int k=0; k<K; k++) {
 					updateValue[k] = sumOverNYt[k] - sumOverNnotM[k] - alpha.alpha[t] * sumOverY[k];
-					normalizer += Math.exp(updateValue[k]);
+					/*
+					System.out.println(String.format("updateValue=%.2f, sumNYt=%.2f, sumNot=%.2f, alpha, %.2f, sumY=%.2f", updateValue[k], 
+							sumOverNYt[k], sumOverNnotM[k], alpha.alpha[t], sumOverY[k]));
+					*/
 					if(updateValue[k] > maxOverK) {
 						maxOverK = updateValue[k];
 					}
 				}
-				
-				//normalize and update
+				normalizer = MathUtils.logsumexp(updateValue);
+				//System.out.println("Normalizer : " + normalizer);
+				//System.out.println("MaxoverK " + maxOverK);
+				//normalize and update				
 				for(int k=0; k<K; k++) {
 					double oldValue = varParamObs.shi[m][t][k];
-					varParamObs.shi[m][t][k] = updateValue[k] - maxOverK;
-					//varParamObs.shi[m][t][k] = updateValue[k] - Math.log(normalizer);
+					//varParamObs.shi[m][t][k] = updateValue[k] - maxOverK;
+					varParamObs.shi[m][t][k] = updateValue[k] - normalizer;
 					MathUtils.check(varParamObs.shi[m][t][k]);
 					shiL1NormInstance += Math.abs(oldValue - varParamObs.shi[m][t][k]);					
 				}
@@ -125,6 +131,10 @@ public class VariationalParam {
 				sumY = 1e-200;
 			}
 			alpha.alpha[t] = 1/sumY;
+			if(alpha.alpha[t] == 0) {
+				System.err.println("alpha is zero");
+				alpha.alpha[t] = 1e-200;
+			}
 			alphaL1Norm += Math.abs(alpha.alpha[t] - oldAlpha);
 			MathUtils.check(alpha.alpha[t]);
 		}

@@ -43,8 +43,8 @@ public class VariationalParam {
 		double maxExtreme = -Double.MAX_VALUE;
 		//optimize shi's
 		double shiL1NormInstance = 0;
-		for(int m=0; m<M; m++) {
-			for(int t=0; t<instance.T; t++) {
+		for(int t=0; t<instance.T; t++) {
+			for(int m=0; m<M; m++) {
 				double[] sumOverNYt = new double[K];
 				for(int k=0; k<K; k++) {
 					for(int n=0; n<M; n++) {				
@@ -83,10 +83,10 @@ public class VariationalParam {
 				double[] updateValue = new double[K];
 				for(int k=0; k<K; k++) {
 					updateValue[k] = sumOverNYt[k] - sumOverNnotM[k] - alpha.alpha[t] * sumOverY[k];
-					/*
-					System.out.println(String.format("updateValue=%.2f, sumNYt=%.2f, sumNot=%.2f, alpha, %.2f, sumY=%.2f", updateValue[k], 
+					
+					System.out.println(String.format("updateValue=%f, sumNYt=%f, sumNot=%f, alpha, %f, sumY=%f", updateValue[k], 
 							sumOverNYt[k], sumOverNnotM[k], alpha.alpha[t], sumOverY[k]));
-					*/
+					
 					if(updateValue[k] > maxOverK) {
 						maxOverK = updateValue[k];
 					}
@@ -102,8 +102,10 @@ public class VariationalParam {
 					MathUtils.check(varParamObs.shi[m][t][k]);
 					shiL1NormInstance += Math.abs(oldValue - varParamObs.shi[m][t][k]);					
 				}
+				instance.forwardBackwardList.get(m).doInference();
 			}							
-		}	
+		}
+		
 		InstanceList.shiL1NormAll += shiL1NormInstance;		
 	}
 	

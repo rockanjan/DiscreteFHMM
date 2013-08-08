@@ -94,7 +94,7 @@ public class InstanceList extends ArrayList<Instance> {
 	
 	public void doVariationalInference(HMMBase model) {
 		//optimize variational parameters
-		for(int iter=0; iter < 2; iter++) {
+		for(int iter=0; iter < 5; iter++) {
 			shiL1NormAll = 0;
 			alphaL1NormAll = 0;
 			double LL = 0;
@@ -119,7 +119,7 @@ public class InstanceList extends ArrayList<Instance> {
 			shiL1NormAll = shiL1NormAll/(model.nrLayers * this.numberOfTokens * model.nrStates); //difference per variable
 			alphaL1NormAll = alphaL1NormAll/this.numberOfTokens;
 			updateString.append(String.format(" LL=%.2f time=%s", LL, varIterTime.stop()));
-			updateString.append(String.format(" shiNorm=%.2f alphaNorm=%.2f", shiL1NormAll, alphaL1NormAll));
+			updateString.append(String.format(" shiNorm=%.5f alphaNorm=%.5f", shiL1NormAll, alphaL1NormAll));
 			System.out.println(updateString.toString());			
 		}		
 	}

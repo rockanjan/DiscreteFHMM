@@ -1,13 +1,13 @@
 package model.inference;
 
 import java.util.ArrayList;
-
 import model.HMMBase;
 import model.param.HMMParamBase;
 import model.param.MultinomialBase;
 import util.MathUtils;
 import util.MyArray;
 import corpus.Instance;
+import corpus.InstanceList;
 
 public class ForwardBackwardLog extends ForwardBackward{
 	public ForwardBackwardLog(HMMBase model, Instance instance, int layer) {
@@ -90,6 +90,10 @@ public class ForwardBackwardLog extends ForwardBackward{
 	//regular probablity (no log)
 	@Override
 	public void computePosterior() {
+		double[][] oldPosterior = null;
+		if(posterior != null) {
+			oldPosterior = MyArray.getCloneOfMatrix(posterior);
+		}
 		posterior = new double[T][nrStates];
 		instance.posteriors[layer] = new double[T][nrStates];
 		
@@ -103,6 +107,9 @@ public class ForwardBackwardLog extends ForwardBackward{
 				posterior[t][i] = alpha[t][i] + beta[t][i] - denom;
 				posterior[t][i] = Math.exp(posterior[t][i]);
 				instance.posteriors[layer][t][i] = posterior[t][i];
+				if(oldPosterior != null) {
+					InstanceList.expectationL1NormAll += Math.abs(oldPosterior[t][i] - posterior[t][i]);
+				}
 			}
 		}
 		checkStatePosterior();		

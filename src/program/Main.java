@@ -252,6 +252,7 @@ public class Main {
 		sb.append("\noutFolderPrefix : " + outFolderPrefix);
 		sb.append("\nIterations : " + numIter);
 		sb.append("\nNumStates : " + numStates);
+		sb.append("\nNumLayers : " + nrLayers);
 		System.out.println(sb.toString());
 		if(InstanceList.VOCAB_UPDATE_COUNT <= 0) {
 			System.out.println("Using exact gradient for training");

@@ -83,10 +83,10 @@ public class VariationalParam {
 				double[] updateValue = new double[K];
 				for(int k=0; k<K; k++) {
 					updateValue[k] = sumOverNYt[k] - sumOverNnotM[k] - alpha.alpha[t] * sumOverY[k];
-					
+					/*
 					System.out.println(String.format("updateValue=%f, sumNYt=%f, sumNot=%f, alpha, %f, sumY=%f", updateValue[k], 
 							sumOverNYt[k], sumOverNnotM[k], alpha.alpha[t], sumOverY[k]));
-					
+					*/
 					if(updateValue[k] > maxOverK) {
 						maxOverK = updateValue[k];
 					}

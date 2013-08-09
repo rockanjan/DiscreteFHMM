@@ -97,6 +97,7 @@ public class InstanceList extends ArrayList<Instance> {
 		for(int iter=0; iter < 5; iter++) {
 			shiL1NormAll = 0;
 			alphaL1NormAll = 0;
+			expectationL1NormAll = 0;
 			double LL = 0;
 			Timing varIterTime = new Timing();
 			varIterTime.start();
@@ -118,8 +119,10 @@ public class InstanceList extends ArrayList<Instance> {
 			}
 			shiL1NormAll = shiL1NormAll/(model.nrLayers * this.numberOfTokens * model.nrStates); //difference per variable
 			alphaL1NormAll = alphaL1NormAll/this.numberOfTokens;
+			expectationL1NormAll = expectationL1NormAll/this.numberOfTokens/model.nrStates;
 			updateString.append(String.format(" LL=%.2f time=%s", LL, varIterTime.stop()));
-			updateString.append(String.format(" shiNorm=%.5f alphaNorm=%.5f", shiL1NormAll, alphaL1NormAll));
+			updateString.append(String.format(" shiNorm=%f alphaNorm=%f", shiL1NormAll, alphaL1NormAll));
+			updateString.append(String.format(" expectedNorm=%f", expectationL1NormAll));
 			System.out.println(updateString.toString());			
 		}		
 	}

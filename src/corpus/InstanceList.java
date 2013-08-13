@@ -88,13 +88,13 @@ public class InstanceList extends ArrayList<Instance> {
 		model.param.expWeightsCache = null;
 		model.param.expWeights = null;
 		featurePartitionCache = null;
-		System.out.println("Joint LL = " + jointLL);
-		return LL;
+		System.out.println("LL = " + LL);
+		return jointLL;
 	}
 	
 	public void doVariationalInference(HMMBase model) {
 		//optimize variational parameters
-		for(int iter=0; iter < 5; iter++) {
+		for(int iter=0; iter < 3; iter++) {
 			shiL1NormAll = 0;
 			alphaL1NormAll = 0;
 			expectationL1NormAll = 0;
@@ -116,13 +116,17 @@ public class InstanceList extends ArrayList<Instance> {
 				instance.decode();
 				//LL += instance.logLikelihood;				
 				LL += getJointLL(instance, model);
+				if(n==10) {
+					System.out.println("instance 10, shi[0][0][0] = " + instance.varParam.varParamObs.shi[0][0][0]
+							+ "shi[0][0][1]=" + instance.varParam.varParamObs.shi[0][0][1]);
+				}
 			}
 			shiL1NormAll = shiL1NormAll/(model.nrLayers * this.numberOfTokens * model.nrStates); //difference per variable
 			alphaL1NormAll = alphaL1NormAll/this.numberOfTokens;
 			expectationL1NormAll = expectationL1NormAll/this.numberOfTokens/model.nrStates;
 			updateString.append(String.format(" LL=%.2f time=%s", LL, varIterTime.stop()));
 			updateString.append(String.format(" shiNorm=%f alphaNorm=%f", shiL1NormAll, alphaL1NormAll));
-			updateString.append(String.format(" expectedNorm=%f", expectationL1NormAll));
+			updateString.append(String.format(" expectedNorm=" + expectationL1NormAll));
 			System.out.println(updateString.toString());			
 		}		
 	}

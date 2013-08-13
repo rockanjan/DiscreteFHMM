@@ -19,4 +19,10 @@ public class VariationalParamAlpha {
 			alpha[i] = r.nextDouble() + 1e-200;
 		}
 	}
+	
+	public void initializeUniform(double value) {
+		for(int i=0; i<T; i++) {
+			alpha[i] = value;
+		}
+	}
 }

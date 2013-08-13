@@ -19,6 +19,10 @@ public class VariationalParam {
 	int V;
 	int T;
 	
+	//for a fixed t, cache for each Y the dot product (S_tn, exp(theta_nY)) for all layers n 
+	double prodCache[];
+	
+	
 	public VariationalParam(HMMBase model, Instance instance) {
 		this.model = model;
 		M = model.nrLayers;
@@ -31,19 +35,44 @@ public class VariationalParam {
 		varParamObs.initializeRandom();
 		alpha = new VariationalParamAlpha(T);
 		alpha.initializeRandom();		
+		//alpha.initializeUniform(1.0);
 	}
 	
 	public void optimize() {
-		optimizeAlpha();
-		optimizeParamObs();
+		for(int t=0; t<instance.T; t++) {
+			createCache(t);
+			optimizeAlpha(t);
+			//optimizeParamObs(t);
+			optimizeParamObsNew(t);
+			clearCache();
+		}
 	}
 	
-	public void optimizeParamObs() {
+	public void createCache(int t) {
+		prodCache = new double[V];
+		for(int y=0; y<V; y++) {
+			double prod = 1.0;
+			//TODO: might underflow
+			for(int n=0; n<M; n++) {
+				prod = prod * MathUtils.dot(model.param.expWeights.getStateVector(n, y), 
+						instance.forwardBackwardList.get(n).posterior[t]);
+				if(prod == 0) {
+					throw new RuntimeException("Underflow");
+				}			
+			}
+			prodCache[y] = prod;
+		}
+	}
+	
+	public void clearCache() {
+		prodCache = null;
+	}
+	
+	public void optimizeParamObs(int t) {
 		double minExtreme = Double.MAX_VALUE;
 		double maxExtreme = -Double.MAX_VALUE;
 		//optimize shi's
 		double shiL1NormInstance = 0;
-		for(int t=0; t<instance.T; t++) {
 			for(int m=0; m<M; m++) {
 				double[] sumOverNYt = new double[K];
 				for(int k=0; k<K; k++) {
@@ -61,19 +90,11 @@ public class VariationalParam {
 					}
 				}
 				
-				//TODO: might underflow
 				double[] sumOverY = new double[K];
 				for(int y=0; y<V; y++) {
-					double prod = 1.0;
-					for(int n=0; n<M; n++) {
-						if(n != m) {
-							prod *= MathUtils.dot(model.param.expWeights.getStateVector(n, y), 
-									instance.forwardBackwardList.get(n).posterior[t]);
-							if(prod == 0) {
-								throw new RuntimeException("Underflow");
-							}
-						}
-					}
+					double allProd = prodCache[y];
+					double prod = allProd / MathUtils.dot(model.param.expWeights.getStateVector(m, y), 
+							instance.forwardBackwardList.get(m).posterior[t]); //all prod except m'th layer
 					for(int k=0; k<K; k++) {
 						sumOverY[k] += prod * model.param.expWeights.getStateVector(m, y)[k];
 					}
@@ -84,8 +105,8 @@ public class VariationalParam {
 				for(int k=0; k<K; k++) {
 					updateValue[k] = sumOverNYt[k] - sumOverNnotM[k] - alpha.alpha[t] * sumOverY[k];
 					/*
-					System.out.println(String.format("updateValue=%f, sumNYt=%f, sumNot=%f, alpha, %f, sumY=%f", updateValue[k], 
-							sumOverNYt[k], sumOverNnotM[k], alpha.alpha[t], sumOverY[k]));
+					System.out.println(String.format("updateValue=%f, sumNYt=%f, sumNot=%f, alpha=%f, sumY=%f, prod=%f", updateValue[k], 
+							sumOverNYt[k], sumOverNnotM[k], alpha.alpha[t], sumOverY[k], (alpha.alpha[t] * sumOverY[k])));
 					*/
 					if(updateValue[k] > maxOverK) {
 						maxOverK = updateValue[k];
@@ -102,44 +123,80 @@ public class VariationalParam {
 					MathUtils.check(varParamObs.shi[m][t][k]);
 					shiL1NormInstance += Math.abs(oldValue - varParamObs.shi[m][t][k]);					
 				}
-				instance.forwardBackwardList.get(m).doInference();
-			}							
-		}
-		
+				//instance.forwardBackwardList.get(m).doInference();
+			}
 		InstanceList.shiL1NormAll += shiL1NormInstance;		
 	}
 	
-	public void optimizeAlpha() {
-		double alphaL1Norm = 0;
-		for(int t=0; t<T; t++) {
-			double sumY = 0;
-			for(int y=0; y<V; y++) {
-				double prodM = 1.0;
-				for(int m=0; m<M; m++) {
-					double dotStateMExpThetaM = MathUtils.dot(
-							instance.forwardBackwardList.get(m).posterior[t],
-							model.param.expWeights.getStateVector(m, y)
-							);
-					prodM = prodM * dotStateMExpThetaM;
-					if(prodM == 0) {
-						throw new RuntimeException("Underflow");
+	public void optimizeParamObsNew(int t) {
+		double minExtreme = Double.MAX_VALUE;
+		double maxExtreme = -Double.MAX_VALUE;
+		//optimize shi's
+		double shiL1NormInstance = 0;
+			for(int m=0; m<M; m++) {
+				double[] sumOverNYt = new double[K];
+				for(int k=0; k<K; k++) {
+					sumOverNYt[k] += model.param.weights.get(m, k, instance.words[t][0]);
+				}
+				
+				double[] sumOverY = new double[K];
+				for(int y=0; y<V; y++) {
+					double allProd = prodCache[y];
+					double prod = allProd / MathUtils.dot(model.param.expWeights.getStateVector(m, y), 
+							instance.forwardBackwardList.get(m).posterior[t]); //all prod except m'th layer
+					for(int k=0; k<K; k++) {
+						sumOverY[k] += prod * model.param.expWeights.getStateVector(m, y)[k];
 					}
 				}
-				sumY += prodM;
-			}	
-			double oldAlpha = alpha.alpha[t];
-			if(sumY <= 0) {
-				System.err.println(String.format("sumY = %f, setting small value", sumY));
-				sumY = 1e-200;
+				
+				double normalizer = 0;
+				double maxOverK = -Double.MAX_VALUE;
+				double[] updateValue = new double[K];
+				for(int k=0; k<K; k++) {
+					updateValue[k] = sumOverNYt[k] - - alpha.alpha[t] * sumOverY[k];
+					/*
+					System.out.println(String.format("updateValue=%f, sumNYt=%f, sumNot=%f, alpha=%f, sumY=%f, prod=%f", updateValue[k], 
+							sumOverNYt[k], sumOverNnotM[k], alpha.alpha[t], sumOverY[k], (alpha.alpha[t] * sumOverY[k])));
+					*/
+					if(updateValue[k] > maxOverK) {
+						maxOverK = updateValue[k];
+					}
+				}
+				normalizer = MathUtils.logsumexp(updateValue);
+				//System.out.println("Normalizer : " + normalizer);
+				//System.out.println("MaxoverK " + maxOverK);
+				//normalize and update				
+				for(int k=0; k<K; k++) {
+					double oldValue = varParamObs.shi[m][t][k];
+					//varParamObs.shi[m][t][k] = updateValue[k] - maxOverK;
+					varParamObs.shi[m][t][k] = updateValue[k] - normalizer;
+					MathUtils.check(varParamObs.shi[m][t][k]);
+					shiL1NormInstance += Math.abs(oldValue - varParamObs.shi[m][t][k]);					
+				}
+				//instance.forwardBackwardList.get(m).doInference();
 			}
-			alpha.alpha[t] = 1/sumY;
-			if(alpha.alpha[t] == 0) {
-				System.err.println("alpha is zero");
-				alpha.alpha[t] = 1e-200;
-			}
-			alphaL1Norm += Math.abs(alpha.alpha[t] - oldAlpha);
-			MathUtils.check(alpha.alpha[t]);
+		InstanceList.shiL1NormAll += shiL1NormInstance;		
+	}
+	
+	public void optimizeAlpha(int t) {
+		double alphaL1Norm = 0;
+		double sumY = 0;
+		for(int y=0; y<V; y++) {
+			double prodM = prodCache[y];
+			sumY += prodM;
+		}	
+		double oldAlpha = alpha.alpha[t];
+		if(sumY <= 0) {
+			System.err.println(String.format("sumY = %f, setting small value", sumY));
+			sumY = 1e-200;
 		}
+		alpha.alpha[t] = 1/sumY;
+		if(alpha.alpha[t] == 0) {
+			System.err.println("alpha is zero");
+			alpha.alpha[t] = 1e-200;
+		}
+		alphaL1Norm += Math.abs(alpha.alpha[t] - oldAlpha);
+		MathUtils.check(alpha.alpha[t]);
 		InstanceList.alphaL1NormAll += alphaL1Norm;
 	}
 }

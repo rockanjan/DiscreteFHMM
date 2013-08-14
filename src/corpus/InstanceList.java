@@ -95,7 +95,7 @@ public class InstanceList extends ArrayList<Instance> {
 	
 	public void doVariationalInference(HMMBase model) {
 		//optimize variational parameters
-		for(int iter=0; iter < 1; iter++) {
+		for(int iter=0; iter < 3; iter++) {
 			shiL1NormAll = 0;
 			alphaL1NormAll = 0;
 			expectationL1NormAll = 0;
@@ -237,10 +237,10 @@ public class InstanceList extends ArrayList<Instance> {
 	public double[][] getGradient(double[][] parameterMatrix) {
 		//cache frequent conditionals
 		double[][] gradient;
-		Corpus.frequentConditionals = new TreeSet<>();
+		Corpus.cacheFrequentConditionals();
 		//gradient = getGradientNoThread(parameterMatrix);
 		gradient = getGradientThreaded(parameterMatrix);
-		Corpus.frequentConditionals = null;
+		Corpus.clearFrequentConditionals();
 		return gradient;
 	}
 	
@@ -349,10 +349,11 @@ public class InstanceList extends ArrayList<Instance> {
 			double[] conditionalVector = conditional.vector;
 			//MyArray.printVector(conditionalVector, "Conditional vector");
 			double partition = 0.0;
-			PriorityQueue<VocabItemProbability> topProbs = new PriorityQueue<VocabItemProbability>(VOCAB_UPDATE_COUNT, comparator);
+			//PriorityQueue<VocabItemProbability> topProbs = new PriorityQueue<VocabItemProbability>(VOCAB_UPDATE_COUNT, comparator);
 			//fill the arrays
 			for(int v=0; v<vocabSize; v++) {
 				double numerator = MathUtils.expDot(expWeights[v], conditionalVector);
+				/*
 				if(topProbs.size() < VOCAB_UPDATE_COUNT) {
 					//just insert
 					VocabItemProbability item = new VocabItemProbability(v, numerator);
@@ -367,11 +368,12 @@ public class InstanceList extends ArrayList<Instance> {
 						topProbs.add(new VocabItemProbability(v, numerator));
 					}
 				}
+				*/
 				conditionalVocabArrays.array[v] = numerator;
 				partition += numerator;
 			}
 			conditionalVocabArrays.normalizer = partition;
-			conditionalVocabArrays.topProbs = topProbs;
+			//conditionalVocabArrays.topProbs = topProbs;
 			featureNumeratorCache.put(conditional.index, conditionalVocabArrays);
 		}
 		
@@ -433,22 +435,34 @@ public class InstanceList extends ArrayList<Instance> {
 					double[] conditionalVector = instance.getConditionalVector(t);
 					String conditionalString = instance.getConditionalString(t);
 					//create partition
-					if(VOCAB_UPDATE_COUNT <= 0) { //exact
-	                    double normalizer = 0.0;
-						final double[] numeratorCache = new double[expWeights.length];
-						for (int v = 0; v < expWeights.length; v++) {
-							double numerator = MathUtils.expDot(expWeights[v], conditionalVector);
-							numeratorCache[v] = numerator;
-							normalizer += numerator;						
-						}
-						for(int j=0; j<expWeights[0].length; j++) {
-							if(conditionalVector[j] != 0) {
-								gradient[instance.words[t][0]][j] += 1;
-								for(int v=0; v<expWeights.length; v++) {
-									gradient[v][j] -= numeratorCache[v] / normalizer;
+					if(VOCAB_UPDATE_COUNT == Corpus.corpusVocab.get(0).vocabSize) { //exact
+						if(featureNumeratorCache.containsKey(conditionalString)) {
+							for(int j=0; j<expWeights[0].length; j++) {
+								if(conditionalVector[j] != 0) {
+									gradient[instance.words[t][0]][j] += 1;
+									VocabNumeratorArray vna = featureNumeratorCache.get(conditionalString);
+									for(int v=0; v<expWeights.length; v++) {
+										gradient[v][j] -= vna.array[v]/ vna.normalizer;
+									}
 								}
 							}
-						}				
+						} else {
+		                    double normalizer = 0.0;
+							final double[] numeratorCache = new double[expWeights.length];
+							for (int v = 0; v < expWeights.length; v++) {
+								double numerator = MathUtils.expDot(expWeights[v], conditionalVector);
+								numeratorCache[v] = numerator;
+								normalizer += numerator;						
+							}
+							for(int j=0; j<expWeights[0].length; j++) {
+								if(conditionalVector[j] != 0) {
+									gradient[instance.words[t][0]][j] += 1;
+									for(int v=0; v<expWeights.length; v++) {
+										gradient[v][j] -= numeratorCache[v] / normalizer;
+									}
+								}
+							}				
+						}
 					} else {
 						if(featureNumeratorCache.containsKey(conditionalString)) {
 							for(int j=0; j<expWeights[0].length; j++) {

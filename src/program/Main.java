@@ -75,7 +75,7 @@ public class Main {
 		Corpus.oneTimeStepObsSize = Corpus.findOneTimeStepObsSize(vocabFile);
 		// TRAIN
 		corpus.readVocab(vocabFile);
-		if(InstanceList.VOCAB_UPDATE_COUNT < 0) {
+		if(InstanceList.VOCAB_UPDATE_COUNT <= 0) {
 			InstanceList.VOCAB_UPDATE_COUNT = Corpus.corpusVocab.get(0).vocabSize;
 		}
 		// corpus.setupSampler();

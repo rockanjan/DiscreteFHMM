@@ -24,6 +24,7 @@ public class VariationalParamObservation {
 	
 	public void initializeRandom() {
 		Random r = new Random(Main.seed);
+		//Random r = Main.random;
 		double small = 1e-100;
 		for(int m=0; m<M; m++) {
 			for(int t=0; t<T; t++) {

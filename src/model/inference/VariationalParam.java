@@ -123,7 +123,7 @@ public class VariationalParam {
 					MathUtils.check(varParamObs.shi[m][t][k]);
 					shiL1NormInstance += Math.abs(oldValue - varParamObs.shi[m][t][k]);					
 				}
-				//instance.forwardBackwardList.get(m).doInference();
+				instance.forwardBackwardList.get(m).doInference();
 			}
 		InstanceList.shiL1NormAll += shiL1NormInstance;		
 	}
@@ -153,7 +153,7 @@ public class VariationalParam {
 				double maxOverK = -Double.MAX_VALUE;
 				double[] updateValue = new double[K];
 				for(int k=0; k<K; k++) {
-					updateValue[k] = sumOverNYt[k] - - alpha.alpha[t] * sumOverY[k];
+					updateValue[k] = sumOverNYt[k] - alpha.alpha[t] * sumOverY[k];
 					/*
 					System.out.println(String.format("updateValue=%f, sumNYt=%f, sumNot=%f, alpha=%f, sumY=%f, prod=%f", updateValue[k], 
 							sumOverNYt[k], sumOverNnotM[k], alpha.alpha[t], sumOverY[k], (alpha.alpha[t] * sumOverY[k])));

@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
+import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 
 import model.HMMBase;
@@ -94,7 +95,7 @@ public class InstanceList extends ArrayList<Instance> {
 	
 	public void doVariationalInference(HMMBase model) {
 		//optimize variational parameters
-		for(int iter=0; iter < 3; iter++) {
+		for(int iter=0; iter < 1; iter++) {
 			shiL1NormAll = 0;
 			alphaL1NormAll = 0;
 			expectationL1NormAll = 0;
@@ -116,18 +117,24 @@ public class InstanceList extends ArrayList<Instance> {
 				instance.decode();
 				//LL += instance.logLikelihood;				
 				LL += getJointLL(instance, model);
+				/*
 				if(n==10) {
 					System.out.println("instance 10, shi[0][0][0] = " + instance.varParam.varParamObs.shi[0][0][0]
 							+ "shi[0][0][1]=" + instance.varParam.varParamObs.shi[0][0][1]);
 				}
+				*/
 			}
 			shiL1NormAll = shiL1NormAll/(model.nrLayers * this.numberOfTokens * model.nrStates); //difference per variable
 			alphaL1NormAll = alphaL1NormAll/this.numberOfTokens;
-			expectationL1NormAll = expectationL1NormAll/this.numberOfTokens/model.nrStates;
+			expectationL1NormAll = expectationL1NormAll/this.numberOfTokens/model.nrLayers;
 			updateString.append(String.format(" LL=%.2f time=%s", LL, varIterTime.stop()));
 			updateString.append(String.format(" shiNorm=%f alphaNorm=%f", shiL1NormAll, alphaL1NormAll));
-			updateString.append(String.format(" expectedNorm=" + expectationL1NormAll));
-			System.out.println(updateString.toString());			
+			updateString.append(" expectedNorm=" + expectationL1NormAll);
+			System.out.println(updateString.toString());
+			if(expectationL1NormAll < 1e-6) {
+				System.out.println("variational params converged");
+				break;
+			}
 		}		
 	}
 	
@@ -142,8 +149,8 @@ public class InstanceList extends ArrayList<Instance> {
 	
 	public double getConditionalLogLikelihoodUsingViterbi(
 			double[][] parameterMatrix) {
-		return getCLLNoThread(parameterMatrix);
-		//return getCLLThreaded(parameterMatrix);
+		//return getCLLNoThread(parameterMatrix);
+		return getCLLThreaded(parameterMatrix);
 	}
 	
 	public double getCLLNoThread(double[][] parameterMatrix) {
@@ -157,7 +164,7 @@ public class InstanceList extends ArrayList<Instance> {
 			Instance i = get(n);
 			cll += i.getConditionalLogLikelihoodUsingViterbi(expWeights);
 		}
-		//System.out.println("CLL computation time : " + timing.stop());
+		System.out.println("CLL computation time : " + timing.stop());
 		featurePartitionCache = null;
 		return cll;
 		
@@ -221,14 +228,20 @@ public class InstanceList extends ArrayList<Instance> {
 			result = 0.0;
 			for(int n=startIndex; n<endIndex; n++) {
 				Instance instance = instanceList.get(n);
+				//result += instance.getConditionalLogLikelihoodUsingViterbi(expWeights);
 				result += instance.getConditionalLogLikelihoodUsingViterbi(expWeights);
 			}
 		}		
 	}
 
 	public double[][] getGradient(double[][] parameterMatrix) {
-		return getGradientNoThread(parameterMatrix);
-		//return getGradientThreaded(parameterMatrix);
+		//cache frequent conditionals
+		double[][] gradient;
+		Corpus.frequentConditionals = new TreeSet<>();
+		//gradient = getGradientNoThread(parameterMatrix);
+		gradient = getGradientThreaded(parameterMatrix);
+		Corpus.frequentConditionals = null;
+		return gradient;
 	}
 	
 	public double[][] getGradientNoThread(double[][] parameterMatrix) {
@@ -327,6 +340,9 @@ public class InstanceList extends ArrayList<Instance> {
 		//cache conditional numerators
 		featureNumeratorCache = new HashMap<String, VocabNumeratorArray>();
 		VocabItemProbComparator comparator = new VocabItemProbComparator();
+		if(Corpus.frequentConditionals == null) {
+			Corpus.frequentConditionals = new TreeSet<>();
+		}
 		for(FrequentConditionalStringVector conditional : Corpus.frequentConditionals) {
 			//initialize
 			VocabNumeratorArray conditionalVocabArrays = new VocabNumeratorArray(vocabSize);

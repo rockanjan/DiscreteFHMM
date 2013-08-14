@@ -22,22 +22,22 @@ public class Instance {
 	public int T; // sentence length
 	Corpus c;
 	public List<ForwardBackward> forwardBackwardList;
-	
-	//TODO: might change if we consider finalState hmm
+
+	// TODO: might change if we consider finalState hmm
 	public static int nrStates = Main.numStates;
 	public int unknownCount;
 	public HMMBase model;
-	
+
 	public static int FEATURE_PARTITION_CACHE_SIZE = 10000;
-	
-	//m,t,k
+
+	// m,t,k
 	public double[][][] posteriors;
-	
-	//m, t
+
+	// m, t
 	public int[][] decodedStates;
 
 	public double[] observationCache;
-	
+
 	public double logLikelihood;
 
 	public Instance(Corpus c, String line) {
@@ -46,25 +46,26 @@ public class Instance {
 		// read from line
 		populateWordArray(line);
 	}
-	
+
 	public void doInference(HMMBase model) {
-		//TODO: to save memory free this right after its use
+		// TODO: to save memory free this right after its use
 		decodedStates = null;
 		this.model = model;
-		posteriors = new double[model.nrLayers][][];		
+		posteriors = new double[model.nrLayers][][];
 		forwardBackwardList = new ArrayList<ForwardBackward>();
 		if (model.hmmType == HMMType.LOG_SCALE) {
 			logLikelihood = 0;
-			for(int l=0; l<model.nrLayers; l++) {
-				ForwardBackwardLog tempFB = new ForwardBackwardLog(model, this, l);
-				//find initial posteriors
+			for (int l = 0; l < model.nrLayers; l++) {
+				ForwardBackwardLog tempFB = new ForwardBackwardLog(model, this,
+						l);
+				// find initial posteriors
 				tempFB.doInference();
 				forwardBackwardList.add(tempFB);
 				logLikelihood += tempFB.logLikelihood;
 			}
 		} else {
 			throw new UnsupportedOperationException("Not implemented");
-		}		
+		}
 	}
 
 	public void clearInference() {
@@ -72,38 +73,39 @@ public class Instance {
 		forwardBackwardList = null;
 		observationCache = null;
 	}
-	
+
 	/*
 	 * TODO: decode viterbi
 	 */
 	public void decode() {
 		decodeViterbi();
 	}
-	
+
 	/*
 	 * decodes viterbi states in each layer
 	 */
 	public void decodeViterbi() {
-		decodedStates = new int[model.nrLayers][];
-		for(int l=0; l<model.nrLayers; l++) {
+		decodedStates = new int[c.model.nrLayers][];
+		for (int l = 0; l < c.model.nrLayers; l++) {
 			int[] decoded = new int[T];
-			double[][] probLattice = new double[T][model.nrStates];
-			int[][] stateLattice = new int[T][model.nrStates];
-			for(int i=0; i<model.nrStates; i++) {
-				double init = model.param.initial.get(l).get(i, 0);
+			double[][] probLattice = new double[T][c.model.nrStates];
+			int[][] stateLattice = new int[T][c.model.nrStates];
+			for (int i = 0; i < c.model.nrStates; i++) {
+				double init = c.model.param.initial.get(l).get(i, 0);
 				double obs = varParam.varParamObs.shi[l][0][i];
-				probLattice[0][i] = init + obs;			
+				probLattice[0][i] = init + obs;
 			}
 			double maxValue = -Double.MAX_VALUE;
 			int maxIndex = -1;
-			for(int t=1; t<T; t++) {
-				for(int j=0; j<model.nrStates; j++) {
+			for (int t = 1; t < T; t++) {
+				for (int j = 0; j < c.model.nrStates; j++) {
 					double obs = varParam.varParamObs.shi[l][t][j];
 					maxValue = -Double.MAX_VALUE;
 					maxIndex = -1;
-					for(int i=0; i<model.nrStates; i++) {
-						double value = probLattice[t-1][i] + model.param.transition.get(l).get(j, i) + obs;
-						if(value > maxValue) {
+					for (int i = 0; i < c.model.nrStates; i++) {
+						double value = probLattice[t - 1][i]
+								+ c.model.param.transition.get(l).get(j, i) + obs;
+						if (value > maxValue) {
 							maxValue = value;
 							maxIndex = i;
 						}
@@ -114,21 +116,21 @@ public class Instance {
 			}
 			maxValue = -Double.MAX_VALUE;
 			maxIndex = -1;
-			for(int i=0; i<model.nrStates; i++) {
-				if(probLattice[T-1][i] > maxValue) {
-					maxValue = probLattice[T-1][i];
-					decoded[T-1] = i;
+			for (int i = 0; i < c.model.nrStates; i++) {
+				if (probLattice[T - 1][i] > maxValue) {
+					maxValue = probLattice[T - 1][i];
+					decoded[T - 1] = i;
 				}
 			}
-			//MyArray.printTable(stateLattice);
-			//backtrack
-			for(int t=T-2; t>=0; t--) {
-				decoded[t] = stateLattice[t+1][decoded[t+1]];			
+			// MyArray.printTable(stateLattice);
+			// backtrack
+			for (int t = T - 2; t >= 0; t--) {
+				decoded[t] = stateLattice[t + 1][decoded[t + 1]];
 			}
 			decodedStates[l] = decoded;
 		}
 	}
-	
+
 	/*
 	 * returns log(ObservationProb) or ObservationProb depending on the model
 	 */
@@ -138,41 +140,43 @@ public class Instance {
 			for (int t = 0; t < T; t++) {
 				double[] conditionalVector = getConditionalVector(t);
 				int observationIndex = this.words[t][0];
-				double[] expWeightObservation = model.param.expWeightsCache[observationIndex];
-				double numerator = MathUtils.expDot(expWeightObservation, conditionalVector);
-				double result = numerator / getExactNormalizer(t, model.param.expWeightsCache);
-				if(model.hmmType == HMMType.LOG_SCALE) {
+				double[] expWeightObservation = c.model.param.expWeightsCache[observationIndex];
+				double numerator = MathUtils.expDot(expWeightObservation,
+						conditionalVector);
+				double result = numerator
+						/ getExactNormalizer(t, c.model.param.expWeightsCache);
+				if (c.model.hmmType == HMMType.LOG_SCALE) {
 					result = Math.log(result);
 				}
-				observationCache[t] = result;								
+				observationCache[t] = result;
 			}
 		}
 		return observationCache[position];
 	}
-	
+
 	public String getConditionalString(int t) {
 		StringBuffer sb = new StringBuffer();
-		for(int l=0; l<model.nrLayers; l++) {
+		for (int l = 0; l < Main.nrLayers; l++) {
 			sb.append(decodedStates[l][t]);
-			if(l != model.nrLayers - 1) {
+			if (l != Main.nrLayers - 1) {
 				sb.append("+");
 			}
 		}
 		return sb.toString();
 	}
-	
-	
+
 	/*
-	 * gets conditional vector using viterbi decoded (state is fixed for a time t)
+	 * gets conditional vector using viterbi decoded (state is fixed for a time
+	 * t)
 	 */
-	public double[] getConditionalVector(int t){
-		double[] conditionalVector = new double[model.param.weights.conditionalSize];
-		//fill the conditionVector
-		//conditionalVector[0] = 1.0; //offset
+	public double[] getConditionalVector(int t) {
+		double[] conditionalVector = new double[c.model.param.weights.conditionalSize];
+		// fill the conditionVector
+		// conditionalVector[0] = 1.0; //offset
 		int index = 0;
-		for(int l=0; l<model.nrLayers; l++) {
-			for(int i=0; i<nrStates; i++) {
-				if(i == decodedStates[l][t]) {
+		for (int l = 0; l < c.model.nrLayers; l++) {
+			for (int i = 0; i < nrStates; i++) {
+				if (i == decodedStates[l][t]) {
 					conditionalVector[index] = 1.0;
 				} else {
 					conditionalVector[index] = 0.0;
@@ -182,33 +186,35 @@ public class Instance {
 		}
 		return conditionalVector;
 	}
-	
+
 	public double getConditionalLogLikelihoodUsingViterbi(double[][] expWeights) {
 		double cll = 0.0;
-		for(int t=0; t<T; t++) {
+		for (int t = 0; t < T; t++) {
 			double[] conditionalVector = getConditionalVector(t);
 			int observationIndex = this.words[t][0];
-			double numerator = MathUtils.expDot(expWeights[observationIndex], conditionalVector);
+			double numerator = MathUtils.expDot(expWeights[observationIndex],
+					conditionalVector);
 			double normalizer = getExactNormalizer(t, expWeights);
 			cll += Math.log(numerator) - Math.log(normalizer);
 		}
 		return cll;
 	}
-	
+
 	public double getExactNormalizer(int position, double[][] expWeights) {
 		double Z = 0;
 		double[] conditionalVector = getConditionalVector(position);
 		String conditionalString = getConditionalString(position);
-		if(InstanceList.featurePartitionCache.containsKey(conditionalString)) {
+		if (InstanceList.featurePartitionCache.containsKey(conditionalString)) {
 			return InstanceList.featurePartitionCache.get(conditionalString);
 		}
-		for(int i=0; i<Corpus.corpusVocab.get(0).vocabSize; i++) {
-			double numerator = MathUtils.expDot(expWeights[i], conditionalVector);
+		for (int i = 0; i < Corpus.corpusVocab.get(0).vocabSize; i++) {
+			double numerator = MathUtils.expDot(expWeights[i],
+					conditionalVector);
 			Z += numerator;
 		}
-		if(InstanceList.featurePartitionCache.size() < FEATURE_PARTITION_CACHE_SIZE) {
+		if (InstanceList.featurePartitionCache.size() < FEATURE_PARTITION_CACHE_SIZE) {
 			InstanceList.featurePartitionCache.put(conditionalString, Z);
-		}		
+		}
 		return Z;
 	}
 
@@ -226,8 +232,11 @@ public class Instance {
 		for (int i = 0; i < T; i++) {
 			String oneTimeStep = allTimeSteps[i];
 			String[] obsElements = oneTimeStep.split(Corpus.obsDelimiter);
-			if(obsElements.length != Corpus.oneTimeStepObsSize) {
-				throw new RuntimeException("One timestep observation size from vocab : " + Corpus.oneTimeStepObsSize + " from instance: " + obsElements.length);
+			if (obsElements.length != Corpus.oneTimeStepObsSize) {
+				throw new RuntimeException(
+						"One timestep observation size from vocab : "
+								+ Corpus.oneTimeStepObsSize
+								+ " from instance: " + obsElements.length);
 			}
 			// original word
 			String word = obsElements[0];
@@ -238,14 +247,15 @@ public class Instance {
 				word = SmoothWord.smooth(word);
 			}
 			int wordId = Corpus.corpusVocab.get(0).getIndex(word);
-			if(wordId == 0) {
+			if (wordId == 0) {
 				unknownCount++;
 			}
 			words[i][0] = wordId;
 			// for hmm states as observations
 			for (int j = 1; j < obsElements.length; j++) {
 				String obsElement = obsElements[j];
-				int obsElementId = Corpus.corpusVocab.get(j).getIndex(obsElement);
+				int obsElementId = Corpus.corpusVocab.get(j).getIndex(
+						obsElement);
 				words[i][j] = obsElementId;
 			}
 		}

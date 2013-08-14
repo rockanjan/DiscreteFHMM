@@ -28,8 +28,8 @@ public class EM {
 	double LL = 0;
 
 	// convergence criteria
-	double precision = 1e-6;
-	int maxConsecutiveDecreaseLimit = 20;
+	double precision = 1e-4;
+	int maxConsecutiveDecreaseLimit = 5;
 	int maxConsecutiveConvergeLimit = 3;
 	HMMParamBase expectedCounts;
 
@@ -75,13 +75,13 @@ public class EM {
 		Optimizer optimizer = new LimitedMemoryBFGS(optimizable);
 		boolean converged = false;
 		try {
-			converged = optimizer.optimize();
+			converged = optimizer.optimize(mStepIter);
 		} catch (IllegalArgumentException e) {
 			System.out.println("optimization threw exception: IllegalArgument");
 		} catch (OptimizationException oe) {
 			System.out.println("optimization threw OptimizationException");
-			if(Main.sampleSizeMStep < 25000) {
-				Main.sampleSizeMStep += 1000;
+			if(Main.sampleSizeMStep < 2000) {
+				Main.sampleSizeMStep += 100;
 			}
 		}
 		System.out.println("Converged = " + converged);
@@ -137,9 +137,11 @@ public class EM {
 		}
 		convergeCount = 0;
 		if (LL < bestOldLL) {
+			/*
 			if(Main.sampleSizeMStep < 25000) {
 				Main.sampleSizeMStep += 1000;
 			}
+			*/
 			if (lowerCount == 0) {
 				// cache the best model so far
 				System.out.println("Caching the best model so far");

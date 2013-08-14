@@ -18,8 +18,9 @@ import corpus.Instance;
 import corpus.InstanceList;
 
 public class Main {
+	public static Random random = new Random();
 
-	public final static int USE_THREAD_COUNT = 4;
+	public final static int USE_THREAD_COUNT = 6;
 
 	/** user parameters **/
 	static String delimiter = "\\+";
@@ -34,14 +35,14 @@ public class Main {
 	static String outFolderPrefix;
 	static HMMBase model;
 	static Corpus corpus;
-	public static int sampleSizeEStep = -1;
-	public static int sampleSizeMStep = -1;
+	public static int sampleSizeEStep = 5000;
+	public static int sampleSizeMStep = 5000;
 
 	static int oneTimeStepObsSize; // number of elements in observation e.g.
 									// word|hmm1|hmm2 has 3
 
 	static int vocabThreshold = 1; // only above this included*******
-	public static int nrLayers = 2;
+	public static int nrLayers = 5;
 	public static int numStates = 2;
 
 	/** user parameters end **/
@@ -54,14 +55,14 @@ public class Main {
 	public static void train() throws IOException {
 		InstanceList.VOCAB_UPDATE_COUNT = 0;
 		outFolderPrefix = "out/";
-		numIter = 100;
+		numIter = 40;
 		String trainFileBase;
 		String testFileBase;
 		String devFileBase;
 		
 		//trainFileBase = "data/simple_corpus_sorted.txt";
-		trainFileBase = "data/test.txt.SPL";
-		testFileBase = "data/combined.txt.SPL";
+		trainFileBase = "data/combined.txt.SPL";
+		testFileBase = "data/test.txt.SPL";
 		devFileBase = "data/srl.txt";
 		trainFile = trainFileBase;
 		testFile = testFileBase;
@@ -74,11 +75,15 @@ public class Main {
 		Corpus.oneTimeStepObsSize = Corpus.findOneTimeStepObsSize(vocabFile);
 		// TRAIN
 		corpus.readVocab(vocabFile);
+		if(InstanceList.VOCAB_UPDATE_COUNT < 0) {
+			InstanceList.VOCAB_UPDATE_COUNT = Corpus.corpusVocab.get(0).vocabSize;
+		}
 		// corpus.setupSampler();
 		corpus.readTrain(trainFile);
 		//corpus.readTest(testFile);
 		//corpus.readDev(devFile);
 		model = new HMMNoFinalStateLog(nrLayers, numStates, corpus);
+		corpus.model = model;
 		Random random = new Random(seed);
 		model.initializeRandom(random);
 		//model.param.weights.initializeZeros();
@@ -106,7 +111,7 @@ public class Main {
 		test(model, corpus.trainInstanceList, outFileTrain);
 		*/
 		
-		testVariational(model, corpus.trainInstanceEStepSampleList, outFileTrain);
+		testVariational(model, corpus.trainInstanceList, outFileTrain);
 	}
 	
 	public static void testVariational(HMMBase model, InstanceList instanceList, String outFile) {
@@ -114,16 +119,15 @@ public class Main {
 		Timing decodeTiming = new Timing();
 		decodeTiming.start();
 		System.out.println("Decoding started on :" + new Date().toString());
-		model.param.expWeightsCache = MathUtils
-				.expArray(model.param.weights.weights);
+		model.param.expWeights = model.param.weights.getCloneExp();
+		model.param.expWeightsCache = MathUtils.expArray(model.param.weights.weights);
 		InstanceList.featurePartitionCache = new ConcurrentHashMap<String, Double>();
-		instanceList.doVariationalInference(model);
-		instanceList.decode(model);
+		instanceList.doVariationalInference(model); //also decodes
 		try{
 			PrintWriter pw = new PrintWriter(outFile);
 			for (int n = 0; n < instanceList.size(); n++) {
 				Instance i = instanceList.get(n);
-				i.decode();
+				//i.decode();
 				for (int t = 0; t < i.T; t++) {
 					String word = i.getWord(t);
 					StringBuffer sb = new StringBuffer();
@@ -143,6 +147,7 @@ public class Main {
 			e.printStackTrace();
 		}
 		model.param.expWeightsCache = null;
+		model.param.expWeights = null;
 		InstanceList.featurePartitionCache = null;
 		System.out.println("Finished decoding");
 		System.out.println("Total decoding time : " + decodeTiming.stop());
@@ -253,8 +258,9 @@ public class Main {
 		sb.append("\nIterations : " + numIter);
 		sb.append("\nNumStates : " + numStates);
 		sb.append("\nNumLayers : " + nrLayers);
+		sb.append("\nthreads : " + USE_THREAD_COUNT);
 		System.out.println(sb.toString());
-		if(InstanceList.VOCAB_UPDATE_COUNT <= 0) {
+		if(InstanceList.VOCAB_UPDATE_COUNT <=0 ||  InstanceList.VOCAB_UPDATE_COUNT == Corpus.corpusVocab.get(0).vocabSize) {
 			System.out.println("Using exact gradient for training");
 		} else {
 			System.out.format("Using approx gradient with %d negative evidence vocab items for training\n", InstanceList.VOCAB_UPDATE_COUNT);

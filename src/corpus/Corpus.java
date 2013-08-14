@@ -15,6 +15,8 @@ import java.util.PriorityQueue;
 import java.util.Random;
 import java.util.TreeSet;
 
+import model.HMMBase;
+
 import program.Main;
 import util.MyArray;
 import util.SmoothWord;
@@ -34,7 +36,7 @@ public class Corpus {
 	static public ArrayList<Vocabulary> corpusVocab;
 	
 	public static int maxTokensToProcessForFrequentConditionals = 1000000;
-	public static int maxFrequentConditionals = 1000000;
+	public static int maxFrequentConditionals = 100000;
 	public static TreeSet<FrequentConditionalStringVector> frequentConditionals;
 
 	int vocabThreshold;
@@ -45,7 +47,9 @@ public class Corpus {
 	
 	public List<Double> unigramProbability;
 	static DiscreteSampler vocabSampler;
-	public static int VOCAB_SAMPLE_SIZE = 1000;
+	public static int VOCAB_SAMPLE_SIZE = 0;
+	
+	public HMMBase model;
 
 	public Corpus(String delimiter, int vocabThreshold) {
 		this.delimiter = delimiter;
@@ -149,7 +153,14 @@ public class Corpus {
 		readVocabFromCorpus(inFile);
 	}
 	
+	public static void clearFrequentConditionals() {
+		frequentConditionals = null;
+	}
+	
 	//cache from the training data only
+	/*
+	 * finds the most frequent conditional vectors 
+	 */
 	public static void cacheFrequentConditionals() {
 		HashMap<FrequentConditionalStringVector, Integer> conditionalCountMap = new HashMap<FrequentConditionalStringVector, Integer>();
 		frequentConditionals = new TreeSet<FrequentConditionalStringVector>(new Comparator<FrequentConditionalStringVector>() {
@@ -162,27 +173,26 @@ public class Corpus {
 		});
 		int nrTokensProcessed = 0;
 		//count frequencies
-		for(int state=0; state<Main.numStates; state++) {
-			for(int n=0; n<Corpus.trainInstanceList.size(); n++) {
-				Instance instance = Corpus.trainInstanceList.get(n);
-				for(int t=0; t<instance.T; t++) {
-					String conditionalString = instance.getConditionalString(t);
-					double[] conditionalVector = instance.getConditionalVector(t);
-					//MyArray.printVector(conditionalVector, "conditiona");
-					FrequentConditionalStringVector fc = new FrequentConditionalStringVector(conditionalString, conditionalVector);
-					if(conditionalCountMap.containsKey(fc)) {
-						int prevFreq = conditionalCountMap.get(fc);
-						conditionalCountMap.put(fc, prevFreq+1);
-					} else {
-						conditionalCountMap.put(fc, 1);
-					}
-					nrTokensProcessed++;
-					if(nrTokensProcessed >= maxTokensToProcessForFrequentConditionals) {
-						break;
-					}
+		for(int n=0; n<Corpus.trainInstanceMStepSampleList.size(); n++) {
+			Instance instance = Corpus.trainInstanceMStepSampleList.get(n);
+			for(int t=0; t<instance.T; t++) {
+				String conditionalString = instance.getConditionalString(t);
+				double[] conditionalVector = instance.getConditionalVector(t);
+				//MyArray.printVector(conditionalVector, "conditiona");
+				FrequentConditionalStringVector fc = new FrequentConditionalStringVector(conditionalString, conditionalVector);
+				if(conditionalCountMap.containsKey(fc)) {
+					int prevFreq = conditionalCountMap.get(fc);
+					conditionalCountMap.put(fc, prevFreq+1);
+				} else {
+					conditionalCountMap.put(fc, 1);
+				}
+				nrTokensProcessed++;
+				if(nrTokensProcessed >= maxTokensToProcessForFrequentConditionals) {
+					break;
 				}
 			}
 		}
+		
 		FrequentConditionalCountComparator comparator = new FrequentConditionalCountComparator();
 		PriorityQueue<FrequentConditionalStringVector> pq = new PriorityQueue<FrequentConditionalStringVector>(maxFrequentConditionals, comparator);
 		//get top freq items

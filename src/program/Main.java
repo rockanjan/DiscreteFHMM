@@ -36,7 +36,7 @@ public class Main {
 	static HMMBase model;
 	static Corpus corpus;
 	public static int sampleSizeEStep = 5000;
-	public static int sampleSizeMStep = 5000;
+	public static int sampleSizeMStep = 2000;
 
 	static int oneTimeStepObsSize; // number of elements in observation e.g.
 									// word|hmm1|hmm2 has 3

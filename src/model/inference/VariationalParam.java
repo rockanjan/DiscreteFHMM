@@ -173,9 +173,9 @@ public class VariationalParam {
 					MathUtils.check(varParamObs.shi[m][t][k]);
 					shiL1NormInstance += Math.abs(oldValue - varParamObs.shi[m][t][k]);					
 				}
-				//instance.forwardBackwardList.get(m).doInference();
+				instance.forwardBackwardList.get(m).doInference();
 			}
-		InstanceList.shiL1NormAll += shiL1NormInstance;		
+		//InstanceList.shiL1NormAll += shiL1NormInstance;		
 	}
 	
 	public void optimizeAlpha(int t) {
@@ -197,6 +197,6 @@ public class VariationalParam {
 		}
 		alphaL1Norm += Math.abs(alpha.alpha[t] - oldAlpha);
 		MathUtils.check(alpha.alpha[t]);
-		InstanceList.alphaL1NormAll += alphaL1Norm;
+		//InstanceList.alphaL1NormAll += alphaL1Norm;
 	}
 }

@@ -39,6 +39,8 @@ public class Instance {
 	public double[] observationCache;
 
 	public double logLikelihood;
+	
+	public double posteriorDifference = 0;
 
 	public Instance(Corpus c, String line) {
 		this.c = c;

@@ -108,7 +108,7 @@ public class ForwardBackwardLog extends ForwardBackward{
 				posterior[t][i] = Math.exp(posterior[t][i]);
 				instance.posteriors[layer][t][i] = posterior[t][i];
 				if(oldPosterior != null) {
-					InstanceList.expectationL1NormAll += Math.abs(oldPosterior[t][i] - posterior[t][i]);
+					instance.posteriorDifference += Math.abs(oldPosterior[t][i] - posterior[t][i]);
 				}
 			}
 		}

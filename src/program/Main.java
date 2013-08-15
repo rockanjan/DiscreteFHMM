@@ -20,7 +20,7 @@ import corpus.InstanceList;
 public class Main {
 	public static Random random = new Random();
 
-	public final static int USE_THREAD_COUNT = 6;
+	public final static int USE_THREAD_COUNT = 4;
 
 	/** user parameters **/
 	static String delimiter = "\\+";
@@ -35,14 +35,14 @@ public class Main {
 	static String outFolderPrefix;
 	static HMMBase model;
 	static Corpus corpus;
-	public static int sampleSizeEStep = 5000;
-	public static int sampleSizeMStep = 2000;
+	public static int sampleSizeEStep = 1000;
+	public static int sampleSizeMStep = 500;
 
 	static int oneTimeStepObsSize; // number of elements in observation e.g.
 									// word|hmm1|hmm2 has 3
 
 	static int vocabThreshold = 1; // only above this included*******
-	public static int nrLayers = 5;
+	public static int nrLayers = 2;
 	public static int numStates = 2;
 
 	/** user parameters end **/

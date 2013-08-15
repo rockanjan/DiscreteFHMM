@@ -23,6 +23,15 @@ public class InstanceList extends ArrayList<Instance> {
 	public static double alphaL1NormAll=0;
 	public static double expectationL1NormAll=0;
 	
+	//locks used for threads
+	private static final Object gradientLock = new Object();
+	private static final Object cllLock = new Object();
+	private static final Object variationalLock = new Object();
+	
+	double LL = 0;
+	double cll = 0;
+	double gradient[][];
+	
 	private static final long serialVersionUID = -2409272084529539276L;
 	public int numberOfTokens;	
 	public static int VOCAB_UPDATE_COUNT = 1000;
@@ -73,7 +82,7 @@ public class InstanceList extends ArrayList<Instance> {
 		
 		//decode the most likely states and compute joint likelihood to return
 		double jointLL = 0;
-		double LL = 0;
+		LL = 0;
 		for (int n = 0; n < this.size(); n++) {
 			Instance instance = this.get(n);
 			instance.doInference(model);
@@ -99,7 +108,6 @@ public class InstanceList extends ArrayList<Instance> {
 			shiL1NormAll = 0;
 			alphaL1NormAll = 0;
 			expectationL1NormAll = 0;
-			double LL = 0;
 			Timing varIterTime = new Timing();
 			varIterTime.start();
 			
@@ -126,15 +134,13 @@ public class InstanceList extends ArrayList<Instance> {
 				} catch (InterruptedException e) {				
 					e.printStackTrace();
 				}
-				//TODO: synchronization
-				expectationL1NormAll += worker.localExpectationL1Norm;
-				LL += worker.localLL;
+				updateVariationalComputation(worker);
 			}
 			StringBuffer updateString = new StringBuffer();
 			updateString.append("\tvar iter=" + iter);
 			shiL1NormAll = shiL1NormAll/(model.nrLayers * this.numberOfTokens * model.nrStates); //difference per variable
 			alphaL1NormAll = alphaL1NormAll/this.numberOfTokens;
-			expectationL1NormAll = expectationL1NormAll/this.numberOfTokens/model.nrLayers;
+			expectationL1NormAll = expectationL1NormAll/this.numberOfTokens/model.nrLayers/model.nrStates;
 			updateString.append(String.format(" LL=%.2f time=%s", LL, varIterTime.stop()));
 			updateString.append(String.format(" shiNorm=%f alphaNorm=%f", shiL1NormAll, alphaL1NormAll));
 			updateString.append(" expectedNorm=" + expectationL1NormAll);
@@ -145,6 +151,15 @@ public class InstanceList extends ArrayList<Instance> {
 			}
 		}		
 	}
+	
+	public void updateVariationalComputation(VariationalWorker worker) {
+        synchronized (variationalLock) {
+        	expectationL1NormAll += worker.localExpectationL1Norm;
+			LL += worker.localLL;
+        }
+    }
+	
+	
 	
 	private class VariationalWorker extends Thread{
 		double localExpectationL1Norm = 0;
@@ -217,7 +232,7 @@ public class InstanceList extends ArrayList<Instance> {
 	
 	public double getCLLThreaded(double[][] parameterMatrix) {
 		featurePartitionCache = new ConcurrentHashMap<String, Double>();
-		double cll = 0;
+		cll = 0;
 		Timing timing = new Timing();
 		timing.start();
 		double[][] expWeights = MathUtils.expArray(parameterMatrix);
@@ -245,12 +260,18 @@ public class InstanceList extends ArrayList<Instance> {
 			} catch (InterruptedException e) {				
 				e.printStackTrace();
 			}
-			cll += worker.result;
+			updateCLLComputation(worker);
 		}
 		System.out.println("CLL computation time : " + timing.stop());
 		featurePartitionCache = null;
 		return cll;
 	}
+	
+	public void updateCLLComputation(CllWorker worker) {
+	    synchronized (cllLock) {
+	    	cll += worker.result;
+        }
+    }
 	
 	private class CllWorker extends Thread{
 		public double result;
@@ -423,7 +444,7 @@ public class InstanceList extends ArrayList<Instance> {
 		}
 		
 		
-		double gradient[][] = new double[parameterMatrix.length][parameterMatrix[0].length];
+		gradient = new double[parameterMatrix.length][parameterMatrix[0].length];
 		
 		//start parallel processing
 		int divideSize = this.size() / Main.USE_THREAD_COUNT;
@@ -448,12 +469,18 @@ public class InstanceList extends ArrayList<Instance> {
 			} catch (InterruptedException e) {				
 				e.printStackTrace();
 			}
-			MathUtils.addMatrix(gradient, worker.gradient);
+			updateGradientComputation(worker);
 		}
 		System.out.println("Gradient computation time : " + timing.stop());
 		featureNumeratorCache = null;
 		return gradient;
 	}
+	
+	public void updateGradientComputation(GradientWorker worker) {
+        synchronized (gradientLock) {
+        	MathUtils.addMatrix(gradient, worker.gradient);
+        }
+    }
 	
 	private class GradientWorker extends Thread{
 		public double[][] gradient;

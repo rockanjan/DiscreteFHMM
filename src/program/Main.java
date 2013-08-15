@@ -131,7 +131,7 @@ public class Main {
 				for (int t = 0; t < i.T; t++) {
 					String word = i.getWord(t);
 					StringBuffer sb = new StringBuffer();
-					sb.append(word);
+					sb.append(word + " ");
 					for(int m=0; m<model.nrLayers; m++) {
 						int state = i.decodedStates[m][t];
 						sb.append("|" + state);
@@ -139,6 +139,7 @@ public class Main {
 					pw.println(sb.toString());
 					pw.flush();
 				}
+				pw.println();
 				i.clearInference();
 			}
 			pw.close();

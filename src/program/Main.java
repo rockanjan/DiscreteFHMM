@@ -95,10 +95,7 @@ public class Main {
 		EM em = new EM(numIter, corpus, model);
 		em.start();
 		
-		//TODO
-		//model.saveModel(currentRecursion);
-		// store weights to assign for the next recursion
-		//previousRecursionWeights = MyArray.getCloneOfMatrix(model.param.weights.weights);
+		model.saveModel();
 		/*
 		if(corpus.testInstanceList != null) {
 			System.out.println("LL of Test Data : " + corpus.testInstanceList.getLL(model));

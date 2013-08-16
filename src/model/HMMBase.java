@@ -56,40 +56,32 @@ public abstract class HMMBase {
 		param.transition.get(0).cloneFrom(counts.transition.get(0));
 	}
 
-	public String saveModel(int recursionLevel) {
-		return saveModel(recursionLevel, -1);
+	public String saveModel() {
+		return saveModel(-1);
 	}
 
 	/*
 	 * return the location saved
 	 */
-	public String saveModel(int recursionLevel, int iterCount) {
-		File folder = new File(baseDir + "recursion_" + recursionLevel);
+	public String saveModel(int iterCount) {
+		File folder = new File(baseDir);
 		if (!folder.exists()) {
 			folder.mkdir();
 		}
-		// save vocab files
-		for (int z = 0; z < Corpus.oneTimeStepObsSize; z++) {
-			String vocabFilename = folder.getAbsoluteFile() + "/vocab_" + z
-					+ ".txt";
-			corpus.corpusVocab.get(z).writeDictionary(vocabFilename);
-		}
 		String modelFile = "";
 		if (iterCount < 0) {
-			modelFile = folder.getAbsolutePath() + "/model_states_" + nrStates
-					+ "_final.txt";
+			modelFile = folder.getAbsolutePath() + "/model_states_" + nrStates + "_final.txt";
 		} else {
-			modelFile = folder.getAbsolutePath() + "/model_states_" + nrStates
-					+ "_iter_" + iterCount + ".txt";
+			modelFile = folder.getAbsolutePath() + "/model_states_" + nrStates + "_iter_" + iterCount + ".txt";
 		}
 		PrintWriter pw;
 		try {
 			pw = new PrintWriter(modelFile);
 			pw.println(nrStates);
-			pw.println(Corpus.oneTimeStepObsSize);
+			pw.println(nrLayers);
 			pw.println();
 			// initial
-			for (int z = 0; z < Corpus.oneTimeStepObsSize; z++) {
+			for (int z = 0; z < nrLayers; z++) {
 				pw.println(param.initial.get(z).getConditionedSize());
 				for (int i = 0; i < param.initial.get(z).getConditionedSize(); i++) {
 					pw.print(param.initial.get(z).get(i, 0));
@@ -101,7 +93,7 @@ public abstract class HMMBase {
 			}
 			pw.println();
 			// transition
-			for (int z = 0; z < Corpus.oneTimeStepObsSize; z++) {
+			for (int z = 0; z < nrLayers; z++) {
 				pw.println(param.transition.get(z).getConditionalSize());
 				pw.println(param.transition.get(z).getConditionedSize());
 				for (int j = 0; j < param.transition.get(z)

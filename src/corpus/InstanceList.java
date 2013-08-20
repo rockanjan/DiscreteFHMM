@@ -304,8 +304,8 @@ public class InstanceList extends ArrayList<Instance> {
 		//cache frequent conditionals
 		double[][] gradient;
 		Corpus.cacheFrequentConditionals();
-		//gradient = getGradientNoThread(parameterMatrix);
-		gradient = getGradientThreaded(parameterMatrix);
+		gradient = getGradientNoThread(parameterMatrix);
+		//gradient = getGradientThreaded(parameterMatrix);
 		Corpus.clearFrequentConditionals();
 		return gradient;
 	}

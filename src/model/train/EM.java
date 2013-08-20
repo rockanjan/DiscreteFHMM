@@ -80,9 +80,6 @@ public class EM {
 			System.out.println("optimization threw exception: IllegalArgument");
 		} catch (OptimizationException oe) {
 			System.out.println("optimization threw OptimizationException");
-			if(Main.sampleSizeMStep < 2000) {
-				Main.sampleSizeMStep += 100;
-			}
 		}
 		System.out.println("Converged = " + converged);
 		System.out.println("Gradient call count: " + optimizable.gradientCallCount);

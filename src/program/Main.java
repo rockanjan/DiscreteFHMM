@@ -42,8 +42,8 @@ public class Main {
 									// word|hmm1|hmm2 has 3
 
 	static int vocabThreshold = 1; // only above this included*******
-	public static int nrLayers = 2;
-	public static int numStates = 2;
+	public static int nrLayers = 10;
+	public static int numStates = 5;
 
 	/** user parameters end **/
 	public static void main(String[] args) throws IOException {

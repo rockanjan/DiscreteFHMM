@@ -9,6 +9,11 @@ public class VocabNumeratorArray {
 	public double normalizer;
 	public PriorityQueue<VocabItemProbability> topProbs;
 	
+	//conditional if processed in gradient update
+	public boolean processed = false;
+	//how many conditionals for this
+	public int count; 
+	
 	public VocabNumeratorArray(int size) {
 		array = new double[size];
 	}

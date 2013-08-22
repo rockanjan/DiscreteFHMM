@@ -123,7 +123,7 @@ public class VariationalParam {
 					MathUtils.check(varParamObs.shi[m][t][k]);
 					shiL1NormInstance += Math.abs(oldValue - varParamObs.shi[m][t][k]);					
 				}
-				instance.forwardBackwardList.get(m).doInference();
+				//instance.forwardBackwardList.get(m).doInference();
 			}
 		InstanceList.shiL1NormAll += shiL1NormInstance;		
 	}
@@ -140,6 +140,7 @@ public class VariationalParam {
 				}
 				
 				double[] sumOverY = new double[K];
+				
 				for(int y=0; y<V; y++) {
 					double allProd = prodCache[y];
 					double prod = allProd / MathUtils.dot(model.param.expWeights.getStateVector(m, y), 
@@ -153,11 +154,15 @@ public class VariationalParam {
 				double maxOverK = -Double.MAX_VALUE;
 				double[] updateValue = new double[K];
 				for(int k=0; k<K; k++) {
-					updateValue[k] = sumOverNYt[k] - alpha.alpha[t] * sumOverY[k];
-					/*
-					System.out.println(String.format("updateValue=%f, sumNYt=%f, sumNot=%f, alpha=%f, sumY=%f, prod=%f", updateValue[k], 
-							sumOverNYt[k], sumOverNnotM[k], alpha.alpha[t], sumOverY[k], (alpha.alpha[t] * sumOverY[k])));
-					*/
+					double prod = alpha.alpha[t] * sumOverY[k];
+					updateValue[k] = sumOverNYt[k] - prod;
+					//updateValue[k] = sumOverNYt[k] - 1;
+				/*
+					if(prod < 0.5 || prod > 1.5) {
+					System.out.println(String.format("updateValue=%f, sumNYt=%f, alpha=%f, sumY=%f, prod=%f", updateValue[k], 
+							sumOverNYt[k], alpha.alpha[t], sumOverY[k], prod));
+					}
+				*/
 					if(updateValue[k] > maxOverK) {
 						maxOverK = updateValue[k];
 					}

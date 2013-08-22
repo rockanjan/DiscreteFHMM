@@ -60,10 +60,12 @@ public class EM {
 
 	public void mStep() {
 		System.out.println("Mstep #tokens : " + c.trainInstanceMStepSampleList.numberOfTokens);
+		Corpus.cacheFrequentConditionals();
 		trainLBFGS();
 		//trainAveragedPerceptronPosterior();
 		//trainAveragedPerceptronViterbi();
 		//trainSgd();
+		Corpus.clearFrequentConditionals();
 		model.updateFromCounts(expectedCounts);
 	}
 	
@@ -75,7 +77,7 @@ public class EM {
 		Optimizer optimizer = new LimitedMemoryBFGS(optimizable);
 		boolean converged = false;
 		try {
-			converged = optimizer.optimize(mStepIter);
+			converged = optimizer.optimize();
 		} catch (IllegalArgumentException e) {
 			System.out.println("optimization threw exception: IllegalArgument");
 		} catch (OptimizationException oe) {

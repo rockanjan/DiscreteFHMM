@@ -35,7 +35,6 @@ public class Corpus {
 
 	static public ArrayList<Vocabulary> corpusVocab;
 	
-	public static int maxTokensToProcessForFrequentConditionals = 1000000;
 	public static int maxFrequentConditionals = 100000;
 	public static TreeSet<FrequentConditionalStringVector> frequentConditionals;
 
@@ -171,7 +170,6 @@ public class Corpus {
 			}
 			
 		});
-		int nrTokensProcessed = 0;
 		//count frequencies
 		for(int n=0; n<Corpus.trainInstanceMStepSampleList.size(); n++) {
 			Instance instance = Corpus.trainInstanceMStepSampleList.get(n);
@@ -185,10 +183,6 @@ public class Corpus {
 					conditionalCountMap.put(fc, prevFreq+1);
 				} else {
 					conditionalCountMap.put(fc, 1);
-				}
-				nrTokensProcessed++;
-				if(nrTokensProcessed >= maxTokensToProcessForFrequentConditionals) {
-					break;
 				}
 			}
 		}

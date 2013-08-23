@@ -116,6 +116,26 @@ public class MathUtils {
 		}
 	}
 	
+
+	public static double[][] weightedAverageMatrix(double[][] first, double[][] second, double weight) {
+		if(weight <=0 || weight > 1) {
+			throw new RuntimeException("Invalid weight, should be (0,1]");
+		}
+		int m = first.length;
+		int n = first[0].length;
+		
+		if(second.length != m || second[0].length != n) {
+			throw new RuntimeException("Matrix dimensions mismatch");
+		}
+		double[][] averageMatrix = new double[m][n];
+		for(int i=0; i<m; i++) {
+			for(int j=0; j<n; j++) {
+				averageMatrix[i][j] = weight * first[i][j] + (1-weight) * second[i][j];
+			}
+		}
+		return averageMatrix;
+	}
+	
 	public static double matrixDifferenceNorm(double[][] A, double[][] B) {
 		int m = A.length;
 		int n = A[0].length;

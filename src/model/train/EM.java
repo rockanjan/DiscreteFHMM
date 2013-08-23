@@ -85,7 +85,11 @@ public class EM {
 		}
 		System.out.println("Converged = " + converged);
 		System.out.println("Gradient call count: " + optimizable.gradientCallCount);
-		model.param.weights.weights = optimizable.getParameterMatrix();
+		//model.param.weights.weights = optimizable.getParameteMatrix();
+		
+		double adaptiveWeight = 20.0 / (20.0 + iterCount);
+		model.param.weights.weights = MathUtils.weightedAverageMatrix(optimizable.getParameterMatrix(), 
+				model.param.weights.weights, adaptiveWeight);
 		
 	}
 

@@ -35,15 +35,15 @@ public class Main {
 	static String outFolderPrefix;
 	static HMMBase model;
 	static Corpus corpus;
-	public static int sampleSizeEStep = 10000;
-	public static int sampleSizeMStep = 5000;
+	public static int sampleSizeEStep = 25000;
+	public static int sampleSizeMStep = 25000;
 
 	static int oneTimeStepObsSize; // number of elements in observation e.g.
 									// word|hmm1|hmm2 has 3
 
 	static int vocabThreshold = 1; // only above this included*******
-	public static int nrLayers = 10;
-	public static int numStates = 5;
+	public static int nrLayers = 20;
+	public static int numStates = 2;
 
 	/** user parameters end **/
 	public static void main(String[] args) throws IOException {
@@ -55,7 +55,7 @@ public class Main {
 	public static void train() throws IOException {
 		InstanceList.VOCAB_UPDATE_COUNT = 0;
 		outFolderPrefix = "out/";
-		numIter = 40;
+		numIter = 100;
 		String trainFileBase;
 		String testFileBase;
 		String devFileBase;

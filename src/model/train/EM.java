@@ -72,7 +72,6 @@ public class EM {
 	public void trainLBFGS() {
 		// maximize CLL of the data
 		double[] initParams = MyArray.createVector(model.param.weights.weights);
-		model.param.weights.weights = null;
 		CLLTrainer optimizable = new CLLTrainer(initParams, c);
 		Optimizer optimizer = new LimitedMemoryBFGS(optimizable);
 		boolean converged = false;
@@ -85,9 +84,10 @@ public class EM {
 		}
 		System.out.println("Converged = " + converged);
 		System.out.println("Gradient call count: " + optimizable.gradientCallCount);
-		//model.param.weights.weights = optimizable.getParameteMatrix();
 		
-		double adaptiveWeight = 20.0 / (20.0 + iterCount);
+		//model.param.weights.weights = optimizable.getParameterMatrix();
+		
+		double adaptiveWeight = 25.0 / (25.0 + iterCount);
 		model.param.weights.weights = MathUtils.weightedAverageMatrix(optimizable.getParameterMatrix(), 
 				model.param.weights.weights, adaptiveWeight);
 		

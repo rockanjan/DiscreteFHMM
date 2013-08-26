@@ -70,9 +70,9 @@ public abstract class HMMBase {
 		}
 		String modelFile = "";
 		if (iterCount < 0) {
-			modelFile = folder.getAbsolutePath() + "/model_states_" + nrStates + "_final.txt";
+			modelFile = folder.getAbsolutePath() + "/variational_model_layers_" + nrLayers +  "_states_" + nrStates + "_final.txt";
 		} else {
-			modelFile = folder.getAbsolutePath() + "/model_states_" + nrStates + "_iter_" + iterCount + ".txt";
+			modelFile = folder.getAbsolutePath() + "/variational_model_layers_" + nrLayers + "_states_" + nrStates + "_iter_" + iterCount + ".txt";
 		}
 		PrintWriter pw;
 		try {

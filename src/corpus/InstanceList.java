@@ -19,9 +19,12 @@ import util.MyArray;
 import util.Timing;
 
 public class InstanceList extends ArrayList<Instance> {
+	/*
 	public static double shiL1NormAll=0;
 	public static double alphaL1NormAll=0;
+	*/
 	public static double expectationL1NormAll=0;
+	public static double expectationL1NormMax=0;
 	
 	//locks used for threads
 	private static final Object gradientLock = new Object();
@@ -93,6 +96,7 @@ public class InstanceList extends ArrayList<Instance> {
 			instance.decode();
 			jointLL += getJointLL(instance, model);
 			instance.clearInference();
+			instance.varParam = null;
 		}
 		//clear expWeights;				
 		model.param.expWeightsCache = null;
@@ -104,10 +108,11 @@ public class InstanceList extends ArrayList<Instance> {
 	
 	public void doVariationalInference(HMMBase model) {
 		//optimize variational parameters
-		for(int iter=0; iter < 3; iter++) {
-			shiL1NormAll = 0;
-			alphaL1NormAll = 0;
+		for(int iter=0; iter < 5; iter++) {
+//			shiL1NormAll = 0;
+//			alphaL1NormAll = 0;
 			expectationL1NormAll = 0;
+			expectationL1NormMax = 0;
 			Timing varIterTime = new Timing();
 			varIterTime.start();
 			
@@ -138,14 +143,15 @@ public class InstanceList extends ArrayList<Instance> {
 			}
 			StringBuffer updateString = new StringBuffer();
 			updateString.append("\tvar iter=" + iter);
-			shiL1NormAll = shiL1NormAll/(model.nrLayers * this.numberOfTokens * model.nrStates); //difference per variable
-			alphaL1NormAll = alphaL1NormAll/this.numberOfTokens;
+//			shiL1NormAll = shiL1NormAll/(model.nrLayers * this.numberOfTokens * model.nrStates); //difference per variable
+//			alphaL1NormAll = alphaL1NormAll/this.numberOfTokens;
 			expectationL1NormAll = expectationL1NormAll/this.numberOfTokens/model.nrLayers/model.nrStates;
 			updateString.append(String.format(" LL=%.2f time=%s", LL, varIterTime.stop()));
-			updateString.append(String.format(" shiNorm=%f alphaNorm=%f", shiL1NormAll, alphaL1NormAll));
-			updateString.append(" expectedNorm=" + expectationL1NormAll);
+			//updateString.append(String.format(" shiNorm=%f alphaNorm=%f", shiL1NormAll, alphaL1NormAll));
+			updateString.append(String.format(" expectedNormAvg=%f", expectationL1NormAll));
+			updateString.append(String.format(" expectedNormMax=%f", expectationL1NormMax));
 			System.out.println(updateString.toString());
-			if(expectationL1NormAll < 1e-6) {
+			if(expectationL1NormAll < 1e-5) {
 				System.out.println("variational params converged");
 				break;
 			}

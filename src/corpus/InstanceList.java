@@ -148,13 +148,15 @@ public class InstanceList extends ArrayList<Instance> {
 			expectationL1NormAll = expectationL1NormAll/this.numberOfTokens/model.nrLayers/model.nrStates;
 			updateString.append(String.format(" LL=%.2f time=%s", LL, varIterTime.stop()));
 			//updateString.append(String.format(" shiNorm=%f alphaNorm=%f", shiL1NormAll, alphaL1NormAll));
-			updateString.append(String.format(" expectedNormAvg=%f", expectationL1NormAll));
-			updateString.append(String.format(" expectedNormMax=%f", expectationL1NormMax));
+			updateString.append(String.format(" expectedDiffL1NormAvg=%f", expectationL1NormAll));
+			updateString.append(String.format(" Max=%f", expectationL1NormMax));
 			System.out.println(updateString.toString());
+			
 			if(expectationL1NormAll < 1e-5) {
 				System.out.println("variational params converged");
 				break;
 			}
+			
 		}		
 	}
 	
@@ -162,6 +164,9 @@ public class InstanceList extends ArrayList<Instance> {
         synchronized (variationalLock) {
         	expectationL1NormAll += worker.localExpectationL1Norm;
 			LL += worker.localLL;
+			if(worker.localExpectationL1Max > expectationL1NormMax) {
+				expectationL1NormMax = worker.localExpectationL1Max; 
+			}
         }
     }
 	
@@ -169,6 +174,7 @@ public class InstanceList extends ArrayList<Instance> {
 	
 	private class VariationalWorker extends Thread{
 		double localExpectationL1Norm = 0;
+		double localExpectationL1Max = 0;
 		double localLL = 0;
 		InstanceList instanceList;
 		final int startIndex;
@@ -186,20 +192,26 @@ public class InstanceList extends ArrayList<Instance> {
 		@Override
 		public void run() {
 			localExpectationL1Norm = 0.0;
+			localExpectationL1Max = 0.0;
 			//instance level params
 			for (int n = startIndex; n < endIndex; n++) {
 				Instance instance = instanceList.get(n);
 				instance.model = model;
 				if(instance.varParam == null) {
 					instance.varParam = new VariationalParam(model, instance);
+					instance.doInference(model); //get expected states with unoptimized params
 				}
-				instance.posteriorDifference = 0;
-				instance.doInference(model); //get expected states with unoptimized params
 				instance.varParam.optimize();
+				instance.posteriorDifference = 0;
+				instance.posteriorDifferenceMax = 0;
 				instance.doInference(model);
 				instance.decode();
 				localLL += getJointLL(instance, model);
 				localExpectationL1Norm += instance.posteriorDifference;
+				if(instance.posteriorDifferenceMax > localExpectationL1Max) {
+					localExpectationL1Max = instance.posteriorDifferenceMax; 
+				}
+				
 			}
 		}		
 	}

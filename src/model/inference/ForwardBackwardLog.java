@@ -110,8 +110,8 @@ public class ForwardBackwardLog extends ForwardBackward{
 				if(oldPosterior != null) {
 					double diff = Math.abs(oldPosterior[t][i] - posterior[t][i]);
 					instance.posteriorDifference += diff;
-					if(diff > InstanceList.expectationL1NormMax) {
-						InstanceList.expectationL1NormMax = diff;
+					if(diff > instance.posteriorDifferenceMax) {
+						instance.posteriorDifferenceMax = diff;
 					}
 					
 				}

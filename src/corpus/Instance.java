@@ -41,6 +41,7 @@ public class Instance {
 	public double logLikelihood;
 	
 	public double posteriorDifference = 0;
+	public double posteriorDifferenceMax = 0;
 
 	public Instance(Corpus c, String line) {
 		this.c = c;
@@ -53,27 +54,33 @@ public class Instance {
 		// TODO: to save memory free this right after its use
 		decodedStates = null;
 		this.model = model;
-		posteriors = new double[model.nrLayers][][];
-		forwardBackwardList = new ArrayList<ForwardBackward>();
-		if (model.hmmType == HMMType.LOG_SCALE) {
-			logLikelihood = 0;
+		if(posteriors == null) {
+			posteriors = new double[model.nrLayers][][];
+		}
+		logLikelihood = 0;
+		if(forwardBackwardList == null) {
+			forwardBackwardList = new ArrayList<ForwardBackward>();
 			for (int l = 0; l < model.nrLayers; l++) {
-				ForwardBackwardLog tempFB = new ForwardBackwardLog(model, this,
-						l);
-				// find initial posteriors
+				ForwardBackwardLog tempFB = new ForwardBackwardLog(model, this, l);
 				tempFB.doInference();
 				forwardBackwardList.add(tempFB);
 				logLikelihood += tempFB.logLikelihood;
 			}
-		} else {
-			throw new UnsupportedOperationException("Not implemented");
 		}
+		else {
+			for (int l = 0; l < model.nrLayers; l++) {
+				ForwardBackwardLog tempFB = (ForwardBackwardLog) forwardBackwardList.get(l);
+				tempFB.doInference();
+				logLikelihood += tempFB.logLikelihood;
+			}
+		}	
 	}
 
 	public void clearInference() {
 		forwardBackwardList.clear();
 		forwardBackwardList = null;
 		observationCache = null;
+		posteriors = null;
 	}
 
 	/*

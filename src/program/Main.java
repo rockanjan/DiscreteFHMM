@@ -42,8 +42,8 @@ public class Main {
 									// word|hmm1|hmm2 has 3
 
 	static int vocabThreshold = 1; // only above this included*******
-	public static int nrLayers = 6;
-	public static int numStates = 10;
+	public static int nrLayers = 2;
+	public static int numStates = 5;
 
 	/** user parameters end **/
 	public static void main(String[] args) throws IOException {
@@ -61,7 +61,7 @@ public class Main {
 		String devFileBase;
 		
 		//trainFileBase = "data/simple_corpus_sorted.txt";
-		trainFileBase = "data/combined.txt.SPL";
+		trainFileBase = "data/test.txt.SPL";
 		testFileBase = "data/test.txt.SPL";
 		devFileBase = "data/srl.txt";
 		trainFile = trainFileBase;

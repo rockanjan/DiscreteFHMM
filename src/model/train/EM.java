@@ -121,6 +121,9 @@ public class EM {
 			if(iterCount % 10 == 0 && c.devInstanceList != null) {
 				System.out.println("Dev LL : " + c.devInstanceList.getLL(model));
 			}
+			if(iterCount > 0 && iterCount % 10 == 0) {
+				model.saveModel(iterCount);
+			}
 		}
 		System.out.println("Total EM Time : " + totalEMTime.stop());
 	}

@@ -119,6 +119,7 @@ public class Vocabulary {
 			System.exit(-1);
 		}
 		
+		wordToIndex.clear();
 		String line = null;
 		try {
 			line = br.readLine().trim();

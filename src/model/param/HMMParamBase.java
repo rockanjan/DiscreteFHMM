@@ -24,7 +24,7 @@ public abstract class HMMParamBase {
 
 	int nrStatesWithFake = -1; //the extending class should initialize this (for no fake, equals nrStates)
 	int nrStates = -1;
-	int nrObs = -1;
+	public int nrObs = -1;
 	
 	
 	public HMMParamBase(HMMBase model) {
@@ -120,33 +120,59 @@ public abstract class HMMParamBase {
 	
 	public boolean equalsExact(HMMParamBase other) {
 		boolean result = true;
-		if(nrStates != other.nrStates || nrObs != other.nrObs || nrStatesWithFake != other.nrStatesWithFake) {
+		if(other == null) {
+			System.err.println("Other model null");
+			return false;
+		}
+		if(nrLayers != other.nrLayers) {
+			System.err.println("layers mismatch");
 			return false;
 		}
 		
-		if(! this.initial.get(0).equalsExact(other.initial.get(0)) && this.transition.get(0).equalsExact(other.transition.get(0))) {
-			result = false;
+		if(nrStates != other.nrStates || nrStatesWithFake != other.nrStatesWithFake) {
+			System.err.println("dimensions mismatch");
+			return false;
 		}
+		
+		for(int m=0; m<nrLayers; m++) {
+			if(! this.initial.get(m).equalsExact(other.initial.get(m)) && this.transition.get(m).equalsExact(other.transition.get(m))) {
+				System.err.println("initial or transition mismatch");
+				result = false;
+			}
+		}
+		
 		if(! weights.equalsExact(other.weights)) {
+			System.err.println("observation weights mismatch");
 			result = false;
 		}
 		return result;
 	}
 	
 	public boolean equalsApprox(HMMParamBase other) {
-		if(nrStates != other.nrStates || nrObs != other.nrObs || nrStatesWithFake != other.nrStatesWithFake) {
+		boolean result = true;
+		if(other == null) {
+			System.err.println("Other model null");
 			return false;
 		}
-		boolean result = true;
-		if(nrStates != other.nrStates || nrObs != other.nrObs || nrStatesWithFake != other.nrStatesWithFake) {
+		if(nrLayers != other.nrLayers) {
+			System.err.println("layers mismatch");
 			return false;
 		}
 		
-		if(! this.initial.get(0).equalsApprox(other.initial.get(0)) && this.transition.get(0).equalsApprox(other.transition.get(0))) {
-			result = false;
+		if(nrStates != other.nrStates || nrStatesWithFake != other.nrStatesWithFake) {
+			System.err.println("dimensions mismatch");
+			return false;
+		}
+		
+		for(int m=0; m<nrLayers; m++) {
+			if(! this.initial.get(m).equalsExact(other.initial.get(m)) && this.transition.get(m).equalsExact(other.transition.get(m))) {
+				System.err.println("initial or transition mismatch");
+				result = false;
+			}
 		}
 		
 		if(! weights.equalsApprox(other.weights)) {
+			System.err.println("observation weights mismatch");
 			result = false;
 		}
 		return result;

@@ -84,12 +84,12 @@ public class EM {
 		}
 		System.out.println("Converged = " + converged);
 		System.out.println("Gradient call count: " + optimizable.gradientCallCount);
-		model.param.weights.weights = optimizable.getParameterMatrix();
-		/*
+		//model.param.weights.weights = optimizable.getParameterMatrix();
+		
 		double adaptiveWeight = 25.0 / (25.0 + iterCount);
 		model.param.weights.weights = MathUtils.weightedAverageMatrix(optimizable.getParameterMatrix(), 
 				model.param.weights.weights, adaptiveWeight);
-		*/
+		
 		
 	}
 
@@ -119,7 +119,7 @@ public class EM {
 			// m-step
 			c.generateRandomTrainingMStepSample(Main.sampleSizeMStep);
 			mStep();
-			if(iterCount % 10 == 0 && c.devInstanceList != null) {
+			if(iterCount % 5 == 0 && c.devInstanceList != null) {
 				System.out.println("Dev LL : " + c.devInstanceList.getLL(model));
 			}
 			if(iterCount > 0 && iterCount % 10 == 0) {

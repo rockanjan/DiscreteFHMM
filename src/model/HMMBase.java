@@ -131,92 +131,83 @@ public abstract class HMMBase {
 		return folder.getAbsolutePath();
 	}
 
-	public void loadModel(int recursionLevel) {
-		System.out.println("RECURSION : " + recursionLevel);
-		System.out.println("---------");
-		File folder = new File(baseDir + "recursion_" + recursionLevel);
-		if (!folder.exists()) {
-			throw new RuntimeException(
-					"The recursion folder does not exist for loading model, recursionLevel = "
-							+ recursionLevel);
+	public void loadModel() {
+		//load vocab file
+		File folder = new File(baseDir);
+		String modelFile = folder.getAbsolutePath() + 
+				"/variational_model_layers_" + nrLayers +  "_states_" + nrStates + "_final.txt";
+		if(Corpus.corpusVocab == null) {
+			Corpus.corpusVocab = new ArrayList<Vocabulary>();
 		}
-		String modelFile = "";
-		modelFile = folder.getAbsolutePath() + "/model_states_" + nrStates + "_final.txt";
+		if(Corpus.corpusVocab.size() == 0) {
+			Corpus.corpusVocab.add(new Vocabulary());
+		}
+		Corpus.corpusVocab.get(0).readDictionary(folder.getAbsolutePath() + "/vocab.txt");
+		BufferedReader modelReader;
 		try {
-			BufferedReader modelReader = new BufferedReader(new FileReader(modelFile));
+			modelReader = new BufferedReader(new FileReader(modelFile));
 			this.nrStates = Integer.parseInt(modelReader.readLine());
+			this.nrLayers = Integer.parseInt(modelReader.readLine());
 			this.nrStatesWithFake = this.nrStates;
-			Corpus.oneTimeStepObsSize = Integer
-					.parseInt(modelReader.readLine());
-			// read blank
-			modelReader.readLine();
-
-			// initialize corpus vocabs
-			corpus.corpusVocab = new ArrayList<Vocabulary>();
-			for (int z = 0; z < Corpus.oneTimeStepObsSize; z++) {
-				Vocabulary tempVocab = new Vocabulary();
-				corpus.corpusVocab.add(tempVocab);
-			}
-			// load vocab files
-			for (int z = 0; z < Corpus.oneTimeStepObsSize; z++) {
-				String vocabFilename = folder.getAbsoluteFile() + "/vocab_" + z + ".txt";
-				corpus.corpusVocab.get(z).readDictionary(vocabFilename);
-				//corpus.corpusVocab.get(z).debug();
-			}
 			
-			// initialize params
-			this.param = new HMMParamNoFinalStateLog(this);
-			this.param.initial = new ArrayList<MultinomialBase>();
-			this.param.transition = new ArrayList<MultinomialBase>();
-			// read initial parameters
-			for (int z = 0; z < Corpus.oneTimeStepObsSize; z++) {
-				int conditionedSize = Integer.parseInt(modelReader.readLine());
-				MultinomialBase init = new MultinomialLog(conditionedSize, 1);
-				this.param.initial.add(init);
-				String[] splittedParams = modelReader.readLine().split("\\s+");
+			modelReader.readLine(); //empty line
+			
+			param = new HMMParamNoFinalStateLog(this);
+			param.initializeZeros();
+			param.nrObs = Corpus.corpusVocab.get(0).vocabSize;
+			// initial
+			
+			for (int z = 0; z < nrLayers; z++) {
+				//pw.println(param.initial.get(z).getConditionedSize());
+				modelReader.readLine();
+				String[] initialProbs = modelReader.readLine().split("\\s+");
 				for (int i = 0; i < param.initial.get(z).getConditionedSize(); i++) {
-					param.initial.get(z).set(i, 0, Double.parseDouble(splittedParams[i]));
-				}				
+					param.initial.get(z).count[i][0] = Double.parseDouble(initialProbs[i]);
+				}
+				//modelReader.readLine();
 			}
 			modelReader.readLine();
-			//read transition params
-			for (int z = 0; z < Corpus.oneTimeStepObsSize; z++) {
-				int conditionalSize = Integer.parseInt(modelReader.readLine());
-				int conditionedSize = Integer.parseInt(modelReader.readLine());
+			// transition
+			for (int z = 0; z < nrLayers; z++) {
+				//pw.println(param.transition.get(z).getConditionalSize());
+				//pw.println(param.transition.get(z).getConditionedSize());
+				modelReader.readLine();
+				modelReader.readLine();
 				
-				MultinomialBase transition = new MultinomialLog(conditionedSize, conditionalSize);
-				this.param.transition.add(transition);
-				for(int j=0; j<conditionalSize; j++) {
-					String[] splittedParams = modelReader.readLine().split("\\s+");
-					for (int i = 0; i < conditionedSize; i++) {
-						param.transition.get(z).set(i, j, Double.parseDouble(splittedParams[i]));
+				for (int j = 0; j < param.transition.get(z).getConditionalSize(); j++) {
+					String[] probs = modelReader.readLine().split("\\s+");
+					for (int i = 0; i < param.transition.get(z).getConditionedSize(); i++) {
+						param.transition.get(z).count[j][i] = Double.parseDouble(probs[i]);
 					}
+					//modelReader.readLine();
 				}
-				modelReader.readLine(); //read a blank line				
+				modelReader.readLine();
 			}
 			modelReader.readLine();
-			// read log linear weights
-			int vocabSize = Integer.parseInt(modelReader.readLine());
-			int conditionalSize = Integer.parseInt(modelReader.readLine());
-			
-			//initialize log linear weights
-			param.weights = new LogLinearWeights(vocabSize, conditionalSize-1); //-1 because initialization will add one
-			param.weights.initializeZeros();
+			// log linear weights
+			//pw.println(param.weights.vocabSize);
+			modelReader.readLine();
+			//pw.println(param.weights.conditionalSize);
+			modelReader.readLine();
 			for (int y = 0; y < param.weights.vocabSize; y++) {
-				String[] splittedParams = modelReader.readLine().split("\\s+");
+				String[] weights = modelReader.readLine().split("\\s+");
 				for (int u = 0; u < param.weights.conditionalSize; u++) {
-					param.weights.weights[y][u] = Double.parseDouble(splittedParams[u]);
+					param.weights.weights[y][u] = Double.parseDouble(weights[u]);
 				}
+				//pw.println();
 			}
-			//verify complete
-			String line = modelReader.readLine().trim();
+			//pw.println("EOF");
+			if(modelReader.readLine().equals("EOF")) {
+				System.out.println("Model file loaded successfully");
+			} else {
+				System.err.println("Model file loading failed");
+			}
 			modelReader.close();
-			if(! line.equals("EOF")) {
-				throw new RuntimeException("EOF not encountered after loading model, found :" + line);				
-			}
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();			
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		} // read blank line
+		}
 	}
 }

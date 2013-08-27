@@ -152,7 +152,7 @@ public class InstanceList extends ArrayList<Instance> {
 			updateString.append(String.format(" Max=%f", expectationL1NormMax));
 			System.out.println(updateString.toString());
 			
-			if(expectationL1NormAll < 1e-5) {
+			if(expectationL1NormMax < 1e-3) {
 				System.out.println("variational params converged");
 				break;
 			}

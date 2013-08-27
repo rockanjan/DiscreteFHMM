@@ -35,15 +35,15 @@ public class Main {
 	static String outFolderPrefix;
 	static HMMBase model;
 	static Corpus corpus;
-	public static int sampleSizeEStep = 25000;
-	public static int sampleSizeMStep = 25000;
+	public static int sampleSizeEStep = 2000;
+	public static int sampleSizeMStep = 2000;
 
 	static int oneTimeStepObsSize; // number of elements in observation e.g.
 									// word|hmm1|hmm2 has 3
 
-	static int vocabThreshold = 1; // only above this included*******
-	public static int nrLayers = 2;
-	public static int numStates = 5;
+	static int vocabThreshold = 2; // only above this included*******
+	public static int nrLayers = 6;
+	public static int numStates = 10;
 
 	/** user parameters end **/
 	public static void main(String[] args) throws IOException {
@@ -55,13 +55,13 @@ public class Main {
 	public static void train() throws IOException {
 		InstanceList.VOCAB_UPDATE_COUNT = 0;
 		outFolderPrefix = "out/";
-		numIter = 100;
+		numIter = 50;
 		String trainFileBase;
 		String testFileBase;
 		String devFileBase;
 		
 		//trainFileBase = "data/simple_corpus_sorted.txt";
-		trainFileBase = "data/test.txt.SPL";
+		trainFileBase = "data/combined.txt.SPL";
 		testFileBase = "data/test.txt.SPL";
 		devFileBase = "data/srl.txt";
 		trainFile = trainFileBase;
@@ -75,6 +75,7 @@ public class Main {
 		Corpus.oneTimeStepObsSize = Corpus.findOneTimeStepObsSize(vocabFile);
 		// TRAIN
 		corpus.readVocab(vocabFile);
+		corpus.corpusVocab.get(0).writeDictionary("out/model/vocab.txt");
 		if(InstanceList.VOCAB_UPDATE_COUNT <= 0) {
 			InstanceList.VOCAB_UPDATE_COUNT = Corpus.corpusVocab.get(0).vocabSize;
 		}
@@ -96,6 +97,16 @@ public class Main {
 		em.start();
 		
 		model.saveModel();
+		
+		/*
+		//model loading
+		Corpus corpusNew = new Corpus(delimiter, 1);
+		HMMBase modelLoaded = new HMMNoFinalStateLog(nrLayers, numStates, corpusNew);
+		modelLoaded.loadModel();
+		System.out.println("Saved and loaded model equal exactly? " + model.param.equalsExact(modelLoaded.param));
+		System.out.println("Saved and loaded model equal approx? " + model.param.equalsApprox(modelLoaded.param));
+		*/
+		
 		/*
 		if(corpus.testInstanceList != null) {
 			System.out.println("LL of Test Data : " + corpus.testInstanceList.getLL(model));

@@ -76,7 +76,8 @@ public class EM {
 		//trainAveragedPerceptronViterbi();
 		//trainSgd();
 		Corpus.clearFrequentConditionals();
-		model.updateFromCounts(expectedCounts);
+		//model.updateFromCounts(expectedCounts);
+		model.updateFromCountsWeighted(expectedCounts, adaptiveWeight);
 	}
 	
 	public void trainLBFGS() {

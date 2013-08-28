@@ -61,6 +61,8 @@ public abstract class HMMBase {
 			param.initial.get(m).cloneWeightedFrom(counts.initial.get(m), weight);
 			param.transition.get(m).cloneWeightedFrom(counts.transition.get(m), weight);
 		}
+		//renormalize
+		this.param.normalize();
 	}
 
 	public String saveModel() {

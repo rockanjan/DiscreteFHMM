@@ -57,6 +57,7 @@ public class VariationalParam {
 			for(int n=0; n<M; n++) {
 				prod = prod * MathUtils.dot(model.param.expWeights.getStateVector(n, y), 
 						instance.forwardBackwardList.get(n).posterior[t]);
+				MathUtils.check(prod);
 				if(prod == 0) {
 					throw new RuntimeException("Underflow");
 				}			

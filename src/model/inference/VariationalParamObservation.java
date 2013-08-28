@@ -35,7 +35,7 @@ public class VariationalParamObservation {
 				}
 				//normalize
 				for(int k=0; k<K; k++) {
-					shi[m][t][k] = Math.log(shi[m][t][k]/sum);
+					shi[m][t][k] = shi[m][t][k] - Math.log(sum);
 				}
 			}
 		}

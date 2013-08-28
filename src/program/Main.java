@@ -20,7 +20,7 @@ import corpus.InstanceList;
 public class Main {
 	public static Random random = new Random();
 
-	public final static int USE_THREAD_COUNT = 4;
+	public final static int USE_THREAD_COUNT = 8;
 
 	/** user parameters **/
 	static String delimiter = "\\+";
@@ -35,13 +35,13 @@ public class Main {
 	static String outFolderPrefix;
 	static HMMBase model;
 	static Corpus corpus;
-	public static int sampleSizeEStep = 2000;
-	public static int sampleSizeMStep = 2000;
+	public static int sampleSizeEStep = 250;
+	public static int sampleSizeMStep = 250;
 
 	static int oneTimeStepObsSize; // number of elements in observation e.g.
 									// word|hmm1|hmm2 has 3
 
-	static int vocabThreshold = 2; // only above this included*******
+	static int vocabThreshold = 1; // only above this included*******
 	public static int nrLayers = 6;
 	public static int numStates = 10;
 
@@ -71,11 +71,13 @@ public class Main {
 		String outFileTrain = trainFileBase + ".decoded";
 		String outFileTest = testFileBase + ".decoded";
 		String outFileDev = devFileBase + ".decoded";
+		
 		corpus = new Corpus("\\s+", vocabThreshold);
 		Corpus.oneTimeStepObsSize = Corpus.findOneTimeStepObsSize(vocabFile);
 		// TRAIN
 		corpus.readVocab(vocabFile);
 		corpus.corpusVocab.get(0).writeDictionary("out/model/vocab.txt");
+		
 		if(InstanceList.VOCAB_UPDATE_COUNT <= 0) {
 			InstanceList.VOCAB_UPDATE_COUNT = Corpus.corpusVocab.get(0).vocabSize;
 		}
@@ -86,26 +88,26 @@ public class Main {
 		model = new HMMNoFinalStateLog(nrLayers, numStates, corpus);
 		corpus.model = model;
 		Random random = new Random(seed);
+		
+		//random init
+		
 		model.initializeRandom(random);
 		//model.param.weights.initializeZeros();
 		//model.param.weights.initializeUniform(0.01);
 		model.initializeZerosToBest();
+		
 		printParams();
-		//find most frequent conditionals
-		//Corpus.cacheFrequentConditionals();
+		
+		
+		//model loading for continuing the training
+		//model.loadModel();
+		
 		EM em = new EM(numIter, corpus, model);
 		em.start();
 		
 		model.saveModel();
 		
-		/*
-		//model loading
-		Corpus corpusNew = new Corpus(delimiter, 1);
-		HMMBase modelLoaded = new HMMNoFinalStateLog(nrLayers, numStates, corpusNew);
-		modelLoaded.loadModel();
-		System.out.println("Saved and loaded model equal exactly? " + model.param.equalsExact(modelLoaded.param));
-		System.out.println("Saved and loaded model equal approx? " + model.param.equalsApprox(modelLoaded.param));
-		*/
+		
 		
 		/*
 		if(corpus.testInstanceList != null) {

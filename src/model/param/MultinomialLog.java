@@ -33,7 +33,7 @@ public class MultinomialLog extends MultinomialBase{
 	@Override
 	public void smooth() {
 		//hyperparameter
-		double small = 100;
+		double small = 1;
 		for(int i=0; i<y; i++) {
 			for(int j=0; j<x; j++) {
 				if(count[j][i] == 0) {

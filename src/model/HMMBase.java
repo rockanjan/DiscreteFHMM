@@ -49,11 +49,18 @@ public abstract class HMMBase {
 
 	public void updateFromCounts(HMMParamBase counts) {
 		counts.normalize();
-		// don't try to update the initial and transition for the previously
-		// learnt layers (z1, z2...)
-		// update only for the current hidden layer x
-		param.initial.get(0).cloneFrom(counts.initial.get(0));
-		param.transition.get(0).cloneFrom(counts.transition.get(0));
+		for(int m=0; m<nrLayers; m++) {
+			param.initial.get(m).cloneFrom(counts.initial.get(m));
+			param.transition.get(m).cloneFrom(counts.transition.get(m));
+		}
+	}
+	
+	public void updateFromCountsWeighted(HMMParamBase counts, double weight) {
+		counts.normalize();
+		for(int m=0; m<nrLayers; m++) {
+			param.initial.get(m).cloneWeightedFrom(counts.initial.get(m), weight);
+			param.transition.get(m).cloneWeightedFrom(counts.transition.get(m), weight);
+		}
 	}
 
 	public String saveModel() {

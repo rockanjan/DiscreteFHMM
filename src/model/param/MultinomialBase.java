@@ -45,6 +45,14 @@ public abstract class MultinomialBase {
 		}
 	}
 	
+	public void cloneWeightedFrom(MultinomialBase source, double weight) {
+		for(int i=0; i<y; i++) {
+			for(int j=0; j<x; j++) {
+				count[j][i] = (1-weight) * count[j][i] + weight * source.count[j][i];
+			}
+		}
+	}
+	
 	public boolean equalsExact(MultinomialBase other) {
 		boolean result = true;
 		for(int i=0; i<y; i++) {

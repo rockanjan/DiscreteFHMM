@@ -37,7 +37,10 @@ public class EM {
 	int lowerCount = 0; // number of times LL could not increase from previous
 						// best
 	int iterCount = 0;
-	int mStepIter = 10; //initial
+	int mStepIter = 50; //initial
+	
+	double alpha = 0.8; //hyperparam ( 0.5 < alpha <= 1)
+	double adaptiveWeight;
 	
 	public EM(int numIter, Corpus c, HMMBase model) {
 		this.numIter = numIter;
@@ -59,6 +62,13 @@ public class EM {
 	}
 
 	public void mStep() {
+		//adaptiveWeight based on : Online EM paper (Liang and Klein)
+		adaptiveWeight = Math.pow((1.0 * iterCount + 2.0), -alpha);
+		if(adaptiveWeight < 0.0 || adaptiveWeight > 1) {
+			System.err.println("Adaptive weight not in [0.0, 1], found " + adaptiveWeight);
+			System.exit(-1);
+		}
+		
 		System.out.println("Mstep #tokens : " + c.trainInstanceMStepSampleList.numberOfTokens);
 		Corpus.cacheFrequentConditionals();
 		trainLBFGS();
@@ -76,7 +86,7 @@ public class EM {
 		Optimizer optimizer = new LimitedMemoryBFGS(optimizable);
 		boolean converged = false;
 		try {
-			converged = optimizer.optimize();
+			converged = optimizer.optimize(mStepIter);
 		} catch (IllegalArgumentException e) {
 			System.out.println("optimization threw exception: IllegalArgument");
 		} catch (OptimizationException oe) {
@@ -85,12 +95,9 @@ public class EM {
 		System.out.println("Converged = " + converged);
 		System.out.println("Gradient call count: " + optimizable.gradientCallCount);
 		//model.param.weights.weights = optimizable.getParameterMatrix();
-		
-		double adaptiveWeight = 25.0 / (25.0 + iterCount);
-		model.param.weights.weights = MathUtils.weightedAverageMatrix(optimizable.getParameterMatrix(), 
-				model.param.weights.weights, adaptiveWeight);
-		
-		
+		model.param.weights.weights = MathUtils.weightedAverageMatrix(model.param.weights.weights, 
+				optimizable.getParameterMatrix(), 
+				adaptiveWeight);
 	}
 
 	public void start() {
@@ -105,7 +112,6 @@ public class EM {
 			LL = 0;
 			// e-step
 			eStepTime.start();
-			Stats.totalFixes = 0;
 			eStep();
 			System.out.println("E-step time: " + eStepTime.stop());
 			double diff = LL - bestOldLL;
@@ -119,12 +125,12 @@ public class EM {
 			// m-step
 			c.generateRandomTrainingMStepSample(Main.sampleSizeMStep);
 			mStep();
+			Stats.totalFixes = 0;
 			if(iterCount % 5 == 0 && c.devInstanceList != null) {
 				System.out.println("Dev LL : " + c.devInstanceList.getLL(model));
 			}
-			if(iterCount > 0 && iterCount % 10 == 0) {
-				model.saveModel(iterCount);
-			}
+			model.saveModel(iterCount); //save every iteration
+			
 		}
 		System.out.println("Total EM Time : " + totalEMTime.stop());
 	}

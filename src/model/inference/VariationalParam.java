@@ -32,10 +32,11 @@ public class VariationalParam {
 		this.instance = instance;
 		
 		varParamObs = new VariationalParamObservation(M, T, K);
-		varParamObs.initializeRandom();
+		//varParamObs.initializeRandom();
+		varParamObs.initializeFromObsParam(model.param, instance);
 		alpha = new VariationalParamAlpha(T);
-		alpha.initializeRandom();		
-		//alpha.initializeUniform(1.0);
+		//alpha.initializeRandom();		
+		alpha.initializeUniform(1.0);
 	}
 	
 	public void optimize() {

@@ -35,15 +35,15 @@ public class Main {
 	static String outFolderPrefix;
 	static HMMBase model;
 	static Corpus corpus;
-	public static int sampleSizeEStep = 250;
-	public static int sampleSizeMStep = 250;
+	public static int sampleSizeEStep = 2500;
+	public static int sampleSizeMStep = 2500;
 
 	static int oneTimeStepObsSize; // number of elements in observation e.g.
 									// word|hmm1|hmm2 has 3
 
 	static int vocabThreshold = 1; // only above this included*******
-	public static int nrLayers = 6;
-	public static int numStates = 10;
+	public static int nrLayers = 20;
+	public static int numStates = 2;
 
 	/** user parameters end **/
 	public static void main(String[] args) throws IOException {

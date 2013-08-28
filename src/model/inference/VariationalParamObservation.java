@@ -2,7 +2,10 @@ package model.inference;
 
 import java.util.Random;
 
+import model.param.HMMParamBase;
+
 import corpus.Corpus;
+import corpus.Instance;
 
 import program.Main;
 
@@ -20,6 +23,22 @@ public class VariationalParamObservation {
 		this.T = T;
 		this.K = K;
 		shi = new double[M][T][K];
+	}
+	
+	public void initializeFromObsParam(HMMParamBase param, Instance instance) {
+		for(int m=0; m<M; m++) {
+			for(int t=0; t<T; t++) {
+				double sum = 0;
+				for(int k=0; k<K; k++) {
+					shi[m][t][k] = param.weights.get(m, k, instance.words[t][0]);
+					sum += param.expWeights.get(m, k, instance.words[t][0]); //cached exponentiated result
+				}
+				//normalize
+				for(int k=0; k<K; k++) {
+					shi[m][t][k] = Math.log(shi[m][t][k]/sum);
+				}
+			}
+		}
 	}
 	
 	public void initializeRandom() {

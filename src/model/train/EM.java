@@ -37,7 +37,7 @@ public class EM {
 	int lowerCount = 0; // number of times LL could not increase from previous
 						// best
 	int iterCount = 0;
-	int mStepIter = 50; //initial
+	int mStepIter = 20; //initial
 	
 	double alpha = 0.8; //hyperparam ( 0.5 < alpha <= 1)
 	double adaptiveWeight;

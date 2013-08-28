@@ -108,7 +108,7 @@ public class InstanceList extends ArrayList<Instance> {
 	
 	public void doVariationalInference(HMMBase model) {
 		//optimize variational parameters
-		for(int iter=0; iter < 5; iter++) {
+		for(int iter=0; iter < 3; iter++) {
 //			shiL1NormAll = 0;
 //			alphaL1NormAll = 0;
 			expectationL1NormAll = 0;

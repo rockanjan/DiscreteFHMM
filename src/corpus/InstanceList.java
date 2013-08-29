@@ -8,6 +8,8 @@ import java.util.PriorityQueue;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 
+import config.Config;
+
 import model.HMMBase;
 import model.inference.VariationalParam;
 import model.inference.VariationalParamObservation;
@@ -37,7 +39,6 @@ public class InstanceList extends ArrayList<Instance> {
 	
 	private static final long serialVersionUID = -2409272084529539276L;
 	public int numberOfTokens;	
-	public static int VOCAB_UPDATE_COUNT = 1000;
 	
 	public InstanceList() {
 		super();		
@@ -117,11 +118,11 @@ public class InstanceList extends ArrayList<Instance> {
 			varIterTime.start();
 			
 			//start parallel processing
-			int divideSize = this.size() / Main.USE_THREAD_COUNT;
+			int divideSize = this.size() / Config.USE_THREAD_COUNT;
 			List<VariationalWorker> threadList = new ArrayList<VariationalWorker>();
 			int startIndex = 0;
 			int endIndex = divideSize;		
-			for(int i=0; i<Main.USE_THREAD_COUNT; i++) {
+			for(int i=0; i<Config.USE_THREAD_COUNT; i++) {
 				VariationalWorker worker = new VariationalWorker(this, startIndex, endIndex, model);
 				threadList.add(worker);
 				worker.start();
@@ -256,11 +257,11 @@ public class InstanceList extends ArrayList<Instance> {
 		double[][] expWeights = MathUtils.expArray(parameterMatrix);
 		
 		//start parallel processing
-		int divideSize = this.size() / Main.USE_THREAD_COUNT;
+		int divideSize = this.size() / Config.USE_THREAD_COUNT;
 		List<CllWorker> threadList = new ArrayList<CllWorker>();
 		int startIndex = 0;
 		int endIndex = divideSize;		
-		for(int i=0; i<Main.USE_THREAD_COUNT; i++) {
+		for(int i=0; i<Config.USE_THREAD_COUNT; i++) {
 			CllWorker worker = new CllWorker(this, startIndex, endIndex, expWeights);
 			threadList.add(worker);
 			worker.start();
@@ -366,42 +367,41 @@ public class InstanceList extends ArrayList<Instance> {
 				//create partition
 				timing2.start();
 				
-				if(VOCAB_UPDATE_COUNT == Corpus.corpusVocab.get(0).vocabSize) { //exact
-					//positive
-					for(int j=0; j<expParam[0].length; j++) {
-						if(conditionalVector[j] != 0) {
-							gradient[instance.words[t][0]][j] += 1; 
-						}
+				//positive
+				for(int j=0; j<expParam[0].length; j++) {
+					if(conditionalVector[j] != 0) {
+						gradient[instance.words[t][0]][j] += 1; 
 					}
-					if(featureNumeratorCache.containsKey(conditionalString)) {
-						VocabNumeratorArray vna = featureNumeratorCache.get(conditionalString);
-						if(! vna.processed) {
-							for(int j=0; j<expParam[0].length; j++) {
-								if(conditionalVector[j] != 0) {
-									for(int v=0; v<expParam.length; v++) {
-										gradient[v][j] -= vna.count * vna.array[v]/ vna.normalizer;
-									}
-								}
-							}
-							vna.processed = true;
-						}							
-					} else {
-	                    double normalizer = 0.0;
-						final double[] numeratorCache = new double[expParam.length];
-						for (int v = 0; v < expParam.length; v++) {
-							double numerator = MathUtils.expDot(expParam[v], conditionalVector);
-							numeratorCache[v] = numerator;
-							normalizer += numerator;						
-						}
+				}
+				if(featureNumeratorCache.containsKey(conditionalString)) {
+					VocabNumeratorArray vna = featureNumeratorCache.get(conditionalString);
+					if(! vna.processed) {
 						for(int j=0; j<expParam[0].length; j++) {
 							if(conditionalVector[j] != 0) {
 								for(int v=0; v<expParam.length; v++) {
-									gradient[v][j] -= numeratorCache[v] / normalizer;
+									gradient[v][j] -= vna.count * vna.array[v]/ vna.normalizer;
 								}
 							}
-						}				
+						}
+						vna.processed = true;
+					}							
+				} else {
+                    double normalizer = 0.0;
+					final double[] numeratorCache = new double[expParam.length];
+					for (int v = 0; v < expParam.length; v++) {
+						double numerator = MathUtils.expDot(expParam[v], conditionalVector);
+						numeratorCache[v] = numerator;
+						normalizer += numerator;						
 					}
-				}	
+					for(int j=0; j<expParam[0].length; j++) {
+						if(conditionalVector[j] != 0) {
+							for(int v=0; v<expParam.length; v++) {
+								gradient[v][j] -= numeratorCache[v] / normalizer;
+							}
+						}
+					}				
+				}
+					
 			}
 		}		
 		System.out.println("Total conditional time : " + totalConditionalTime);
@@ -430,23 +430,7 @@ public class InstanceList extends ArrayList<Instance> {
 			//PriorityQueue<VocabItemProbability> topProbs = new PriorityQueue<VocabItemProbability>(VOCAB_UPDATE_COUNT, comparator);
 			//fill the arrays
 			for(int v=0; v<vocabSize; v++) {
-				double numerator = MathUtils.expDot(expWeights[v], conditionalVector);
-				/*
-				if(topProbs.size() < VOCAB_UPDATE_COUNT) {
-					//just insert
-					VocabItemProbability item = new VocabItemProbability(v, numerator);
-					topProbs.add(item);
-				} else {
-					//find the min among the current max
-					VocabItemProbability currentMinItem = topProbs.peek();
-					if(numerator > currentMinItem.prob) {
-						//remove the current min
-						topProbs.poll();
-						//insert the new one
-						topProbs.add(new VocabItemProbability(v, numerator));
-					}
-				}
-				*/
+				double numerator = MathUtils.expDot(expWeights[v], conditionalVector);				
 				conditionalVocabArrays.array[v] = numerator;
 				partition += numerator;
 			}
@@ -460,11 +444,11 @@ public class InstanceList extends ArrayList<Instance> {
 		gradient = new double[parameterMatrix.length][parameterMatrix[0].length];
 		
 		//start parallel processing
-		int divideSize = this.size() / Main.USE_THREAD_COUNT;
+		int divideSize = this.size() / Config.USE_THREAD_COUNT;
 		List<GradientWorker> threadList = new ArrayList<GradientWorker>();
 		int startIndex = 0;
 		int endIndex = divideSize;		
-		for(int i=0; i<Main.USE_THREAD_COUNT; i++) {
+		for(int i=0; i<Config.USE_THREAD_COUNT; i++) {
 			GradientWorker worker = new GradientWorker(this, startIndex, endIndex, expWeights);
 			threadList.add(worker);
 			worker.start();
@@ -520,85 +504,42 @@ public class InstanceList extends ArrayList<Instance> {
 					double[] conditionalVector = instance.getConditionalVector(t);
 					String conditionalString = instance.getConditionalString(t);
 					//create partition
-					if(VOCAB_UPDATE_COUNT == Corpus.corpusVocab.get(0).vocabSize) { //exact
-						//positive
-						for(int j=0; j<expWeights[0].length; j++) {
-							if(conditionalVector[j] != 0) {
-								gradient[instance.words[t][0]][j] += 1; 
-							}
+					//positive
+					for(int j=0; j<expWeights[0].length; j++) {
+						if(conditionalVector[j] != 0) {
+							gradient[instance.words[t][0]][j] += 1; 
 						}
-						
-						if(featureNumeratorCache.containsKey(conditionalString)) {
-							VocabNumeratorArray vna = featureNumeratorCache.get(conditionalString);
-							if(! vna.processed) {
-								for(int j=0; j<expWeights[0].length; j++) {
-									if(conditionalVector[j] != 0) {
-										for(int v=0; v<expWeights.length; v++) {
-											gradient[v][j] -= vna.count * vna.array[v]/ vna.normalizer;
-										}
-									}
-								}
-								vna.processed = true;
-							}							
-						} else {
-		                    double normalizer = 0.0;
-							final double[] numeratorCache = new double[expWeights.length];
-							for (int v = 0; v < expWeights.length; v++) {
-								double numerator = MathUtils.expDot(expWeights[v], conditionalVector);
-								numeratorCache[v] = numerator;
-								normalizer += numerator;						
-							}
+					}
+					
+					if(featureNumeratorCache.containsKey(conditionalString)) {
+						VocabNumeratorArray vna = featureNumeratorCache.get(conditionalString);
+						if(! vna.processed) {
 							for(int j=0; j<expWeights[0].length; j++) {
 								if(conditionalVector[j] != 0) {
 									for(int v=0; v<expWeights.length; v++) {
-										gradient[v][j] -= numeratorCache[v] / normalizer;
+										gradient[v][j] -= vna.count * vna.array[v]/ vna.normalizer;
 									}
 								}
-							}				
-						}
+							}
+							vna.processed = true;
+						}							
 					} else {
-						if(featureNumeratorCache.containsKey(conditionalString)) {
-							for(int j=0; j<expWeights[0].length; j++) {
-								if(conditionalVector[j] != 0) {
-									gradient[instance.words[t][0]][j] += 1;
-									VocabNumeratorArray vna = featureNumeratorCache.get(conditionalString);
-									for(VocabItemProbability item : vna.topProbs) {
-										gradient[item.index][j] -= item.prob / vna.normalizer;
-									}
-								}
-							}
-						} else {
-							double normalizer = 0.0;
-							PriorityQueue<VocabItemProbability> topProbs = new PriorityQueue<VocabItemProbability>(VOCAB_UPDATE_COUNT, comparator);
-							for (int v = 0; v < expWeights.length; v++) {
-								double numerator;
-								numerator = MathUtils.expDot(expWeights[v], conditionalVector);
-								if(topProbs.size() < VOCAB_UPDATE_COUNT) {
-									//just insert
-									VocabItemProbability item = new VocabItemProbability(v, numerator);
-									topProbs.add(item);
-								} else {
-									//find the min among the current max
-									VocabItemProbability currentMinItem = topProbs.peek();
-									if(numerator > currentMinItem.prob) {
-										//remove the current min
-										topProbs.poll();
-										//insert the new one
-										topProbs.add(new VocabItemProbability(v, numerator));
-									}
-								}									
-								normalizer += numerator;
-							}
-							for(int j=0; j<expWeights[0].length; j++) {
-								if(conditionalVector[j] != 0) {
-									gradient[instance.words[t][0]][j] += 1;
-									for(VocabItemProbability item : topProbs) {
-										gradient[item.index][j] -= item.prob / normalizer;
-									}
-								}
-							}
+	                    double normalizer = 0.0;
+						final double[] numeratorCache = new double[expWeights.length];
+						for (int v = 0; v < expWeights.length; v++) {
+							double numerator = MathUtils.expDot(expWeights[v], conditionalVector);
+							numeratorCache[v] = numerator;
+							normalizer += numerator;						
 						}
+						for(int j=0; j<expWeights[0].length; j++) {
+							if(conditionalVector[j] != 0) {
+								for(int v=0; v<expWeights.length; v++) {
+									gradient[v][j] -= numeratorCache[v] / normalizer;
+								}
+							}
+						}				
 					}
+					
 				}
 			}
 		}		

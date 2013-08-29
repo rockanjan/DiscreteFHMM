@@ -7,12 +7,14 @@ import java.util.Random;
 
 import javax.management.RuntimeErrorException;
 
+import config.Config;
+
 import program.Main;
 
 import util.MyArray;
 
 public class DiscreteSampler {
-	Random random = new Random(Main.seed);
+	
 	List<Double> distribution;
 	
 	int[] alias; //stores the alias (other index whose mass is stacked at this position)
@@ -94,8 +96,8 @@ public class DiscreteSampler {
 	
 	//returns int between [0,N-1]
 	public int sample() {
-		int n = random.nextInt(N);
-		double p = random.nextDouble();
+		int n = Config.random.nextInt(N);
+		double p = Config.random.nextDouble();
 		if(p > prob[n]) {
 			return alias[n];
 		} else {

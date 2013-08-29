@@ -3,6 +3,8 @@ package corpus;
 import java.util.ArrayList;
 import java.util.List;
 
+import config.Config;
+
 import program.Main;
 import model.HMMBase;
 import model.HMMType;
@@ -24,7 +26,7 @@ public class Instance {
 	public List<ForwardBackward> forwardBackwardList;
 
 	// TODO: might change if we consider finalState hmm
-	public static int nrStates = Main.numStates;
+	public static int nrStates = Config.numStates;
 	public int unknownCount;
 	public HMMBase model;
 
@@ -165,9 +167,9 @@ public class Instance {
 
 	public String getConditionalString(int t) {
 		StringBuffer sb = new StringBuffer();
-		for (int l = 0; l < Main.nrLayers; l++) {
+		for (int l = 0; l < Config.nrLayers; l++) {
 			sb.append(decodedStates[l][t]);
-			if (l != Main.nrLayers - 1) {
+			if (l != Config.nrLayers - 1) {
 				sb.append("+");
 			}
 		}

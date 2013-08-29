@@ -15,16 +15,16 @@ import java.util.PriorityQueue;
 import java.util.Random;
 import java.util.TreeSet;
 
+import config.Config;
+
 import model.HMMBase;
 
 import program.Main;
-import util.MyArray;
 import util.SmoothWord;
 
 public class Corpus {
 	public static String delimiter = "\\s+";
 	public static String obsDelimiter = "\\|"; //separator of multiple observation elements at one timestep
-	public static int oneTimeStepObsSize = -1;
 	public static InstanceList trainInstanceList;
 	// testInstanceList can be empty
 	public static InstanceList testInstanceList;
@@ -41,14 +41,14 @@ public class Corpus {
 	int vocabThreshold;
 	
 	public int totalWords; 
-	
-	static Random random = new Random(Main.seed);
-	
+		
 	public List<Double> unigramProbability;
 	static DiscreteSampler vocabSampler;
 	public static int VOCAB_SAMPLE_SIZE = 0;
 	
 	public HMMBase model;
+	
+	public static int oneTimeStepObsSize = 1; //default is a single word
 
 	public Corpus(String delimiter, int vocabThreshold) {
 		this.delimiter = delimiter;
@@ -260,7 +260,7 @@ public class Corpus {
 		// will add one more to each of the vocabs' frequency
 		// have to modify this if the number of states change in each hierarchy
 		for(int z=1; z<oneTimeStepObsSize; z++) {
-			for(int i=0; i<Main.numStates; i++) {
+			for(int i=0; i<Config.numStates; i++) {
 				corpusVocab.get(z).addItem("" + i);
 			}
 		}
@@ -356,7 +356,7 @@ public class Corpus {
 			for(int i=0; i<trainInstanceList.size(); i++) {
 				randomInts.add(i);
 			}
-			Collections.shuffle(randomInts,random);
+			Collections.shuffle(randomInts,Config.random);
 			for(int i=0; i<size; i++) {
 				Instance instance = trainInstanceList.get(randomInts.get(i));
 				trainInstanceEStepSampleList.add(instance);
@@ -378,7 +378,7 @@ public class Corpus {
 			for(int i=0; i<trainInstanceEStepSampleList.size(); i++) {
 				randomInts.add(i);
 			}
-			Collections.shuffle(randomInts,random);
+			Collections.shuffle(randomInts,Config.random);
 			for(int i=0; i<size; i++) {
 				Instance instance = trainInstanceEStepSampleList.get(randomInts.get(i));
 				trainInstanceMStepSampleList.add(instance);
@@ -386,27 +386,6 @@ public class Corpus {
 			}			
 		}
 	}
-	/*
-	public InstanceList getRandomSampleFromMStep(int size) {
-		InstanceList list = new InstanceList();
-		if(trainInstanceMStepSampleList.size() <= size) {
-			list.addAll(trainInstanceMStepSampleList);
-			list.numberOfTokens = trainInstanceMStepSampleList.numberOfTokens;
-		} else {
-			ArrayList<Integer> randomInts = new ArrayList<Integer>();			
-			for(int i=0; i<trainInstanceMStepSampleList.size(); i++) {
-				randomInts.add(i);
-			}
-			Collections.shuffle(randomInts,random);
-			for(int i=0; i<size; i++) {
-				Instance instance = trainInstanceMStepSampleList.get(randomInts.get(i));
-				list.add(instance);
-				list.numberOfTokens += instance.T;
-			}			
-		}
-		return list;
-	}	
-	*/
 	
 	public static int findOneTimeStepObsSize(String filename) {
 		int result = -1;

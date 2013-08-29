@@ -1,5 +1,6 @@
 package model.train;
 
+import config.Config;
 import program.Main;
 import cc.mallet.optimize.LimitedMemoryBFGS;
 import cc.mallet.optimize.OptimizationException;
@@ -11,35 +12,24 @@ import model.param.HMMParamFinalState;
 import model.param.HMMParamNoFinalState;
 import model.param.HMMParamNoFinalStateLog;
 
-import util.MathUtils;
 import util.MyArray;
 import util.Stats;
 import util.Timing;
 import corpus.Corpus;
-import corpus.Instance;
 
 public class EM {
-
 	int numIter;
 	Corpus c;
 	HMMBase model;
 
 	double bestOldLL = -Double.MAX_VALUE;
 	double LL = 0;
-
-	// convergence criteria
-	double precision = 1e-4;
-	int maxConsecutiveDecreaseLimit = 5;
-	int maxConsecutiveConvergeLimit = 3;
 	HMMParamBase expectedCounts;
 
 	int convergeCount = 0;
 	int lowerCount = 0; // number of times LL could not increase from previous
 						// best
 	int iterCount = 0;
-	int mStepIter = 20; //initial
-	
-	double alpha = 0.8; //hyperparam ( 0.5 < alpha <= 1)
 	double adaptiveWeight;
 	
 	public EM(int numIter, Corpus c, HMMBase model) {
@@ -63,7 +53,7 @@ public class EM {
 
 	public void mStep() {
 		//adaptiveWeight based on : Online EM paper (Liang and Klein)
-		adaptiveWeight = Math.pow((1.0 * iterCount + 2.0), -alpha);
+		adaptiveWeight = Math.pow((1.0 * iterCount + 2.0), - Config.alpha);
 		if(adaptiveWeight < 0.0 || adaptiveWeight > 1) {
 			System.err.println("Adaptive weight not in [0.0, 1], found " + adaptiveWeight);
 			System.exit(-1);
@@ -76,8 +66,8 @@ public class EM {
 		//trainAveragedPerceptronViterbi();
 		//trainSgd();
 		Corpus.clearFrequentConditionals();
-		//model.updateFromCounts(expectedCounts);
-		model.updateFromCountsWeighted(expectedCounts, adaptiveWeight);
+		model.updateFromCounts(expectedCounts);
+		//model.updateFromCountsWeighted(expectedCounts, adaptiveWeight);
 	}
 	
 	public void trainLBFGS() {
@@ -87,7 +77,7 @@ public class EM {
 		Optimizer optimizer = new LimitedMemoryBFGS(optimizable);
 		boolean converged = false;
 		try {
-			converged = optimizer.optimize(mStepIter);
+			converged = optimizer.optimize(Config.mStepIter);
 		} catch (IllegalArgumentException e) {
 			System.out.println("optimization threw exception: IllegalArgument");
 		} catch (OptimizationException oe) {
@@ -95,10 +85,12 @@ public class EM {
 		}
 		System.out.println("Converged = " + converged);
 		System.out.println("Gradient call count: " + optimizable.gradientCallCount);
-		//model.param.weights.weights = optimizable.getParameterMatrix();
+		model.param.weights.weights = optimizable.getParameterMatrix();
+		/*
 		model.param.weights.weights = MathUtils.weightedAverageMatrix(model.param.weights.weights, 
 				optimizable.getParameterMatrix(), 
 				adaptiveWeight);
+		*/
 	}
 
 	public void start() {
@@ -109,7 +101,7 @@ public class EM {
 		Timing oneIterEmTime = new Timing();
 		for (iterCount = 0; iterCount < numIter; iterCount++) {
 			//sample new train instances
-			c.generateRandomTrainingEStepSample(Main.sampleSizeEStep);
+			c.generateRandomTrainingEStepSample(Config.sampleSizeEStep);
 			LL = 0;
 			// e-step
 			eStepTime.start();
@@ -124,14 +116,13 @@ public class EM {
 			}
 			oneIterEmTime.start();
 			// m-step
-			c.generateRandomTrainingMStepSample(Main.sampleSizeMStep);
+			c.generateRandomTrainingMStepSample(Config.sampleSizeMStep);
 			mStep();
 			Stats.totalFixes = 0;
 			if(iterCount % 5 == 0 && c.devInstanceList != null) {
 				System.out.println("Dev LL : " + c.devInstanceList.getLL(model));
 			}
 			model.saveModel(iterCount); //save every iteration
-			
 		}
 		System.out.println("Total EM Time : " + totalEMTime.stop());
 	}
@@ -139,9 +130,9 @@ public class EM {
 	public boolean isConverged() {
 		double decreaseRatio = (LL - bestOldLL) / Math.abs(bestOldLL);
 		// System.out.println("Decrease Ratio: %.5f " + decreaseRatio);
-		if (precision > decreaseRatio && decreaseRatio > 0) {
+		if (Config.precision > decreaseRatio && decreaseRatio > 0) {
 			convergeCount++;
-			if(convergeCount > maxConsecutiveConvergeLimit) {
+			if(convergeCount > Config.maxConsecutiveConvergeLimit) {
 				System.out.println("Converged. Saving the final model");
 				//TODO: save model
 				//model.saveModel(Main.currentRecursion);
@@ -150,11 +141,6 @@ public class EM {
 		}
 		convergeCount = 0;
 		if (LL < bestOldLL) {
-			/*
-			if(Main.sampleSizeMStep < 25000) {
-				Main.sampleSizeMStep += 1000;
-			}
-			*/
 			if (lowerCount == 0) {
 				// cache the best model so far
 				System.out.println("Caching the best model so far");
@@ -163,8 +149,9 @@ public class EM {
 				}				
 			}
 			lowerCount++;
-			if (lowerCount == maxConsecutiveDecreaseLimit) {
-				System.out.format("Saying Converged: LL could not increase for %d consecutive iterations\n",maxConsecutiveDecreaseLimit);
+			if (lowerCount == Config.maxConsecutiveDecreaseLimit) {
+				System.out.format("Saying Converged: LL could not increase for %d consecutive iterations\n",
+						Config.maxConsecutiveDecreaseLimit);
 				if (model.bestParam != null) {
 					model.param.cloneFrom(model.bestParam);
 				}

@@ -2,6 +2,8 @@ package model.inference;
 
 import java.util.Random;
 
+import config.Config;
+
 import model.param.HMMParamBase;
 
 import corpus.Corpus;
@@ -42,14 +44,12 @@ public class VariationalParamObservation {
 	}
 	
 	public void initializeRandom() {
-		Random r = new Random(Main.seed);
-		//Random r = Main.random;
 		double small = 1e-100;
 		for(int m=0; m<M; m++) {
 			for(int t=0; t<T; t++) {
 				double sum = 0;
 				for(int k=0; k<K; k++) {
-					shi[m][t][k] = r.nextDouble() + small;
+					shi[m][t][k] = Config.random.nextDouble() + small;
 					sum += shi[m][t][k];
 				}
 				//normalize

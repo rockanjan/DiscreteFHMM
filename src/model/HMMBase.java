@@ -9,6 +9,8 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Random;
 
+import config.Config;
+
 import corpus.Corpus;
 import corpus.Vocabulary;
 
@@ -29,8 +31,7 @@ public abstract class HMMBase {
 	public HMMParamBase bestParam; // best found so far
 
 	public HMMType hmmType;
-	public String baseDir = "out/model/";
-
+	
 	public abstract void initializeRandom(Random r);
 
 	public abstract void initializeZeros();
@@ -73,7 +74,7 @@ public abstract class HMMBase {
 	 * return the location saved
 	 */
 	public String saveModel(int iterCount) {
-		File folder = new File(baseDir);
+		File folder = new File(Config.baseDirModel);
 		if (!folder.exists()) {
 			folder.mkdir();
 		}
@@ -140,11 +141,13 @@ public abstract class HMMBase {
 		return folder.getAbsolutePath();
 	}
 
-	public void loadModel() {
+	public void loadModel(String filename) {
 		//load vocab file
-		File folder = new File(baseDir);
-		String modelFile = folder.getAbsolutePath() + 
-				"/variational_model_layers_" + nrLayers +  "_states_" + nrStates + "_final.txt";
+		File folder = new File(Config.baseDirModel);
+		if(filename == null || filename.equals("")) {
+			filename = "variational_model_layers_" + nrLayers +  "_states_" + nrStates + "_final.txt";
+		}
+		String modelFile = folder.getAbsolutePath() + "/" + filename;
 		if(Corpus.corpusVocab == null) {
 			Corpus.corpusVocab = new ArrayList<Vocabulary>();
 		}

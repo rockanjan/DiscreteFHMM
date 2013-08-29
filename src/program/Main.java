@@ -1,127 +1,60 @@
 package program;
 
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Date;
-import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
+
+import config.Config;
 
 import util.MathUtils;
 import util.Timing;
 import model.HMMBase;
 import model.HMMNoFinalStateLog;
-import model.inference.Decoder;
 import model.train.EM;
 import corpus.Corpus;
 import corpus.Instance;
 import corpus.InstanceList;
 
 public class Main {
-	public static Random random = new Random();
-
-	public final static int USE_THREAD_COUNT = 8;
-
-	/** user parameters **/
-	static String delimiter = "\\+";
-	static int numIter;
-	public static long seed = 4321;
-
-	static String trainFile;
-	static String vocabFile;
-	static String testFile;
-	static String devFile;
-	
-	static String outFolderPrefix;
 	static HMMBase model;
 	static Corpus corpus;
-	public static int sampleSizeEStep = 2500;
-	public static int sampleSizeMStep = 2500;
-
-	static int oneTimeStepObsSize; // number of elements in observation e.g.
-									// word|hmm1|hmm2 has 3
-
-	static int vocabThreshold = 1; // only above this included*******
-	public static int nrLayers = 20;
-	public static int numStates = 2;
-
-	/** user parameters end **/
 	public static void main(String[] args) throws IOException {
-		train();
-		// String testFilenameBase = "out/decoded/test.txt.SPL";
-		// decodeFromPlainText(testFilenameBase, recursionSize);
+		corpus = new Corpus("\\s+", Config.vocabThreshold);
+		trainNew();		
+		testVariational(model, corpus.trainInstanceList, Config.outFileTrain);		
 	}
 
-	public static void train() throws IOException {
-		InstanceList.VOCAB_UPDATE_COUNT = 0;
-		outFolderPrefix = "out/";
-		numIter = 50;
-		String trainFileBase;
-		String testFileBase;
-		String devFileBase;
-		
-		//trainFileBase = "data/simple_corpus_sorted.txt";
-		trainFileBase = "data/combined.txt.SPL";
-		testFileBase = "data/test.txt.SPL";
-		devFileBase = "data/srl.txt";
-		trainFile = trainFileBase;
-		testFile = testFileBase;
-		devFile = devFileBase;
-		vocabFile = trainFile;
-		String outFileTrain = trainFileBase + ".decoded";
-		String outFileTest = testFileBase + ".decoded";
-		String outFileDev = devFileBase + ".decoded";
-		
-		corpus = new Corpus("\\s+", vocabThreshold);
-		Corpus.oneTimeStepObsSize = Corpus.findOneTimeStepObsSize(vocabFile);
-		// TRAIN
-		corpus.readVocab(vocabFile);
-		corpus.corpusVocab.get(0).writeDictionary("out/model/vocab.txt");
-		
-		if(InstanceList.VOCAB_UPDATE_COUNT <= 0) {
-			InstanceList.VOCAB_UPDATE_COUNT = Corpus.corpusVocab.get(0).vocabSize;
-		}
+	public static void trainNew() throws IOException {
+		corpus.readVocab(Config.vocabFile);
+		Corpus.corpusVocab.get(0).writeDictionary(Config.baseDirModel + "vocab.txt");
 		// corpus.setupSampler();
-		corpus.readTrain(trainFile);
+		corpus.readTrain(Config.baseDirData + Config.trainFile);
 		//corpus.readTest(testFile);
 		//corpus.readDev(devFile);
-		model = new HMMNoFinalStateLog(nrLayers, numStates, corpus);
+		model = new HMMNoFinalStateLog(Config.nrLayers, Config.numStates, corpus);
 		corpus.model = model;
-		Random random = new Random(seed);
-		
-		//random init
-		
-		model.initializeRandom(random);
-		//model.param.weights.initializeZeros();
-		//model.param.weights.initializeUniform(0.01);
+		//random init		
+		model.initializeRandom(Config.random);
 		model.initializeZerosToBest();
-		
-		printParams();
-		
-		
-		//model loading for continuing the training
-		//model.loadModel();
-		
-		EM em = new EM(numIter, corpus, model);
+		Config.printParams();
+		EM em = new EM(Config.numIter, corpus, model);
 		em.start();
-		
 		model.saveModel();
-		
-		
-		
-		/*
-		if(corpus.testInstanceList != null) {
-			System.out.println("LL of Test Data : " + corpus.testInstanceList.getLL(model));
-			test(model, corpus.testInstanceList, outFileTest);
-		}
-		if(corpus.devInstanceList != null) {
-			System.out.println("LL of Dev Data : " + corpus.devInstanceList.getLL(model));
-			test(model, corpus.devInstanceList, outFileDev);
-		}
-		test(model, corpus.trainInstanceList, outFileTrain);
-		*/
-		
-		testVariational(model, corpus.trainInstanceList, outFileTrain);
+	}
+	
+	public void trainContinue(String filename) throws IOException {		
+		corpus = new Corpus("\\s+", Config.vocabThreshold);
+		model = new HMMNoFinalStateLog(Config.nrLayers, Config.numStates, corpus);
+		//load model for continuing training
+		model.loadModel(Config.baseDirModel + filename);
+		corpus.model = model;
+		corpus.readTrain(Config.trainFile);
+		model.initializeZerosToBest();
+		Config.printParams();
+		EM em = new EM(Config.numIter, corpus, model);
+		em.start();
+		model.saveModel();
 	}
 	
 	public static void testVariational(HMMBase model, InstanceList instanceList, String outFile) {
@@ -134,7 +67,7 @@ public class Main {
 		InstanceList.featurePartitionCache = new ConcurrentHashMap<String, Double>();
 		instanceList.doVariationalInference(model); //also decodes
 		try{
-			PrintWriter pw = new PrintWriter(outFile);
+			PrintWriter pw = new PrintWriter(Config.baseDirDecode + outFile);
 			for (int n = 0; n < instanceList.size(); n++) {
 				Instance i = instanceList.get(n);
 				//i.decode();
@@ -162,119 +95,5 @@ public class Main {
 		InstanceList.featurePartitionCache = null;
 		System.out.println("Finished decoding");
 		System.out.println("Total decoding time : " + decodeTiming.stop());
-	}
-	
-	
-	// use exact observation probability (also in forwardBackward) for decoding
-	public static void test(HMMBase model, InstanceList instanceList,
-			String outFile) {
-		System.out.println("Decoding Data");
-		Timing decodeTiming = new Timing();
-		decodeTiming.start();
-		System.out.println("Decoding started on :" + new Date().toString());
-		model.param.expWeightsCache = MathUtils
-				.expArray(model.param.weights.weights);
-		InstanceList.featurePartitionCache = new ConcurrentHashMap<String, Double>();
-		Decoder decoder = new Decoder(model);
-		try {
-			PrintWriter pw = new PrintWriter(new FileWriter(outFile));
-			PrintWriter pwSimple = new PrintWriter(new FileWriter(outFile
-					+ ".simple")); // word and latest hmmstate (no intermediate
-									// hmm states)
-			PrintWriter pwSimpleAll = new PrintWriter(new FileWriter(outFile
-					+ ".simple.all")); // word and intermediate hmm states and
-										// final
-			for (int n = 0; n < instanceList.size(); n++) {
-				Instance instance = instanceList.get(n);
-				int[] decoded = decoder.viterbi(instance);
-				for (int t = 0; t < decoded.length; t++) {
-					String word = instance.getWord(t);
-					int state = decoded[t];
-					pwSimple.println(word + " " + state);
-					pwSimpleAll.print(word + "\t");
-					for (int k = 0; k < corpus.oneTimeStepObsSize; k++) {
-						pw.print(corpus.corpusVocab.get(k).indexToWord
-								.get(instance.words[t][k]));
-						pw.print("|");
-						if (k != 0) {
-							// except the word itself
-							pwSimpleAll
-									.print(corpus.corpusVocab.get(k).indexToWord
-											.get(instance.words[t][k]));
-							pwSimpleAll.print("|");
-						}
-					}
-					pw.print(state);
-					if (t != decoded.length - 1) {
-						pw.print(" ");
-					}
-					pwSimpleAll.print(state);
-					pwSimpleAll.println();
-				}
-				pwSimpleAll.println();
-				pwSimple.println();
-				pw.println();
-			}
-			pwSimple.println();
-			pw.close();
-			pwSimple.close();
-			pwSimpleAll.close();
-		} catch (IOException e) {
-			System.err.format("Could not open file for writing %s\n", outFile);
-			e.printStackTrace();
-		}
-		model.param.expWeightsCache = null;
-		InstanceList.featurePartitionCache = null;
-		System.out.println("Finished decoding");
-		System.out.println("Total decoding time : " + decodeTiming.stop());
-	}
-
-	public static void testPosteriorDistribution(HMMBase model,
-			InstanceList instanceList, String outFile) {
-		System.out.println("Decoding Posterior distribution");
-		Decoder decoder = new Decoder(model);
-		try {
-			PrintWriter pw = new PrintWriter(new FileWriter(outFile));
-			for (int n = 0; n < instanceList.size(); n++) {
-				Instance instance = instanceList.get(n);
-				double[][] decoded = decoder.posteriorDistribution(instance);
-				for (int t = 0; t < decoded.length; t++) {
-					String word = instance.getWord(t);
-					pw.print(word + " ");
-					for (int i = 0; i < decoded[t].length; i++) {
-						pw.print(decoded[t][i]);
-						if (i != model.nrStates) {
-							pw.print(" ");
-						}
-					}
-					pw.println();
-				}
-				pw.println();
-			}
-			pw.close();
-		} catch (IOException e) {
-			System.err.format("Could not open file for writing %s\n", outFile);
-			e.printStackTrace();
-		}
-		System.out.println("Finished decoding");
-	}
-
-	public static void printParams() {
-		StringBuffer sb = new StringBuffer();
-		sb.append("Train file : " + trainFile);
-		sb.append("\nVocab file : " + vocabFile);
-		sb.append("\nTest file : " + testFile);
-		sb.append("\nDev file : " + devFile);
-		sb.append("\noutFolderPrefix : " + outFolderPrefix);
-		sb.append("\nIterations : " + numIter);
-		sb.append("\nNumStates : " + numStates);
-		sb.append("\nNumLayers : " + nrLayers);
-		sb.append("\nthreads : " + USE_THREAD_COUNT);
-		System.out.println(sb.toString());
-		if(InstanceList.VOCAB_UPDATE_COUNT <=0 ||  InstanceList.VOCAB_UPDATE_COUNT == Corpus.corpusVocab.get(0).vocabSize) {
-			System.out.println("Using exact gradient for training");
-		} else {
-			System.out.format("Using approx gradient with %d negative evidence vocab items for training\n", InstanceList.VOCAB_UPDATE_COUNT);
-		}
-	}
+	}	
 }

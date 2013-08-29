@@ -1,8 +1,6 @@
 package model.inference;
 
-import java.util.Random;
-
-import program.Main;
+import config.Config;
 
 public class VariationalParamAlpha {
 	double[] alpha;
@@ -14,10 +12,8 @@ public class VariationalParamAlpha {
 	}
 	
 	public void initializeRandom() {
-		Random r = new Random(Main.seed);
-		//Random r = Main.random;
 		for(int i=0; i<T; i++) {
-			alpha[i] = r.nextDouble() + 1e-200;
+			alpha[i] = Config.random.nextDouble() + 1e-200;
 		}
 	}
 	

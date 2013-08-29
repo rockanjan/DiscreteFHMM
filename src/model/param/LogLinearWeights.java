@@ -2,6 +2,8 @@ package model.param;
 
 import java.util.Random;
 
+import config.Config;
+
 import program.Main;
 
 public class LogLinearWeights {
@@ -22,16 +24,16 @@ public class LogLinearWeights {
 	}
 	
 	public double[] getStateVector(int m, int v) {
-		double[] vector = new double[Main.numStates];
-		for(int i=0; i<Main.numStates; i++) {
-			vector[i] = weights[v][m*Main.numStates + i];
+		double[] vector = new double[Config.numStates];
+		for(int i=0; i<Config.numStates; i++) {
+			vector[i] = weights[v][m*Config.numStates + i];
 		}
 		return vector;
 	}
 	
 	public double get(int m, int k, int v) {
 		//return weights[v][m*k + k];
-		return weights[v][m*Main.numStates + k];	
+		return weights[v][m * Config.numStates + k];	
 	}
 	public void initializeZeros() {
 		weights = new double[vocabSize][conditionalSize]; 

@@ -1,5 +1,6 @@
 package util;
 
+import config.Config;
 import program.Main;
 
 public class MathUtils {
@@ -88,7 +89,7 @@ public class MathUtils {
 		double result = 1.0;
 		result *= expWeights[0]; //bias
 		result *= expWeights[1 + state]; //for the current hidden layer state
-		int offset = Main.numStates;
+		int offset = Config.numStates;
 		for(int i=1; i<=z.length; i++) {
 			//0 in the first z layer has to be in the offset + 1
 			result *= expWeights[ 1 + offset * i + z[i]];

@@ -1,11 +1,9 @@
 package model.train;
 
-import util.MathUtils;
+import config.Config;
 import util.MyArray;
-import corpus.Corpus;
-import cc.mallet.optimize.LimitedMemoryBFGS;
 import cc.mallet.optimize.Optimizable;
-import cc.mallet.optimize.Optimizer;
+import corpus.Corpus;
 
 public class CLLTrainer implements Optimizable.ByGradientValue{
 	
@@ -14,8 +12,6 @@ public class CLLTrainer implements Optimizable.ByGradientValue{
 	Corpus corpus;
 	
 	public int gradientCallCount = 0;
-	
-	double c2 = 0.01; //regularizer
 	
 	public CLLTrainer(double[] initParams, Corpus corpus) {
 		this.corpus = corpus;
@@ -36,7 +32,7 @@ public class CLLTrainer implements Optimizable.ByGradientValue{
 		//double cll = corpus.trainInstanceMStepSampleList.getApproxConditionalLogLikelihoodUsingPosteriorDistribution(weights);
 		//add regularizer
 		double normSquared = MyArray.getL2NormSquared(parameters);
-		latestValue = cll - c2 * normSquared;
+		latestValue = cll - Config.c2 * normSquared;
 		System.out.println("CLL : " + latestValue);
         return latestValue;
 	}
@@ -49,7 +45,7 @@ public class CLLTrainer implements Optimizable.ByGradientValue{
 		//regularizer
 		for(int i=0; i<newGradients.length; i++) {
 			for(int j=0; j<newGradients[0].length; j++) {
-				newGradients[i][j] -= 2 * c2 *  weights[i][j];
+				newGradients[i][j] -= 2 * Config.c2 *  weights[i][j];
 			}
 		}
 		weights = null;

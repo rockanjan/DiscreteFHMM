@@ -47,7 +47,9 @@ public class EM {
 			expectedCounts = new HMMParamNoFinalStateLog(model);
 		}
 		expectedCounts.initializeZeros();
-		System.out.format("Estep #sentences = %d, #tokens = %d", Corpus.trainInstanceEStepSampleList.size(), Corpus.trainInstanceEStepSampleList.numberOfTokens);
+		System.out.format("Estep #sentences = %d, #tokens = %d", 
+				Corpus.trainInstanceEStepSampleList.size(), 
+				Corpus.trainInstanceEStepSampleList.numberOfTokens);
 		LL = Corpus.trainInstanceEStepSampleList.updateExpectedCounts(model, expectedCounts);
 	}
 
@@ -58,8 +60,9 @@ public class EM {
 			System.err.println("Adaptive weight not in [0.0, 1], found " + adaptiveWeight);
 			System.exit(-1);
 		}
-		
-		System.out.println("Mstep #tokens : " + c.trainInstanceMStepSampleList.numberOfTokens);
+		System.out.format("Mstep #sentences = %d, #tokens = %d", 
+				Corpus.trainInstanceMStepSampleList.size(), 
+				Corpus.trainInstanceMStepSampleList.numberOfTokens);
 		Corpus.cacheFrequentConditionals();
 		trainLBFGS();
 		//trainAveragedPerceptronPosterior();

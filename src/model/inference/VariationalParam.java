@@ -73,11 +73,6 @@ public class VariationalParam {
 	
 	public void optimizeParamObsNew(int t) {
 		for(int m=0; m<M; m++) {
-			double[] sumOverNYt = new double[K];
-			for(int k=0; k<K; k++) {
-				sumOverNYt[k] += model.param.weights.get(m, k, instance.words[t][0]);
-			}
-			
 			double[] sumOverY = new double[K];
 			
 			for(int y=0; y<V; y++) {
@@ -94,21 +89,18 @@ public class VariationalParam {
 			double[] updateValue = new double[K];
 			for(int k=0; k<K; k++) {
 				double prod = alpha.alpha[t] * sumOverY[k];
-				updateValue[k] = sumOverNYt[k] - prod;
+				updateValue[k] = model.param.weights.get(m, k, instance.words[t][0]) - prod;
 				if(updateValue[k] > maxOverK) {
 					maxOverK = updateValue[k];
 				}
 			}
 			normalizer = MathUtils.logsumexp(updateValue);
-			//System.out.println("Normalizer : " + normalizer);
-			//System.out.println("MaxoverK " + maxOverK);
 			//normalize and update				
 			for(int k=0; k<K; k++) {
 				//varParamObs.shi[m][t][k] = updateValue[k] - maxOverK;
 				varParamObs.shi[m][t][k] = updateValue[k] - normalizer;
 				MathUtils.check(varParamObs.shi[m][t][k]);
 			}
-			//instance.forwardBackwardList.get(m).doInference();
 		}
 	}
 	
@@ -119,13 +111,13 @@ public class VariationalParam {
 			sumY += prodM;
 		}	
 		if(sumY <= 0) {
-			System.err.println(String.format("sumY = %f, setting small value", sumY));
-			sumY = 1e-200;
+			System.err.println(String.format("WARNING: sumY = %f, setting small value", sumY));
+			sumY = 1e-300;
 		}
 		alpha.alpha[t] = 1/sumY;
 		if(alpha.alpha[t] == 0) {
-			System.err.println("alpha is zero");
-			alpha.alpha[t] = 1e-200;
+			System.err.println("WARNING: alpha is zero");
+			alpha.alpha[t] = 1e-300;
 		}
 		MathUtils.check(alpha.alpha[t]);		
 	}

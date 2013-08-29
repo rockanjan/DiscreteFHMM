@@ -77,9 +77,9 @@ public class InstanceList extends ArrayList<Instance> {
 	 * returns LL of the corpus
 	 */
 	public double updateExpectedCounts(HMMBase model, HMMParamBase expectedCounts) {
-		//TODO: refactor
-		model.param.expWeights = model.param.weights.getCloneExp();
 		//cache expWeights for the model
+		model.param.expWeights = model.param.weights.getCloneExp();
+		
 		featurePartitionCache = new ConcurrentHashMap<String, Double>();
 		doVariationalInference(model);
 		
@@ -108,8 +108,6 @@ public class InstanceList extends ArrayList<Instance> {
 	public void doVariationalInference(HMMBase model) {
 		//optimize variational parameters
 		for(int iter=0; iter < 3; iter++) {
-//			shiL1NormAll = 0;
-//			alphaL1NormAll = 0;
 			expectationL1NormAll = 0;
 			expectationL1NormMax = 0;
 			Timing varIterTime = new Timing();
@@ -142,16 +140,13 @@ public class InstanceList extends ArrayList<Instance> {
 			}
 			StringBuffer updateString = new StringBuffer();
 			updateString.append("\tvar iter=" + iter);
-//			shiL1NormAll = shiL1NormAll/(model.nrLayers * this.numberOfTokens * model.nrStates); //difference per variable
-//			alphaL1NormAll = alphaL1NormAll/this.numberOfTokens;
 			expectationL1NormAll = expectationL1NormAll/this.numberOfTokens/model.nrLayers/model.nrStates;
 			updateString.append(String.format(" LL=%.2f time=%s", LL, varIterTime.stop()));
-			//updateString.append(String.format(" shiNorm=%f alphaNorm=%f", shiL1NormAll, alphaL1NormAll));
 			updateString.append(String.format(" expectedDiffL1NormAvg=%f", expectationL1NormAll));
 			updateString.append(String.format(" Max=%f", expectationL1NormMax));
 			System.out.println(updateString.toString());
 			
-			if(expectationL1NormMax < 1e-3) {
+			if(expectationL1NormMax < 1e-2) {
 				System.out.println("variational params converged");
 				break;
 			}

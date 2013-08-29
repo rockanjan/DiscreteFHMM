@@ -1,6 +1,9 @@
 package model.inference;
 
 import java.util.ArrayList;
+
+import javax.management.RuntimeErrorException;
+
 import model.HMMBase;
 import model.param.HMMParamBase;
 import model.param.MultinomialBase;
@@ -35,12 +38,8 @@ public class ForwardBackwardLog extends ForwardBackward{
 		//initialization: for t=0
 		for(int i=0; i<nrStates; i++) {
 			double pi = initial.get(i, 0);
-			if(pi == 0) {
-				//System.out.println("initial prob one");
-			}
 			double obs = instance.varParam.varParamObs.shi[layer][0][i];
-			alpha[0][i] = pi + obs; //these prob are in logscale	
-						
+			alpha[0][i] = pi + obs; //these prob are in logscale			
 		}
 		
 		//induction
@@ -56,9 +55,9 @@ public class ForwardBackwardLog extends ForwardBackward{
 			}			
 		}
 		logLikelihood = MathUtils.logsumexp(alpha[T-1]);
-		if(logLikelihood >= 0) {
-			//MyArray.printExpTable(alpha, "alpha");
-			//throw new RuntimeException("loglikelihood is greater or equal to zero for layer " + layer);
+		if(logLikelihood > 0) {
+			MyArray.printExpTable(alpha, "alpha");
+			throw new RuntimeException("loglikelihood is greater than zero for layer " + layer);
 		}
 	}
 	
@@ -76,9 +75,6 @@ public class ForwardBackwardLog extends ForwardBackward{
 				for(int j=0; j<nrStates; j++) {
 					double trans = transition.get(j, i);
 					double obs = instance.varParam.varParamObs.shi[layer][t+1][j];
-					if(obs > 1) {
-						System.err.println("Obs prob greater than 1");
-					}
 					expParams[j] = trans + obs + beta[t+1][j];
 				}
 				beta[t][i] = MathUtils.logsumexp(expParams);
@@ -124,11 +120,13 @@ public class ForwardBackwardLog extends ForwardBackward{
 		double tolerance = 1e-5;
 		for(int t=0; t<T; t++) {
 			double sum = 0;
-			//sum = LogExp.logsumexp(posterior[t]);
-			//sum = Math.exp(sum);
 			for(int i=0; i<nrStates; i++) {
-				//sum += Math.exp(getStatePosterior(t,i));
-				sum += getStatePosterior(t,i);
+				double value = getStatePosterior(t,i);
+				if(Math.exp(value) > 1) {
+					throw new RuntimeException("State posterior prob greater than 1");
+				}
+				MathUtils.check(value);
+				sum += value;
 			}
 			if(Math.abs(sum - 1) > tolerance) {
 				throw new RuntimeException("In checking state posterior, sum = " + sum);
@@ -141,7 +139,6 @@ public class ForwardBackwardLog extends ForwardBackward{
 		addToTransition(param.transition.get(layer));
 	}
 	
-	//TODO: check if we can still work in log scale instead of exponents
 	//works in normal scale (not log scale)
 	public void addToInitial(MultinomialBase initial) {
 		for(int i=0; i<nrStates; i++) {
@@ -159,7 +156,12 @@ public class ForwardBackwardLog extends ForwardBackward{
 		for(int t=0; t<T-1; t++) {
 			for(int i=0; i<nrStates; i++) {
 				for(int j=0; j<nrStates; j++) {
-					transition.addToCounts(j, i, Math.exp(getTransitionPosterior(i, j, t)));
+					double value = Math.exp(getTransitionPosterior(i, j, t));
+					if(value > 1) {
+						throw new RuntimeException("Transition posterior prob greater than 1");
+					}
+					MathUtils.check(value);
+					transition.addToCounts(j, i, value);
 				}
 			}
 		}
@@ -176,7 +178,10 @@ public class ForwardBackwardLog extends ForwardBackward{
 		double betaValue = beta[position+1][nextState];		
 		//WARNING: important
 		//TODO: decide if we should subtract the log likelihood
-		double value = alphaValue + trans + obs + betaValue - logLikelihood;		
+		double value = alphaValue + trans + obs + betaValue - logLikelihood;
+		if(Math.exp(value) > 1) {
+			throw new RuntimeException("Transition posterior value greater than 1");
+		}
 		return value;
 	}
 	

@@ -20,7 +20,8 @@ public class Main {
 	static Corpus corpus;
 	public static void main(String[] args) throws IOException {
 		corpus = new Corpus("\\s+", Config.vocabThreshold);
-		trainNew();		
+		//trainNew();		
+		trainContinue("variational_model_layers_20_states_2_iter_28.txt");
 		testVariational(model, corpus.trainInstanceList, Config.outFileTrain);		
 	}
 
@@ -42,13 +43,13 @@ public class Main {
 		model.saveModel();
 	}
 	
-	public void trainContinue(String filename) throws IOException {		
+	public static void trainContinue(String filename) throws IOException {		
 		corpus = new Corpus("\\s+", Config.vocabThreshold);
 		model = new HMMNoFinalStateLog(Config.nrLayers, Config.numStates, corpus);
 		//load model for continuing training
-		model.loadModel(Config.baseDirModel + filename);
+		model.loadModel(filename);
 		corpus.model = model;
-		corpus.readTrain(Config.trainFile);
+		corpus.readTrain(Config.baseDirData + Config.trainFile);
 		model.initializeZerosToBest();
 		Config.printParams();
 		EM em = new EM(Config.numIter, corpus, model);

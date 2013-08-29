@@ -47,8 +47,8 @@ public class EM {
 			expectedCounts = new HMMParamNoFinalStateLog(model);
 		}
 		expectedCounts.initializeZeros();
-		System.out.println("Estep #tokens : " + c.trainInstanceEStepSampleList.numberOfTokens);
-		LL = c.trainInstanceEStepSampleList.updateExpectedCounts(model, expectedCounts);
+		System.out.format("Estep #sentences = %d, #tokens = %d", Corpus.trainInstanceEStepSampleList.size(), Corpus.trainInstanceEStepSampleList.numberOfTokens);
+		LL = Corpus.trainInstanceEStepSampleList.updateExpectedCounts(model, expectedCounts);
 	}
 
 	public void mStep() {

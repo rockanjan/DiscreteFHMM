@@ -151,11 +151,11 @@ public class Instance {
 			for (int t = 0; t < T; t++) {
 				double[] conditionalVector = getConditionalVector(t);
 				int observationIndex = this.words[t][0];
-				double[] expWeightObservation = c.model.param.expWeightsCache[observationIndex];
+				double[] expWeightObservation = c.model.param.expWeights.weights[observationIndex];
 				double numerator = MathUtils.expDot(expWeightObservation,
 						conditionalVector);
 				double result = numerator
-						/ getExactNormalizer(t, c.model.param.expWeightsCache);
+						/ getExactNormalizer(t, c.model.param.expWeights.weights);
 				if (c.model.hmmType == HMMType.LOG_SCALE) {
 					result = Math.log(result);
 				}

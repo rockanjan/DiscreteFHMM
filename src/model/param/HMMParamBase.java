@@ -17,9 +17,7 @@ public abstract class HMMParamBase {
 	
 	public LogLinearWeights weights;
 	public LogLinearWeights expWeights;
-	
-	public double[][] expWeightsCache;
-	
+		
 	public HMMBase model;
 
 	int nrStatesWithFake = -1; //the extending class should initialize this (for no fake, equals nrStates)

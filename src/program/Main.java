@@ -7,7 +7,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import config.Config;
 
-import util.MathUtils;
 import util.Timing;
 import model.HMMBase;
 import model.HMMNoFinalStateLog;
@@ -63,7 +62,6 @@ public class Main {
 		decodeTiming.start();
 		System.out.println("Decoding started on :" + new Date().toString());
 		model.param.expWeights = model.param.weights.getCloneExp();
-		model.param.expWeightsCache = MathUtils.expArray(model.param.weights.weights);
 		InstanceList.featurePartitionCache = new ConcurrentHashMap<String, Double>();
 		instanceList.doVariationalInference(model); //also decodes
 		try{
@@ -90,7 +88,6 @@ public class Main {
 		catch(Exception e) {
 			e.printStackTrace();
 		}
-		model.param.expWeightsCache = null;
 		model.param.expWeights = null;
 		InstanceList.featurePartitionCache = null;
 		System.out.println("Finished decoding");

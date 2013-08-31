@@ -12,6 +12,7 @@ import model.param.HMMParamFinalState;
 import model.param.HMMParamNoFinalState;
 import model.param.HMMParamNoFinalStateLog;
 
+import util.MathUtils;
 import util.MyArray;
 import util.Stats;
 import util.Timing;
@@ -54,23 +55,31 @@ public class EM {
 	}
 
 	public void mStep() {
-		//adaptiveWeight based on : Online EM paper (Liang and Klein)
-		adaptiveWeight = Math.pow((1.0 * iterCount + 2.0), - Config.alpha);
-		if(adaptiveWeight < 0.0 || adaptiveWeight > 1) {
-			System.err.println("Adaptive weight not in [0.0, 1], found " + adaptiveWeight);
-			System.exit(-1);
+		//adaptive weight w = a / (a+iter), 
+		//where a= f * maxIter / (1-f), where f is fraction of data used for trainining
+		double f = 1.0 * c.trainInstanceEStepSampleList.numberOfTokens / c.trainInstanceList.numberOfTokens;
+		double a;
+		if(f == 1) {
+			adaptiveWeight = 1;
+		} else {
+			a = f * numIter / (1-f);
+			adaptiveWeight = a / (a + iterCount);
 		}
+		
+		System.out.println("Iter : " + iterCount + " frac : " + f + " adaptiveWeight : " + adaptiveWeight);
+		
 		System.out.format("Mstep #sentences = %d, #tokens = %d\n", 
 				Corpus.trainInstanceMStepSampleList.size(), 
 				Corpus.trainInstanceMStepSampleList.numberOfTokens);
 		Corpus.cacheFrequentConditionals();
 		trainLBFGS();
-		//trainAveragedPerceptronPosterior();
-		//trainAveragedPerceptronViterbi();
-		//trainSgd();
 		Corpus.clearFrequentConditionals();
-		model.updateFromCounts(expectedCounts);
-		//model.updateFromCountsWeighted(expectedCounts, adaptiveWeight);
+		//model.updateFromCounts(expectedCounts); //unweighted
+		
+		model.updateFromCountsWeighted(expectedCounts, adaptiveWeight);
+		
+		Corpus.trainInstanceEStepSampleList.clearPosteriorProbabilities();
+		Corpus.trainInstanceEStepSampleList.clearDecodedStates();
 	}
 	
 	public void trainLBFGS() {
@@ -88,12 +97,14 @@ public class EM {
 		}
 		System.out.println("Converged = " + converged);
 		System.out.println("Gradient call count: " + optimizable.gradientCallCount);
-		model.param.weights.weights = optimizable.getParameterMatrix();
-		/*
-		model.param.weights.weights = MathUtils.weightedAverageMatrix(model.param.weights.weights, 
-				optimizable.getParameterMatrix(), 
-				adaptiveWeight);
-		*/
+		
+		//not weighted
+		//model.param.weights.weights = optimizable.getParameterMatrix();
+		
+		//weighted
+		model.param.weights.weights = MathUtils.weightedAverageMatrix(optimizable.getParameterMatrix(),
+				model.param.weights.weights, 
+				adaptiveWeight);		
 	}
 
 	public void start() {
@@ -137,8 +148,7 @@ public class EM {
 			convergeCount++;
 			if(convergeCount > Config.maxConsecutiveConvergeLimit) {
 				System.out.println("Converged. Saving the final model");
-				//TODO: save model
-				//model.saveModel(Main.currentRecursion);
+				model.saveModel();
 				return true;
 			}
 		}

@@ -117,10 +117,15 @@ public class MathUtils {
 		}
 	}
 	
-
+	//arithmetic average for normal scale
+	//geometric if in log scale
+	/*
+	 * @param weight to give to the first matrix
+	 * (1-weight) given to the second matrix 
+	 */
 	public static double[][] weightedAverageMatrix(double[][] first, double[][] second, double weight) {
-		if(weight <=0 || weight > 1) {
-			throw new RuntimeException(String.format("Invalid weight %f, should be (0,1]", weight));
+		if(weight < 0 || weight > 1) {
+			throw new RuntimeException(String.format("Invalid weight %f, should be [0,1]", weight));
 		}
 		int m = first.length;
 		int n = first[0].length;
@@ -131,7 +136,7 @@ public class MathUtils {
 		double[][] averageMatrix = new double[m][n];
 		for(int i=0; i<m; i++) {
 			for(int j=0; j<n; j++) {
-				averageMatrix[i][j] = (1-weight) * first[i][j] + weight * second[i][j];
+				averageMatrix[i][j] = weight * first[i][j] + (1-weight) * second[i][j];
 			}
 		}
 		return averageMatrix;

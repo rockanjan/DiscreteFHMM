@@ -4,6 +4,7 @@ import java.util.Random;
 
 import javax.management.RuntimeErrorException;
 
+import util.MathUtils;
 import util.MyArray;
 import util.Stats;
 
@@ -11,6 +12,7 @@ public abstract class MultinomialBase {
 	//x,y == P(x given y)
 	int x,y;
 	public double[][] count;
+	public double[][] oldCount;
 	
 	public void initializeUniformCounts() {
 		for(int i=0; i<x; i++) {
@@ -45,11 +47,21 @@ public abstract class MultinomialBase {
 		}
 	}
 	
+	//computes weighted average of sufficient statistics using older and newer counts
+	//oldCount stores the old actual sufficient statistics (counts), 
+	//count stores the recent probabilites (i.e parameters after normalizing)
 	public void cloneWeightedFrom(MultinomialBase source, double weight) {
-		for(int i=0; i<y; i++) {
-			for(int j=0; j<x; j++) {
-				count[j][i] = (1-weight) * count[j][i] + weight * source.count[j][i];
+		if(oldCount == null) {
+			oldCount = MyArray.getCloneOfMatrix(source.count);
+			count = MyArray.getCloneOfMatrix(source.count);
+		} else {
+			for(int i=0; i<y; i++) {
+				for(int j=0; j<x; j++) {
+					count[j][i] = weight * source.count[j][i] + (1-weight) * oldCount[j][i];
+				}
 			}
+			//update the sufficient statistics for the next computation
+			oldCount = MyArray.getCloneOfMatrix(count);
 		}
 	}
 	

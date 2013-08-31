@@ -11,12 +11,12 @@ import corpus.InstanceList;
 public class Config {
 	public final static long seed = 4321;
 	public static Random random = new Random(seed);
-	public static int sampleSizeEStep = 25000;
-	public static int sampleSizeMStep = 25000;
+	public static int sampleSizeEStep = 250;
+	public static int sampleSizeMStep = 250;
 	public final static int numIter = 10;
 	public final static int nrLayers = 20;
 	public final static int numStates = 2;
-	public final static int USE_THREAD_COUNT = 8;
+	public final static int USE_THREAD_COUNT = 4;
 	public final static int vocabThreshold = 1;
 	
 	public static final String baseDirData = "data/";
@@ -32,8 +32,7 @@ public class Config {
 	public static String outFileTest = testFile + ".decoded";
 	public static String outFileDev = devFile + ".decoded";
 	
-	public static int FEATURE_PARTITION_CACHE_SIZE = 10000;
-	public static int maxTokensToProcessForFrequentConditionals = 1000000;
+	public static int FEATURE_PARTITION_CACHE_SIZE = 100000;
 	public static int maxFrequentConditionals = 100000;
 	
 	//EM related
@@ -42,7 +41,6 @@ public class Config {
 	public static int maxConsecutiveDecreaseLimit = 50;
 	public static int maxConsecutiveConvergeLimit = 3;
 	public static int mStepIter = 20; 
-	public static double alpha = 0.5; //for setting adaptive weight
 	//LBFGS
 	public static double c2 = 0.01; // L2-regularizer constant (higher means higher penalty)
 	

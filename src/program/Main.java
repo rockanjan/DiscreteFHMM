@@ -20,13 +20,13 @@ public class Main {
 	static Corpus corpus;
 	public static void main(String[] args) throws IOException {
 		corpus = new Corpus("\\s+", Config.vocabThreshold);
-		//trainNew();		
-		trainContinue("variational_model_layers_20_states_2_iter_28.txt");
+		trainNew();		
+		//trainContinue("variational_model_layers_20_states_2_iter_28.txt");
 		testVariational(model, corpus.trainInstanceList, Config.outFileTrain);		
 	}
 
 	public static void trainNew() throws IOException {
-		corpus.readVocab(Config.vocabFile);
+		corpus.readVocab(Config.baseDirData + Config.vocabFile);
 		Corpus.corpusVocab.get(0).writeDictionary(Config.baseDirModel + "vocab.txt");
 		// corpus.setupSampler();
 		corpus.readTrain(Config.baseDirData + Config.trainFile);

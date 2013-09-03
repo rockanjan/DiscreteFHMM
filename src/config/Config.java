@@ -25,7 +25,7 @@ public class Config {
 	
 	public static String trainFile = "combined.txt.SPL";
 	public static String vocabFile = trainFile;
-	public static String testFile;
+	public static String testFile = "combined.txt.SPL";
 	public static String devFile;	
 	
 	public static String outFileTrain = trainFile + ".decoded";
@@ -34,7 +34,7 @@ public class Config {
 	
 	public static int FEATURE_PARTITION_CACHE_SIZE = 10000;
 	public static int maxTokensToProcessForFrequentConditionals = 1000000;
-	public static int maxFrequentConditionals = 100000;
+	public static int maxFrequentConditionals = 1000000;
 	
 	//EM related
 	// convergence criteria

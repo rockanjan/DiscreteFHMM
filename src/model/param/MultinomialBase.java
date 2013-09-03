@@ -4,6 +4,7 @@ import java.util.Random;
 
 import javax.management.RuntimeErrorException;
 
+import util.MathUtils;
 import util.MyArray;
 import util.Stats;
 
@@ -11,6 +12,7 @@ public abstract class MultinomialBase {
 	//x,y == P(x given y)
 	int x,y;
 	public double[][] count;
+	public double[][] oldCount;
 	
 	public void initializeUniformCounts() {
 		for(int i=0; i<x; i++) {
@@ -46,11 +48,17 @@ public abstract class MultinomialBase {
 	}
 	
 	public void cloneWeightedFrom(MultinomialBase source, double weight) {
+		if(oldCount == null) {
+			oldCount = MyArray.getCloneOfMatrix(source.count);
+		}
 		for(int i=0; i<y; i++) {
 			for(int j=0; j<x; j++) {
-				count[j][i] = (1-weight) * count[j][i] + weight * source.count[j][i];
+				//weighted expected counts
+				count[j][i] = weight * source.count[j][i] + (1-weight) * oldCount[j][i];
 			}
 		}
+		//store the new expected counts for next iteration
+		oldCount = MyArray.getCloneOfMatrix(count);		
 	}
 	
 	public boolean equalsExact(MultinomialBase other) {

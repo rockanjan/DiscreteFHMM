@@ -105,6 +105,20 @@ public class InstanceList extends ArrayList<Instance> {
 		return jointLL;
 	}
 	
+	public void clearPosteriorProbabilities() {
+		for (int n = 0; n < this.size(); n++) {
+			Instance instance = this.get(n);
+			instance.posteriors = null;
+		}
+	}
+	
+	public void clearDecodedStates() {
+		for (int n = 0; n < this.size(); n++) {
+			Instance instance = this.get(n);
+			instance.decodedStates = null;
+		}
+	}
+	
 	public void doVariationalInference(HMMBase model) {
 		//optimize variational parameters
 		for(int iter=0; iter < 3; iter++) {

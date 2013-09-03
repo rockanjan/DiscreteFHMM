@@ -47,6 +47,9 @@ public abstract class MultinomialBase {
 		}
 	}
 	
+	//computes weighted average of sufficient statistics using older and newer counts
+	//oldCount stores the old actual sufficient statistics (counts), 
+	//count stores the recent probabilites (i.e parameters after normalizing)
 	public void cloneWeightedFrom(MultinomialBase source, double weight) {
 		if(oldCount == null) {
 			oldCount = MyArray.getCloneOfMatrix(source.count);
@@ -56,7 +59,7 @@ public abstract class MultinomialBase {
 				//weighted expected counts
 				count[j][i] = weight * source.count[j][i] + (1-weight) * oldCount[j][i];
 			}
-		}
+		} 
 		//store the new expected counts for next iteration
 		oldCount = MyArray.getCloneOfMatrix(count);		
 	}

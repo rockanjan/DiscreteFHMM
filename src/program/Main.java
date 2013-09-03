@@ -30,7 +30,7 @@ public class Main {
 	}
 
 	public static void trainNew() throws IOException {
-		corpus.readVocab(Config.vocabFile);
+		corpus.readVocab(Config.baseDirData + Config.vocabFile);
 		Corpus.corpusVocab.get(0).writeDictionary(Config.baseDirModel + "vocab.txt");
 		// corpus.setupSampler();
 		corpus.readTrain(Config.baseDirData + Config.trainFile);

@@ -68,19 +68,18 @@ public class EM {
 			a = f * numIter / (1-f);
 			adaptiveWeight = a / (a + iterCount);
 		}
-		System.out.println(" Iter: " + iterCount + "fraction: " + f + " adaptiveWeight : " + adaptiveWeight);
-		if(adaptiveWeight < 0.0 || adaptiveWeight > 1) {
-			System.err.println("Adaptive weight not in [0.0, 1], found " + adaptiveWeight);
-			System.exit(-1);
-		}
+		System.out.println("Iter : " + iterCount + " frac : " + f + " adaptiveWeight : " + adaptiveWeight);
+		
 		System.out.format("Mstep #sentences = %d, #tokens = %d\n", 
 				Corpus.trainInstanceMStepSampleList.size(), 
 				Corpus.trainInstanceMStepSampleList.numberOfTokens);
 		Corpus.cacheFrequentConditionals();
 		trainLBFGS();
 		Corpus.clearFrequentConditionals();
-		//model.updateFromCounts(expectedCounts);
 		model.updateFromCountsWeighted(expectedCounts, adaptiveWeight);
+		//model.updateFromCounts(expectedCounts); //unweighted
+		Corpus.trainInstanceEStepSampleList.clearPosteriorProbabilities();
+		Corpus.trainInstanceEStepSampleList.clearDecodedStates();
 	}
 	
 	public void trainLBFGS() {
@@ -145,8 +144,7 @@ public class EM {
 			convergeCount++;
 			if(convergeCount > Config.maxConsecutiveConvergeLimit) {
 				System.out.println("Converged. Saving the final model");
-				//TODO: save model
-				//model.saveModel(Main.currentRecursion);
+				model.saveModel();
 				return true;
 			}
 		}

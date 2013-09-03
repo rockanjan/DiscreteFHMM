@@ -1,16 +1,12 @@
 package model.inference;
 
 import java.util.ArrayList;
-
-import javax.management.RuntimeErrorException;
-
 import model.HMMBase;
 import model.param.HMMParamBase;
 import model.param.MultinomialBase;
 import util.MathUtils;
 import util.MyArray;
 import corpus.Instance;
-import corpus.InstanceList;
 
 public class ForwardBackwardLog extends ForwardBackward{
 	public ForwardBackwardLog(HMMBase model, Instance instance, int layer) {
@@ -155,12 +151,14 @@ public class ForwardBackwardLog extends ForwardBackward{
 	public void addToTransition(MultinomialBase transition) {
 		for(int t=0; t<T-1; t++) {
 			for(int i=0; i<nrStates; i++) {
+				double numerator[] = new double[nrStates];
 				for(int j=0; j<nrStates; j++) {
-					double value = Math.exp(getTransitionPosterior(i, j, t));
-					if(value > 1) {
-						//throw new RuntimeException("Transition posterior prob greater than 1");
-					}
-					MathUtils.check(value);
+					double value = getTransitionPosterior(i, j, t);
+					numerator[j] = value;					
+				}
+				double normalizer = MathUtils.logsumexp(numerator);
+				for(int j=0; j<nrStates; j++) {
+					double value = Math.exp(numerator[j] - normalizer);
 					transition.addToCounts(j, i, value);
 				}
 			}
@@ -176,12 +174,7 @@ public class ForwardBackwardLog extends ForwardBackward{
 		double trans = transition.get(nextState, currentState); //transition to next given current
 		double obs = instance.varParam.varParamObs.shi[layer][position+1][nextState];		
 		double betaValue = beta[position+1][nextState];		
-		//WARNING: important
-		//TODO: decide if we should subtract the log likelihood
-		double value = alphaValue + trans + obs + betaValue - logLikelihood;
-		if(Math.exp(value) > 1) {
-			throw new RuntimeException("Transition posterior value greater than 1");
-		}
+		double value = alphaValue + trans + obs + betaValue;
 		return value;
 	}
 	

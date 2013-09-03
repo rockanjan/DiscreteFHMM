@@ -57,10 +57,11 @@ public abstract class HMMBase {
 	}
 	
 	public void updateFromCountsWeighted(HMMParamBase counts, double weight) {
-		counts.normalize();
 		for(int m=0; m<nrLayers; m++) {
 			param.initial.get(m).cloneWeightedFrom(counts.initial.get(m), weight);
+			param.initial.get(m).normalize();
 			param.transition.get(m).cloneWeightedFrom(counts.transition.get(m), weight);
+			param.transition.get(m).normalize();
 		}
 		//renormalize
 		this.param.normalize();

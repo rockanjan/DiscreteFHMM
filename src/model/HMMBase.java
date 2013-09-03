@@ -49,21 +49,22 @@ public abstract class HMMBase {
 	}
 
 	public void updateFromCounts(HMMParamBase counts) {
-		counts.normalize();
+		//update sufficient statistics
 		for(int m=0; m<nrLayers; m++) {
 			param.initial.get(m).cloneFrom(counts.initial.get(m));
 			param.transition.get(m).cloneFrom(counts.transition.get(m));
 		}
+		//normalize
+		this.param.normalize();
 	}
 	
 	public void updateFromCountsWeighted(HMMParamBase counts, double weight) {
+		//update weighted sufficient statistics
 		for(int m=0; m<nrLayers; m++) {
 			param.initial.get(m).cloneWeightedFrom(counts.initial.get(m), weight);
-			param.initial.get(m).normalize();
 			param.transition.get(m).cloneWeightedFrom(counts.transition.get(m), weight);
-			param.transition.get(m).normalize();
 		}
-		//renormalize
+		//normalize
 		this.param.normalize();
 	}
 

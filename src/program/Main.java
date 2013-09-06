@@ -23,7 +23,7 @@ public class Main {
 		trainNew();		
 		//trainContinue("variational_model_layers_20_states_2_iter_28.txt");
 		if(Corpus.testInstanceList != null) {
-			testVariational(model, Corpus.testInstanceList, Config.outFileTrain);
+			testVariational(model, Corpus.testInstanceList, Config.outFileTest);
 		} else {
 			testVariational(model, Corpus.trainInstanceList, Config.outFileTrain);
 		}

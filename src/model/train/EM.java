@@ -132,10 +132,10 @@ public class EM {
 			LL = 0;
 			// e-step
 			eStepTime.start();
+			oneIterEmTime.start();
 			eStep();
 			System.out.println("E-step time: " + eStepTime.stop());
 			double diff = LL - bestOldLL;
-			oneIterEmTime.start();
 			// m-step
 			c.generateRandomTrainingMStepSample(Config.sampleSizeMStep);
 			mStep();

@@ -145,7 +145,7 @@ public class EM {
 			StringBuffer display = new StringBuffer();
 			if(Corpus.devInstanceList != null) {
 				c.generateRandomDevSample(Config.sampleDevSize);
-				System.out.println(String.format("Dev #sentence=%d, #tokens=", Corpus.devInstanceList.size(), Corpus.devInstanceList.numberOfTokens));
+				System.out.println(String.format("Dev #sentence=%d, #tokens=%d", Corpus.devInstanceSampleList.size(), Corpus.devInstanceSampleList.numberOfTokens));
 				expectedCounts.initializeZeros(); //mstep already complete
 				devLL = Corpus.devInstanceSampleList.updateExpectedCounts(model, expectedCounts);
 				double devPerplexity = Math.pow(2, -devLL/Math.log(2)/Corpus.devInstanceList.numberOfTokens);

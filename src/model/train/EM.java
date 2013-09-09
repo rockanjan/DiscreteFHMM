@@ -148,7 +148,7 @@ public class EM {
 				System.out.println(String.format("Dev #sentence=%d, #tokens=%d", Corpus.devInstanceSampleList.size(), Corpus.devInstanceSampleList.numberOfTokens));
 				expectedCounts.initializeZeros(); //mstep already complete
 				devLL = Corpus.devInstanceSampleList.updateExpectedCounts(model, expectedCounts);
-				double devPerplexity = Math.pow(2, -devLL/Math.log(2)/Corpus.devInstanceList.numberOfTokens);
+				double devPerplexity = Math.pow(2, -devLL/Math.log(2)/Corpus.devInstanceSampleList.numberOfTokens);
 				System.out.println("Dev Perplexity = " + devPerplexity);
 				double devDiff = devLL - bestOldLLDev;
 				if(iterCount > 0) {

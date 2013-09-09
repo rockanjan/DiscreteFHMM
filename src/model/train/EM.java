@@ -46,7 +46,11 @@ public class EM {
 	public void setAdaptiveWeight() {
 		if(Config.adaptiveWeightType.equals("liang")) {
 			//adaptiveWeight based on : Online EM paper (Liang and Klein)
-			adaptiveWeight = Math.pow((1.0 * iterCount + 2.0), - Config.alpha);
+			if(iterCount == 0) {
+				adaptiveWeight = 1.0;
+			} else {
+				adaptiveWeight = Math.pow((1.0 * iterCount + 2.0), - Config.alpha);
+			}
 		} else if(Config.adaptiveWeightType.equals("data")) {
 			//where a= f * maxIter / (1-f), where f is fraction of data used for trainining
 			double f = 1.0 * Corpus.trainInstanceEStepSampleList.numberOfTokens / Corpus.trainInstanceList.numberOfTokens;

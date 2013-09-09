@@ -38,8 +38,26 @@ public class EM {
 		this.c = c;
 		this.model = model;
 	}
+	
+	public void setAdaptiveWeight() {
+		if(Config.adaptiveWeightType.equals("liang")) {
+			//adaptiveWeight based on : Online EM paper (Liang and Klein)
+			adaptiveWeight = Math.pow((1.0 * iterCount + 2.0), - Config.alpha);
+		} else if(Config.adaptiveWeightType.equals("data")) {
+			//where a= f * maxIter / (1-f), where f is fraction of data used for trainining
+			double f = 1.0 * Corpus.trainInstanceEStepSampleList.numberOfTokens / Corpus.trainInstanceList.numberOfTokens;
+			double a;
+			if(f == 1) {
+				adaptiveWeight = 1;
+			} else {
+				a = f * numIter / (1-f);
+				adaptiveWeight = a / (a + iterCount);
+			}
+		}
+	}
 
 	public void eStep() {
+		
 		if (model.hmmType == HMMType.WITH_NO_FINAL_STATE) {
 			expectedCounts = new HMMParamNoFinalState(model);
 		} else if (model.hmmType == HMMType.WITH_FINAL_STATE) {
@@ -55,20 +73,8 @@ public class EM {
 	}
 
 	public void mStep() {
-		//adaptiveWeight based on : Online EM paper (Liang and Klein)
-		//adaptiveWeight = Math.pow((1.0 * iterCount + 2.0), - Config.alpha);
-		
-		//adaptive weight w = a / (a+iter), 
-		//where a= f * maxIter / (1-f), where f is fraction of data used for trainining
-		double f = 1.0 * Corpus.trainInstanceEStepSampleList.numberOfTokens / Corpus.trainInstanceList.numberOfTokens;
-		double a;
-		if(f == 1) {
-			adaptiveWeight = 1;
-		} else {
-			a = f * numIter / (1-f);
-			adaptiveWeight = a / (a + iterCount);
-		}
-		System.out.println("Iter : " + iterCount + " frac : " + f + " adaptiveWeight : " + adaptiveWeight);
+		setAdaptiveWeight();
+		System.out.println("Iter : " + iterCount + "adaptiveWeight : " + adaptiveWeight);
 		
 		System.out.format("Mstep #sentences = %d, #tokens = %d\n", 
 				Corpus.trainInstanceMStepSampleList.size(), 

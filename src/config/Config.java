@@ -41,7 +41,12 @@ public class Config {
 	public static double precision = 1e-4;
 	public static int maxConsecutiveDecreaseLimit = 50;
 	public static int maxConsecutiveConvergeLimit = 3;
-	public static int mStepIter = 20; 
+	public static int mStepIter = 20;
+	public static double alpha = 0.8;
+	public static String adaptiveWeightType 
+		= "liang"; //from online learning by liang and klein
+		//= "data"; //based on my heuristics
+	
 	//LBFGS
 	public static double c2 = 0.01; // L2-regularizer constant (higher means higher penalty)
 	

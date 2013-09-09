@@ -44,24 +44,28 @@ public class EM {
 	}
 	
 	public void setAdaptiveWeight() {
-		if(Config.adaptiveWeightType.equals("liang")) {
-			//adaptiveWeight based on : Online EM paper (Liang and Klein)
-			if(iterCount == 0) {
-				adaptiveWeight = 1.0;
-			} else {
-				adaptiveWeight = Math.pow((1.0 * iterCount + 2.0), - Config.alpha);
-			}
-		} else if(Config.adaptiveWeightType.equals("data")) {
-			//where a= f * maxIter / (1-f), where f is fraction of data used for trainining
-			double f = 1.0 * Corpus.trainInstanceEStepSampleList.numberOfTokens / Corpus.trainInstanceList.numberOfTokens;
-			double a;
-			if(f == 1) {
-				adaptiveWeight = 1;
-			} else {
-				a = f * numIter / (1-f);
-				adaptiveWeight = a / (a + iterCount);
-			}
+		//standard adaptiveWeight technique
+		//adaptiveWeight = (t0 + iterCount)^(-alpha)
+		if(iterCount == 0) {
+			adaptiveWeight = 1.0;
+		} else {
+			adaptiveWeight = Math.pow((Config.t0 + iterCount), - Config.alpha);
 		}
+		
+		/*
+		 * my approach based on iterations and fraction of samples selected
+		 */
+		/*
+		//where a= f * maxIter / (1-f), where f is fraction of data used for trainining
+		double f = 1.0 * Corpus.trainInstanceEStepSampleList.numberOfTokens / Corpus.trainInstanceList.numberOfTokens;
+		double a;
+		if(f == 1) {
+			adaptiveWeight = 1;
+		} else {
+			a = f * numIter / (1-f);
+			adaptiveWeight = a / (a + iterCount);
+		}
+		*/		
 	}
 
 	public void eStep() {
@@ -110,24 +114,12 @@ public class EM {
 			System.out.println("optimization threw OptimizationException");
 		}
 		System.out.println("Converged = " + converged);
-		System.out.println("Gradient call count: " + optimizable.gradientCallCount);
-		//model.param.weights.weights = optimizable.getParameterMatrix();
+		System.out.println("Gradient call count = " + optimizable.gradientCallCount);
+		System.out.println("CLL = " + optimizable.getValue());
+		//model.param.weights.weights = optimizable.getParameterMatrix(); //unweighted
 		model.param.weights.weights = MathUtils.weightedAverageMatrix(optimizable.getParameterMatrix(), 
 				model.param.weights.weights, 
-				adaptiveWeight);
-		/*
-		double perplexity = Math.pow(2, -Corpus.trainInstanceMStepSampleList.getCLLNoThread(model.param.weights.weights) 
-				/ Corpus.trainInstanceMStepSampleList.numberOfTokens/Math.log(2));
-		System.out.println("perplexity = " + perplexity);
-		if(iterCount % 5 == 0 && Corpus.testInstanceList != null) {
-			c.generateRandomTestSample(200);
-			expectedCounts.initializeZeros();
-			double testLL = Corpus.testInstanceSampleList.updateExpectedCounts(model, expectedCounts);
-			double testPerplexity = Math.pow(2, -Corpus.testInstanceSampleList.getCLLNoThread(model.param.weights.weights) 
-					/ Corpus.testInstanceSampleList.numberOfTokens/Math.log(2));
-			System.out.println("TestLL = " + testLL + " Test perplexity = " + testPerplexity);
-		}
-		*/
+				adaptiveWeight);		
 	}
 
 	public void start() {

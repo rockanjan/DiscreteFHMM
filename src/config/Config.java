@@ -11,9 +11,6 @@ import corpus.InstanceList;
 public class Config {
 	public final static long seed = 4321;
 	public static Random random = new Random(seed);
-	public static int sampleSizeEStep = 100;
-	public static int sampleSizeMStep = 100;
-	public static int sampleDevSize = 50;
 	public final static int numIter = 200;
 	public final static int nrLayers = 7;
 	public final static int numStates = 20;
@@ -44,10 +41,13 @@ public class Config {
 	public static int maxConsecutiveDecreaseLimit = 20;
 	public static int maxConsecutiveConvergeLimit = 3;
 	public static int mStepIter = 20;
+	
+	//online learning params
 	public static double alpha = 0.7;
-	public static String adaptiveWeightType 
-		= "liang"; //from online learning by liang and klein
-		//= "data"; //based on my heuristics
+	public static double t0 = 2;
+	public static int sampleSizeEStep = 100;
+	public static int sampleSizeMStep = sampleSizeEStep;
+	public static int sampleDevSize = 50;
 	
 	//LBFGS
 	public static double c2 = 0.01; // L2-regularizer constant (higher means higher penalty)
@@ -69,6 +69,8 @@ public class Config {
 		sb.append("\nNumStates : " + numStates);
 		sb.append("\nNumLayers : " + nrLayers);
 		sb.append("\nThreads : " + USE_THREAD_COUNT);
+		sb.append("\nt0 : " + t0);
+		sb.append("\nalpha : " + alpha);
 		sb.append("\n---------params------------");
 		System.out.println(sb.toString());
 	}

@@ -32,6 +32,10 @@ public class Corpus {
 	
 	public static InstanceList trainInstanceEStepSampleList; //sampled sentences for stochastic training
 	public static InstanceList trainInstanceMStepSampleList; //sampled sentences for stochastic training
+	
+	public static InstanceList testInstanceSampleList; //sampled sentences for stochastic training
+	public static InstanceList devInstanceSampleList; //sampled sentences for stochastic training
+	
 
 	static public ArrayList<Vocabulary> corpusVocab;
 	
@@ -386,6 +390,50 @@ public class Corpus {
 			}			
 		}
 	}
+	
+	/*
+	 * does not make a clone, just the reference
+	 */
+	public void generateRandomTestSample(int size) {
+		testInstanceSampleList = new InstanceList();
+		if(testInstanceList.size() <= size || size < 0) {
+			testInstanceSampleList.addAll(testInstanceList);
+			testInstanceSampleList.numberOfTokens = testInstanceList.numberOfTokens;
+		} else {
+			ArrayList<Integer> randomInts = new ArrayList<Integer>();			
+			for(int i=0; i<testInstanceList.size(); i++) {
+				randomInts.add(i);
+			}
+			Collections.shuffle(randomInts,Config.random);
+			for(int i=0; i<size; i++) {
+				Instance instance = testInstanceList.get(randomInts.get(i));
+				testInstanceSampleList.add(instance);
+				testInstanceSampleList.numberOfTokens += instance.T;
+			}			
+		}
+	}	
+	
+	/*
+	 * does not make a clone, just the reference
+	 */
+	public void generateRandomDevSample(int size) {
+		devInstanceSampleList = new InstanceList();
+		if(devInstanceList.size() <= size || size < 0) {
+			devInstanceSampleList.addAll(devInstanceList);
+			devInstanceSampleList.numberOfTokens = devInstanceList.numberOfTokens;
+		} else {
+			ArrayList<Integer> randomInts = new ArrayList<Integer>();			
+			for(int i=0; i<devInstanceList.size(); i++) {
+				randomInts.add(i);
+			}
+			Collections.shuffle(randomInts,Config.random);
+			for(int i=0; i<size; i++) {
+				Instance instance = devInstanceList.get(randomInts.get(i));
+				devInstanceSampleList.add(instance);
+				devInstanceSampleList.numberOfTokens += instance.T;
+			}			
+		}
+	}	
 	
 	public static int findOneTimeStepObsSize(String filename) {
 		int result = -1;

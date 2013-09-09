@@ -25,6 +25,10 @@ public class EM {
 
 	double bestOldLL = -Double.MAX_VALUE;
 	double LL = 0;
+	
+	double bestOldLLDev = -Double.MAX_VALUE;
+	double devLL = 0;
+	
 	HMMParamBase expectedCounts;
 
 	int convergeCount = 0;
@@ -107,6 +111,19 @@ public class EM {
 		model.param.weights.weights = MathUtils.weightedAverageMatrix(optimizable.getParameterMatrix(), 
 				model.param.weights.weights, 
 				adaptiveWeight);
+		/*
+		double perplexity = Math.pow(2, -Corpus.trainInstanceMStepSampleList.getCLLNoThread(model.param.weights.weights) 
+				/ Corpus.trainInstanceMStepSampleList.numberOfTokens/Math.log(2));
+		System.out.println("perplexity = " + perplexity);
+		if(iterCount % 5 == 0 && Corpus.testInstanceList != null) {
+			c.generateRandomTestSample(200);
+			expectedCounts.initializeZeros();
+			double testLL = Corpus.testInstanceSampleList.updateExpectedCounts(model, expectedCounts);
+			double testPerplexity = Math.pow(2, -Corpus.testInstanceSampleList.getCLLNoThread(model.param.weights.weights) 
+					/ Corpus.testInstanceSampleList.numberOfTokens/Math.log(2));
+			System.out.println("TestLL = " + testLL + " Test perplexity = " + testPerplexity);
+		}
+		*/
 	}
 
 	public void start() {
@@ -121,30 +138,47 @@ public class EM {
 			LL = 0;
 			// e-step
 			eStepTime.start();
+			oneIterEmTime.start();
 			eStep();
 			System.out.println("E-step time: " + eStepTime.stop());
 			double diff = LL - bestOldLL;
-			if (iterCount > 0) {
-				System.out.format("LL %.2f Diff %.2f \t Iter %d \t Fixes: %d \t iter time %s\n",LL, diff, iterCount,Stats.totalFixes, oneIterEmTime.stop());
-			}
-			if (isConverged()) {
-				break;
-			}
-			oneIterEmTime.start();
 			// m-step
 			c.generateRandomTrainingMStepSample(Config.sampleSizeMStep);
 			mStep();
 			Stats.totalFixes = 0;
-			if(iterCount % 5 == 0 && c.devInstanceList != null) {
-				System.out.println("Dev LL : " + c.devInstanceList.getLL(model));
+			StringBuffer display = new StringBuffer();
+			if(Corpus.devInstanceList != null) {
+				c.generateRandomDevSample(Config.sampleDevSize);
+				expectedCounts.initializeZeros(); //mstep already complete
+				devLL = Corpus.devInstanceSampleList.updateExpectedCounts(model, expectedCounts);
+				double devDiff = devLL - bestOldLLDev;
+				if(iterCount > 0) {
+					display.append(String.format("DevLL %.2f devDiff %.2f ", devLL, devDiff));
+				}
+			}
+			if (iterCount > 0) {
+				display.append(String.format("LL %.2f Diff %.2f \t Iter %d \t Fixes: %d \t iter time %s\n",LL, diff, iterCount,Stats.totalFixes, oneIterEmTime.stop()));
+			}
+			if (isConverged()) {
+				break;
 			}
 			model.saveModel(iterCount); //save every iteration
+			System.out.println(display.toString());
 		}
 		System.out.println("Total EM Time : " + totalEMTime.stop());
 	}
 
 	public boolean isConverged() {
-		double decreaseRatio = (LL - bestOldLL) / Math.abs(bestOldLL);
+		//if no dev data, use training data itself for convergence test
+		if(Corpus.devInstanceList == null) {
+			devLL = LL;
+			bestOldLLDev = bestOldLL;			
+		} 
+		if(bestOldLL < LL) {
+			bestOldLL = LL;
+		}
+		
+		double decreaseRatio = (devLL - bestOldLLDev) / Math.abs(bestOldLLDev);
 		// System.out.println("Decrease Ratio: %.5f " + decreaseRatio);
 		if (Config.precision > decreaseRatio && decreaseRatio > 0) {
 			convergeCount++;
@@ -155,7 +189,7 @@ public class EM {
 			}
 		}
 		convergeCount = 0;
-		if (LL < bestOldLL) {
+		if (devLL < bestOldLLDev) {
 			if (lowerCount == 0) {
 				// cache the best model so far
 				System.out.println("Caching the best model so far");
@@ -175,7 +209,7 @@ public class EM {
 			return false;
 		} else {
 			lowerCount = 0;
-			bestOldLL = LL;
+			bestOldLLDev= devLL;
 			return false;
 		}
 	}

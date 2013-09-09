@@ -23,7 +23,7 @@ public class Main {
 		trainNew();		
 		//trainContinue("variational_model_layers_20_states_2_iter_28.txt");
 		if(Corpus.testInstanceList != null) {
-			testVariational(model, Corpus.testInstanceList, Config.outFileTrain);
+			testVariational(model, Corpus.testInstanceList, Config.outFileTest);
 		} else {
 			testVariational(model, Corpus.trainInstanceList, Config.outFileTrain);
 		}
@@ -34,8 +34,8 @@ public class Main {
 		Corpus.corpusVocab.get(0).writeDictionary(Config.baseDirModel + "vocab.txt");
 		// corpus.setupSampler();
 		corpus.readTrain(Config.baseDirData + Config.trainFile);
-		//corpus.readTest(testFile);
-		//corpus.readDev(devFile);
+		corpus.readTest(Config.baseDirData + Config.testFile);
+		corpus.readDev(Config.baseDirData + Config.devFile);
 		model = new HMMNoFinalStateLog(Config.nrLayers, Config.numStates, corpus);
 		corpus.model = model;
 		//random init		

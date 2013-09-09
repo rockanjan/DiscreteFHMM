@@ -121,7 +121,8 @@ public class InstanceList extends ArrayList<Instance> {
 	
 	public void doVariationalInference(HMMBase model) {
 		//optimize variational parameters
-		for(int iter=0; iter < 3; iter++) {
+		for(int iter=0; iter < Config.variationalIter; iter++) {
+			LL = 0;
 			expectationL1NormAll = 0;
 			expectationL1NormMax = 0;
 			Timing varIterTime = new Timing();

@@ -12,19 +12,19 @@ public class Config {
 	public final static long seed = 4321;
 	public static Random random = new Random(seed);
 	public final static int numIter = 200;
-	public final static int nrLayers = 1;
-	public final static int numStates = 40;
+	public final static int nrLayers = 7;
+	public final static int numStates = 20;
 	public final static int USE_THREAD_COUNT = 8;
-	public final static int vocabThreshold = 3;
+	public final static int vocabThreshold = 4;
 	
 	public static final String baseDirData = "data/";
 	public static final String baseDirModel = "out/model/";
 	public static final String baseDirDecode = "out/decoded/";
 	
-	public static String trainFile = "brown_dev.txt";
-	public static String vocabFile = "brown_dev.txt";
-	public static String testFile = "brown_dev.txt";
-	public static String devFile;	
+	public static String trainFile = "pos.train.txt";
+	public static String vocabFile = "pos.all.txt";
+	public static String testFile = "onco_test.561.notag";
+	public static String devFile = "pos.dev.txt";	
 	
 	public static String outFileTrain = trainFile + ".decoded";
 	public static String outFileTest = testFile + ".decoded";
@@ -45,7 +45,7 @@ public class Config {
 	//online learning params
 	public static double alpha = 0.5;
 	public static double t0 = 2;
-	public static int sampleSizeEStep = 5000;
+	public static int sampleSizeEStep = 1000;
 	public static int sampleSizeMStep = sampleSizeEStep;
 	public static int sampleDevSize = 100;
 	

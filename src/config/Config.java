@@ -44,11 +44,11 @@ public class Config {
 	public static int convergenceIterInterval = 5; //after how many iters to check the convergence on dev data
 	
 	//online learning params
-	public static double alpha = 0.5;
+	public static double alpha = 0.8;
 	public static double t0 = 2;
-	public static int sampleSizeEStep = 1000;
+	public static int sampleSizeEStep = 100;
 	public static int sampleSizeMStep = sampleSizeEStep;
-	public static int sampleDevSize = 100;
+	public static int sampleDevSize = 50;
 	
 	//LBFGS
 	public static double c2 = 0.01; // L2-regularizer constant (higher means higher penalty)

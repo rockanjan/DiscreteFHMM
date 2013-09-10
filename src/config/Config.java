@@ -12,19 +12,19 @@ public class Config {
 	public final static long seed = 4321;
 	public static Random random = new Random(seed);
 	public final static int numIter = 200;
-	public final static int nrLayers = 7;
-	public final static int numStates = 20;
+	public final static int nrLayers = 1;
+	public final static int numStates = 40;
 	public final static int USE_THREAD_COUNT = 8;
-	public final static int vocabThreshold = 2;
+	public final static int vocabThreshold = 3;
 	
 	public static final String baseDirData = "data/";
 	public static final String baseDirModel = "out/model/";
 	public static final String baseDirDecode = "out/decoded/";
 	
-	public static String trainFile = "rcv1.txt.SPL";
-	public static String vocabFile = "rcv1.txt.SPL";
-	public static String testFile = "combined.txt.SPL";
-	public static String devFile = "srl.txt";	
+	public static String trainFile = "brown_dev.txt";
+	public static String vocabFile = "brown_dev.txt";
+	public static String testFile = "brown_dev.txt";
+	public static String devFile;	
 	
 	public static String outFileTrain = trainFile + ".decoded";
 	public static String outFileTest = testFile + ".decoded";
@@ -43,14 +43,16 @@ public class Config {
 	public static int mStepIter = 20;
 	
 	//online learning params
-	public static double alpha = 0.7;
+	public static double alpha = 0.5;
 	public static double t0 = 2;
-	public static int sampleSizeEStep = 100;
+	public static int sampleSizeEStep = 5000;
 	public static int sampleSizeMStep = sampleSizeEStep;
-	public static int sampleDevSize = 50;
+	public static int sampleDevSize = 100;
 	
 	//LBFGS
 	public static double c2 = 0.01; // L2-regularizer constant (higher means higher penalty)
+	
+	public static boolean displayDetail = false;
 	
 	public static void printParams() {
 		StringBuffer sb = new StringBuffer();

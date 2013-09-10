@@ -1,5 +1,6 @@
 package corpus;
 
+import java.awt.DisplayMode;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -33,7 +34,7 @@ public class InstanceList extends ArrayList<Instance> {
 	private static final Object cllLock = new Object();
 	private static final Object variationalLock = new Object();
 	
-	double LL = 0;
+	public double LL = 0;
 	double cll = 0;
 	double gradient[][];
 	
@@ -161,7 +162,7 @@ public class InstanceList extends ArrayList<Instance> {
 			updateString.append(String.format(" Max=%f", expectationL1NormMax));
 			System.out.println(updateString.toString());
 			
-			if(expectationL1NormMax < 1e-2) {
+			if(expectationL1NormMax < 1e-3) {
 				System.out.println("variational params converged");
 				break;
 			}
@@ -251,7 +252,9 @@ public class InstanceList extends ArrayList<Instance> {
 			Instance i = get(n);
 			cll += i.getConditionalLogLikelihoodUsingViterbi(expWeights);
 		}
-		System.out.println("CLL computation time : " + timing.stop());
+		if(Config.displayDetail) {
+			System.out.println("CLL computation time : " + timing.stop());
+		}
 		featurePartitionCache = null;
 		return cll;
 		
@@ -289,7 +292,9 @@ public class InstanceList extends ArrayList<Instance> {
 			}
 			updateCLLComputation(worker);
 		}
-		System.out.println("CLL computation time : " + timing.stop());
+		if(Config.displayDetail) {
+			System.out.println("CLL computation time : " + timing.stop());
+		}
 		featurePartitionCache = null;
 		return cll;
 	}
@@ -411,12 +416,14 @@ public class InstanceList extends ArrayList<Instance> {
 				}
 					
 			}
-		}		
-		System.out.println("Total conditional time : " + totalConditionalTime);
-		System.out.println("Total partition time : " + totalPartitionTime);
-		System.out.println("Total gradient update time : " + totalGradientTime);
-		System.out.println("Total sort time : " + totalSortTime);
-		System.out.println("Gradient computation time : " + timing.stop());		
+		}	
+		if(Config.displayDetail) {
+			System.out.println("Total conditional time : " + totalConditionalTime);
+			System.out.println("Total partition time : " + totalPartitionTime);
+			System.out.println("Total gradient update time : " + totalGradientTime);
+			System.out.println("Total sort time : " + totalSortTime);
+			System.out.println("Gradient computation time : " + timing.stop());
+		}
 		return gradient;
 	}
 	

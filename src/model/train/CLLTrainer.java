@@ -33,7 +33,9 @@ public class CLLTrainer implements Optimizable.ByGradientValue{
 		//add regularizer
 		double normSquared = MyArray.getL2NormSquared(parameters);
 		latestValue = cll - Config.c2 * normSquared;
-		System.out.println("CLL : " + latestValue);
+		if(Config.displayDetail) {
+			System.out.println("CLL : " + latestValue);
+		}
         return latestValue;
 	}
 

@@ -218,10 +218,12 @@ public abstract class HMMBase {
 			}
 			modelReader.close();
 		} catch (FileNotFoundException e) {
-			e.printStackTrace();			
+			e.printStackTrace();
+			System.exit(-1);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+			System.exit(-1);
 		}
 	}
 }

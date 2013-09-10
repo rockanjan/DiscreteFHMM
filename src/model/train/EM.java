@@ -86,7 +86,7 @@ public class EM {
 
 	public void mStep() {
 		setAdaptiveWeight();
-		System.out.println("Iter : " + iterCount + "adaptiveWeight : " + adaptiveWeight);
+		System.out.println("Iter : " + iterCount + " adaptiveWeight : " + adaptiveWeight);
 		
 		System.out.format("Mstep #sentences = %d, #tokens = %d\n", 
 				Corpus.trainInstanceMStepSampleList.size(), 
@@ -127,6 +127,7 @@ public class EM {
 		Timing totalEMTime = new Timing();
 		totalEMTime.start();
 		Timing eStepTime = new Timing();
+		Timing mStepTime = new Timing();
 		Timing oneIterEmTime = new Timing();
 		for (iterCount = 0; iterCount < numIter; iterCount++) {
 			//sample new train instances
@@ -140,7 +141,9 @@ public class EM {
 			double diff = LL - bestOldLL;
 			// m-step
 			c.generateRandomTrainingMStepSample(Config.sampleSizeMStep);
+			mStepTime.start();
 			mStep();
+			System.out.println("M-step time:" + mStepTime.stop());
 			Stats.totalFixes = 0;
 			StringBuffer display = new StringBuffer();
 			if(Corpus.devInstanceList != null) {
@@ -148,8 +151,10 @@ public class EM {
 				System.out.println(String.format("Dev #sentence=%d, #tokens=%d", Corpus.devInstanceSampleList.size(), Corpus.devInstanceSampleList.numberOfTokens));
 				expectedCounts.initializeZeros(); //mstep already complete
 				devLL = Corpus.devInstanceSampleList.updateExpectedCounts(model, expectedCounts);
-				double devPerplexity = Math.pow(2, -devLL/Math.log(2)/Corpus.devInstanceSampleList.numberOfTokens);
-				System.out.println("Dev Perplexity = " + devPerplexity);
+				double devPerplexityJoint = Math.pow(2, -devLL/Math.log(2)/Corpus.devInstanceSampleList.numberOfTokens);
+				double devPerplexityCLL = Math.pow(2, -Corpus.devInstanceSampleList.getCLLNoThread(model.param.weights.weights)/Math.log(2)/Corpus.devInstanceSampleList.numberOfTokens);
+				double devPerplexityLL = Math.pow(2, -Corpus.devInstanceSampleList.LL /Math.log(2)/Corpus.devInstanceSampleList.numberOfTokens);
+				System.out.println("Dev Perplexity LL = " + devPerplexityLL + " Joint = " + devPerplexityJoint + " CLL = " + devPerplexityCLL);
 				double devDiff = devLL - bestOldLLDev;
 				if(iterCount > 0) {
 					display.append(String.format("DevLL %.2f devDiff %.2f ", devLL, devDiff));

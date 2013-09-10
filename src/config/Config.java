@@ -38,9 +38,10 @@ public class Config {
 	//EM related
 	// convergence criteria
 	public static double precision = 1e-4;
-	public static int maxConsecutiveDecreaseLimit = 20;
+	public static int maxConsecutiveDecreaseLimit = 5;
 	public static int maxConsecutiveConvergeLimit = 3;
 	public static int mStepIter = 20;
+	public static int convergenceIterInterval = 5; //after how many iters to check the convergence on dev data
 	
 	//online learning params
 	public static double alpha = 0.5;

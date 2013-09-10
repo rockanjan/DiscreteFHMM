@@ -149,7 +149,7 @@ public class EM {
 			System.out.println("M-step time:" + mStepTime.stop());
 			Stats.totalFixes = 0;
 			StringBuffer display = new StringBuffer();
-			if(Corpus.devInstanceList != null) {
+			if(Corpus.devInstanceList != null && iterCount % Config.convergenceIterInterval == 0) {
 				c.generateRandomDevSample(Config.sampleDevSize);
 				System.out.println(String.format("Dev #sentence=%d, #tokens=%d", Corpus.devInstanceSampleList.size(), Corpus.devInstanceSampleList.numberOfTokens));
 				expectedCounts.initializeZeros(); //mstep already complete
@@ -163,12 +163,18 @@ public class EM {
 				if(iterCount > 0) {
 					display.append(String.format("DevLL %.2f devDiff %.2f ", devLL, devDiff));
 				}
+				if(isConverged()) {
+					break;
+				}
 			}
 			if (iterCount > 0) {
 				display.append(String.format("LL %.2f Diff %.2f \t Iter %d \t Fixes: %d \t iter time %s\n",LL, diff, iterCount,Stats.totalFixes, oneIterEmTime.stop()));
 			}
-			if (isConverged()) {
-				break;
+			//only check if not check in dev done (because dev was null)
+			if(Corpus.devInstanceList == null && Config.convergenceIterInterval == 0) {
+				if (isConverged()) {
+					break;
+				}
 			}
 			model.saveModel(iterCount); //save every iteration
 			System.out.println(display.toString());

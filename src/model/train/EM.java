@@ -154,7 +154,7 @@ public class EM {
 				System.out.println(String.format("Dev #sentence=%d, #tokens=%d", Corpus.devInstanceSampleList.size(), Corpus.devInstanceSampleList.numberOfTokens));
 				expectedCounts.initializeZeros(); //mstep already complete
 				devLL = Corpus.devInstanceSampleList.updateExpectedCounts(model, expectedCounts);
-				devLL = devLL / Corpus.devInstanceSampleList.numberOfTokens);
+				devLL = devLL / Corpus.devInstanceSampleList.numberOfTokens;
 				double devPerplexityJoint = Math.pow(2, -devLL/Math.log(2));
 				double devPerplexityCLL = Math.pow(2, -Corpus.devInstanceSampleList.getCLLNoThread(model.param.weights.weights)/Math.log(2));
 				double devPerplexityLL = Math.pow(2, -Corpus.devInstanceSampleList.LL /Math.log(2));

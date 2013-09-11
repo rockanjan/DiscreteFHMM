@@ -370,11 +370,11 @@ public class Corpus {
 						randomInts.add(i);
 					}
 					Collections.shuffle(randomInts,Config.random);
-					for(int i=0; i<size; i++) {
+					for(int i=0; i<trainInstanceList.size(); i++) {
 						Instance instance = trainInstanceList.get(randomInts.get(i));
 						trainInstanceListRandomized.add(instance);
 						trainInstanceListRandomized.numberOfTokens += instance.T;
-					}
+					}					
 				}
 				int startIndex = (iterCount * Config.sampleSizeEStep) % trainInstanceListRandomized.size();
 				int index = startIndex;

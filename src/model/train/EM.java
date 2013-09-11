@@ -44,12 +44,19 @@ public class EM {
 	}
 	
 	public void setAdaptiveWeight() {
-		//standard adaptiveWeight technique
-		//adaptiveWeight = (t0 + iterCount)^(-alpha)
-		if(iterCount == 0) {
+		//fraction of data
+		double f = 1.0 * Corpus.trainInstanceEStepSampleList.numberOfTokens / Corpus.trainInstanceList.numberOfTokens;
+		if(f == 1) {
+			System.out.println("fraction = 1, all dataset used");
 			adaptiveWeight = 1.0;
 		} else {
-			adaptiveWeight = Math.pow((Config.t0 + iterCount), - Config.alpha);
+			//standard adaptiveWeight technique
+			//adaptiveWeight = (t0 + iterCount)^(-alpha)
+			if(iterCount == 0) {
+				adaptiveWeight = 1.0;
+			} else {
+				adaptiveWeight = Math.pow((Config.t0 + iterCount), - Config.alpha);
+			}
 		}
 		
 		/*
@@ -66,6 +73,7 @@ public class EM {
 			adaptiveWeight = a / (a + iterCount);
 		}
 		*/		
+		
 	}
 
 	public void eStep() {

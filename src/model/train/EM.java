@@ -161,17 +161,17 @@ public class EM {
 				System.out.println("Dev Perplexity LL = " + devPerplexityLL + " Joint = " + devPerplexityJoint + " CLL = " + devPerplexityCLL);
 				double devDiff = devLL - bestOldLLDev;
 				if(iterCount > 0) {
-					display.append(String.format("DevLL %.2f devDiff %.2f ", devLL, devDiff));
+					display.append(String.format("DevLL %.5f devDiff %.5f ", devLL, devDiff));
 				}
 				if(isConverged()) {
 					break;
 				}
 			}
 			if (iterCount > 0) {
-				display.append(String.format("LL %.2f Diff %.2f \t Iter %d \t Fixes: %d \t iter time %s\n",LL, diff, iterCount,Stats.totalFixes, oneIterEmTime.stop()));
+				display.append(String.format("LL %.5f Diff %.5f \t Iter %d \t Fixes: %d \t iter time %s\n",LL, diff, iterCount,Stats.totalFixes, oneIterEmTime.stop()));
 			}
 			//only check if not check in dev done (because dev was null)
-			if(Corpus.devInstanceList == null && Config.convergenceIterInterval == 0) {
+			if(Corpus.devInstanceList == null) {
 				if (isConverged()) {
 					break;
 				}

@@ -35,7 +35,7 @@ public class Main {
 		// corpus.setupSampler();
 		corpus.readTrain(Config.baseDirData + Config.trainFile);
 		corpus.readTest(Config.baseDirData + Config.testFile);
-		corpus.readDev(Config.baseDirData + Config.devFile);
+		//corpus.readDev(Config.baseDirData + Config.devFile);
 		model = new HMMNoFinalStateLog(Config.nrLayers, Config.numStates, corpus);
 		corpus.model = model;
 		//random init		

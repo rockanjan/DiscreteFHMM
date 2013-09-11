@@ -21,9 +21,9 @@ public class Config {
 	public static final String baseDirModel = "out/model/";
 	public static final String baseDirDecode = "out/decoded/";
 	
-	public static String trainFile = "pos.train.txt";
-	public static String vocabFile = "pos.all.txt";
-	public static String testFile = "onco_test.561.notag";
+	public static String trainFile = "pos_small.all.txt";
+	public static String vocabFile = "pos_small.all.txt";
+	public static String testFile = "pos_small.test.txt";
 	public static String devFile = "pos.dev.txt";	
 	
 	public static String outFileTrain = trainFile + ".decoded";
@@ -46,9 +46,9 @@ public class Config {
 	//online learning params
 	public static double alpha = 0.8;
 	public static double t0 = 2;
-	public static int sampleSizeEStep = 100;
+	public static int sampleSizeEStep = 50;
 	public static int sampleSizeMStep = sampleSizeEStep;
-	public static int sampleDevSize = 50;
+	public static int sampleDevSize = 10;
 	
 	//LBFGS
 	public static double c2 = 0.01; // L2-regularizer constant (higher means higher penalty)

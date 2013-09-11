@@ -44,11 +44,18 @@ public class Config {
 	public static int convergenceIterInterval = 5; //after how many iters to check the convergence on dev data
 	
 	//online learning params
-	public static double alpha = 0.8;
+	/*
+	 * sample sequentially from the randomized sentences
+	 * (so that each sentence is covered exactly once in each epoch)
+	 * or: sample randomly from the sentences (in expectation, all will be covered) 
+	 * (some might be repeated some might be skipped)
+	 */
+	public static boolean sampleSequential = true;
+	public static double alpha = 0.6;
 	public static double t0 = 2;
-	public static int sampleSizeEStep = 50;
+	public static int sampleSizeEStep = 500;
 	public static int sampleSizeMStep = sampleSizeEStep;
-	public static int sampleDevSize = 10;
+	public static int sampleDevSize = 100;
 	
 	//LBFGS
 	public static double c2 = 0.01; // L2-regularizer constant (higher means higher penalty)

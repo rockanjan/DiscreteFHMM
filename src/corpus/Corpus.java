@@ -30,8 +30,11 @@ public class Corpus {
 	public static InstanceList testInstanceList;
 	public static InstanceList devInstanceList;
 	
+	//all instances but randomized
+	public static InstanceList trainInstanceListRandomized;
+	
 	public static InstanceList trainInstanceEStepSampleList; //sampled sentences for stochastic training
-	public static InstanceList trainInstanceMStepSampleList; //sampled sentences for stochastic training
+	public static InstanceList trainInstanceMStepSampleList; //sampled sentences for stochastic training (subset of EStep sample)
 	
 	public static InstanceList testInstanceSampleList; //sampled sentences for stochastic training
 	public static InstanceList devInstanceSampleList; //sampled sentences for stochastic training
@@ -349,22 +352,52 @@ public class Corpus {
 	/*
 	 * does not make a clone, just the reference
 	 */
-	public void generateRandomTrainingEStepSample(int size) {
+	public void generateRandomTrainingEStepSample(int size, int iterCount) {
 		
 		trainInstanceEStepSampleList = new InstanceList();
+		//add all
 		if(trainInstanceList.size() <= size || size < 0) {
 			trainInstanceEStepSampleList.addAll(trainInstanceList);
 			trainInstanceEStepSampleList.numberOfTokens = trainInstanceList.numberOfTokens;
 		} else {
-			ArrayList<Integer> randomInts = new ArrayList<Integer>();			
-			for(int i=0; i<trainInstanceList.size(); i++) {
-				randomInts.add(i);
-			}
-			Collections.shuffle(randomInts,Config.random);
-			for(int i=0; i<size; i++) {
-				Instance instance = trainInstanceList.get(randomInts.get(i));
-				trainInstanceEStepSampleList.add(instance);
-				trainInstanceEStepSampleList.numberOfTokens += instance.T;
+			//sample sequentially or randomly
+			if(Config.sampleSequential) {
+				//if the training data is not shuffled yet, shuffle it
+				if(trainInstanceListRandomized == null) {
+					trainInstanceListRandomized = new InstanceList();
+					ArrayList<Integer> randomInts = new ArrayList<Integer>();			
+					for(int i=0; i<trainInstanceList.size(); i++) {
+						randomInts.add(i);
+					}
+					Collections.shuffle(randomInts,Config.random);
+					for(int i=0; i<size; i++) {
+						Instance instance = trainInstanceList.get(randomInts.get(i));
+						trainInstanceListRandomized.add(instance);
+						trainInstanceListRandomized.numberOfTokens += instance.T;
+					}
+				}
+				int startIndex = (iterCount * Config.sampleSizeEStep) % trainInstanceListRandomized.size();
+				int index = startIndex;
+				for(int i=0; i<size; i++) {
+					Instance instance = trainInstanceListRandomized.get(index);
+					trainInstanceEStepSampleList.add(instance);
+					trainInstanceEStepSampleList.numberOfTokens += instance.T;
+					index++;
+					//index can get higher than the size of the training corpus
+					index = index % trainInstanceListRandomized.size();
+				}
+			} else {
+				//sample randomly
+				ArrayList<Integer> randomInts = new ArrayList<Integer>();			
+				for(int i=0; i<trainInstanceList.size(); i++) {
+					randomInts.add(i);
+				}
+				Collections.shuffle(randomInts,Config.random);
+				for(int i=0; i<size; i++) {
+					Instance instance = trainInstanceList.get(randomInts.get(i));
+					trainInstanceEStepSampleList.add(instance);
+					trainInstanceEStepSampleList.numberOfTokens += instance.T;
+				}
 			}			
 		}
 	}	

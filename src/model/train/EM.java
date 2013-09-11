@@ -176,6 +176,9 @@ public class EM {
 					break;
 				}
 			}
+			if(bestOldLL < LL) {
+				bestOldLL = LL;
+			}
 			model.saveModel(iterCount); //save every iteration
 			System.out.println(display.toString());
 		}
@@ -188,9 +191,6 @@ public class EM {
 			devLL = LL;
 			bestOldLLDev = bestOldLL;			
 		} 
-		if(bestOldLL < LL) {
-			bestOldLL = LL;
-		}
 		
 		double decreaseRatio = (devLL - bestOldLLDev) / Math.abs(bestOldLLDev);
 		// System.out.println("Decrease Ratio: %.5f " + decreaseRatio);

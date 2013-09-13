@@ -11,19 +11,19 @@ import corpus.InstanceList;
 public class Config {
 	public final static long seed = 4321;
 	public static Random random = new Random(seed);
-	public final static int numIter = 200;
+	public final static int numIter = 100;
 	public final static int nrLayers = 7;
 	public final static int numStates = 20;
 	public final static int USE_THREAD_COUNT = 8;
-	public final static int vocabThreshold = 4;
+	public final static int vocabThreshold = 2;
 	
 	public static final String baseDirData = "data/";
 	public static final String baseDirModel = "out/model/";
 	public static final String baseDirDecode = "out/decoded/";
 	
-	public static String trainFile = "pos_small.all.txt";
-	public static String vocabFile = "pos_small.all.txt";
-	public static String testFile = "pos_small.test.txt";
+	public static String trainFile = "pos_ul.10k.notag";
+	public static String vocabFile = "pos_ul.10k.notag";
+	public static String testFile = "pos_ul.test.notag";
 	public static String devFile = "pos.dev.txt";	
 	
 	public static String outFileTrain = trainFile + ".decoded";
@@ -51,7 +51,7 @@ public class Config {
 	 * (some might be repeated some might be skipped)
 	 */
 	public static boolean sampleSequential = true;
-	public static double alpha = 0.6;
+	public static double alpha = 0.8;
 	public static double t0 = 2;
 	public static int sampleSizeEStep = 500;
 	public static int sampleSizeMStep = sampleSizeEStep;

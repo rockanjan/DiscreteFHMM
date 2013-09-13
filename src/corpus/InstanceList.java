@@ -1,24 +1,16 @@
 package corpus;
 
-import java.awt.DisplayMode;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.PriorityQueue;
-import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 
 import config.Config;
 
 import model.HMMBase;
 import model.inference.VariationalParam;
-import model.inference.VariationalParamObservation;
 import model.param.HMMParamBase;
-import model.param.LogLinearWeights;
-import program.Main;
 import util.MathUtils;
-import util.MyArray;
 import util.Timing;
 
 public class InstanceList extends ArrayList<Instance> {
@@ -46,7 +38,6 @@ public class InstanceList extends ArrayList<Instance> {
 	}
 	
 	static public Map<String, Double> featurePartitionCache;
-	static public Map<String, VocabNumeratorArray> featureNumeratorCache;
 
 	/*
 	 * just to get the LL of the data
@@ -344,22 +335,7 @@ public class InstanceList extends ArrayList<Instance> {
 		double[][] expParam = MathUtils.expArray(parameterMatrix);
 		timing.start();
 		int vocabSize = Corpus.corpusVocab.get(0).vocabSize;
-		featureNumeratorCache = new HashMap<String, VocabNumeratorArray>();
-		for(FrequentConditionalStringVector conditional : Corpus.frequentConditionals) {
-			//initialize
-			VocabNumeratorArray conditionalVocabArrays = new VocabNumeratorArray(vocabSize);
-			double[] conditionalVector = conditional.vector;
-			double partition = 0.0;
-			//fill the arrays
-			for(int v=0; v<vocabSize; v++) {
-				double numerator = MathUtils.expDot(expParam[v], conditionalVector);
-				conditionalVocabArrays.array[v] = numerator;
-				partition += numerator;
-			}
-			conditionalVocabArrays.normalizer = partition;
-			conditionalVocabArrays.count = conditional.count;
-			featureNumeratorCache.put(conditional.index, conditionalVocabArrays);
-		}
+		
 		double gradient[][] = new double[parameterMatrix.length][parameterMatrix[0].length];
 		long totalPartitionTime = 0;
 		long totalGradientTime = 0;
@@ -370,13 +346,9 @@ public class InstanceList extends ArrayList<Instance> {
 				Timing timing2 = new Timing();
 				timing2.start();
 				double[] conditionalVector = instance.getConditionalVector(t);
-				String conditionalString = instance.getConditionalString(t);
 				totalConditionalTime += timing2.stopGetLong();
 				//create partition
 				timing2.start();
-				
-				//positive: assuming that all conditionals are stored
-				//if not should only include the ones that have conditionals stored
 				for(int j=0; j<expParam[0].length; j++) {
 					if(conditionalVector[j] != 0) {
 						gradient[instance.words[t][0]][j] += 1; 
@@ -386,19 +358,22 @@ public class InstanceList extends ArrayList<Instance> {
 		}
 		
 		for(FrequentConditionalStringVector f : Corpus.frequentConditionals) {
-			String conditionalString = f.index;
 			double[] conditionalVector = f.vector;
-			VocabNumeratorArray vna = featureNumeratorCache.get(conditionalString);
-			if(! vna.processed) {
-				for(int j=0; j<expParam[0].length; j++) {
-					if(conditionalVector[j] != 0) {
-						for(int v=0; v<expParam.length; v++) {
-							gradient[v][j] -= vna.count * vna.array[v]/ vna.normalizer;
-						}
+			double partition = 0.0;
+			double[] numeratorArray = new double[vocabSize];
+			//fill the arrays
+			for(int v=0; v<vocabSize; v++) {
+				double numerator = MathUtils.expDot(expParam[v], conditionalVector);
+				numeratorArray[v] = numerator;
+				partition += numerator;
+			}
+			for(int j=0; j<expParam[0].length; j++) {
+				if(conditionalVector[j] != 0) {
+					for(int v=0; v<expParam.length; v++) {
+						gradient[v][j] -= f.count * numeratorArray[v]/ partition;
 					}
 				}
-				vna.processed = true;
-			}							
+			}										
 		} 
 		if(Config.displayDetail) {
 			System.out.println("Total conditional time : " + totalConditionalTime);
@@ -415,22 +390,6 @@ public class InstanceList extends ArrayList<Instance> {
 		timing.start();
 		//cache for frequent conditonals
 		int vocabSize = Corpus.corpusVocab.get(0).vocabSize;
-		//cache conditional numerators
-		featureNumeratorCache = new HashMap<String, VocabNumeratorArray>();
-		for(FrequentConditionalStringVector conditional : Corpus.frequentConditionals) {
-			//initialize
-			VocabNumeratorArray conditionalVocabArrays = new VocabNumeratorArray(vocabSize);
-			double[] conditionalVector = conditional.vector;
-			double partition = 0.0;
-			for(int v=0; v<vocabSize; v++) {
-				double numerator = MathUtils.expDot(expParam[v], conditionalVector);				
-				conditionalVocabArrays.array[v] = numerator;
-				partition += numerator;
-			}
-			conditionalVocabArrays.normalizer = partition;
-			conditionalVocabArrays.count = conditional.count;
-			featureNumeratorCache.put(conditional.index, conditionalVocabArrays);
-		}
 		gradient = new double[parameterMatrix.length][parameterMatrix[0].length];
 		for (int n = 0; n < this.size(); n++) {
 			Instance instance = get(n);
@@ -476,7 +435,6 @@ public class InstanceList extends ArrayList<Instance> {
 		if(Config.displayDetail) {
 			System.out.println("Gradient computation time : " + timing.stop());
 		}
-		featureNumeratorCache = null;
 		return gradient;
 	}
 	
@@ -490,31 +448,36 @@ public class InstanceList extends ArrayList<Instance> {
 		public double[][] gradientLocal;
 		final int startIndex;
 		final int endIndex;
-		final double[][] expWeights;
+		final double[][] expParam;
 		ArrayList<FrequentConditionalStringVector> freqConditionals;
 		
 		// [startIndex, endIndex) i.e. last index is not included
-		public GradientWorker(ArrayList<FrequentConditionalStringVector> freqConditionals, int startIndex, int endIndex, double[][] expWeights) {
+		public GradientWorker(ArrayList<FrequentConditionalStringVector> freqConditionals, int startIndex, int endIndex, double[][] expParam) {
 			this.startIndex = startIndex;
 			this.endIndex = endIndex;
-			this.expWeights = expWeights;
+			this.expParam = expParam;
 			this.freqConditionals = freqConditionals;
 		}
 		
 		@Override
 		public void run() {
-			gradientLocal = new double[expWeights.length][expWeights[0].length];
+			gradientLocal = new double[expParam.length][expParam[0].length];
 			for(int n=startIndex; n<endIndex; n++) {
-				FrequentConditionalStringVector f = freqConditionals.get(n);
-				VocabNumeratorArray vna = featureNumeratorCache.get(f.index);
-				double[] conditionalVector = f.vector;
-				for(int j=0; j<expWeights[0].length; j++) {
+				FrequentConditionalStringVector conditional = freqConditionals.get(n);
+				double[] conditionalVector = conditional.vector;
+				double partition = 0.0;
+				double[] numeratorArray = new double[Corpus.corpusVocab.get(0).vocabSize];
+				for(int v=0; v<Corpus.corpusVocab.get(0).vocabSize; v++) {
+					double numerator = MathUtils.expDot(expParam[v], conditionalVector);				
+					numeratorArray[v] = numerator;
+					partition += numerator;
+				}
+				for(int j=0; j<expParam[0].length; j++) {
 					if(conditionalVector[j] != 0) {
-						for(int v=0; v<expWeights.length; v++) {
-							gradientLocal[v][j] -= vna.count * vna.array[v]/ vna.normalizer;
+						for(int v=0; v<expParam.length; v++) {
+							gradientLocal[v][j] -= conditional.count * numeratorArray[v]/ partition;
 						}
 					}
-					//vna.processed = true;
 				}
 			}
 		}		

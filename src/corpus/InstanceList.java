@@ -349,9 +349,7 @@ public class InstanceList extends ArrayList<Instance> {
 			//initialize
 			VocabNumeratorArray conditionalVocabArrays = new VocabNumeratorArray(vocabSize);
 			double[] conditionalVector = conditional.vector;
-			//MyArray.printVector(conditionalVector, "Conditional vector");
 			double partition = 0.0;
-			//PriorityQueue<VocabItemProbability> topProbs = new PriorityQueue<VocabItemProbability>(VOCAB_UPDATE_COUNT, comparator);
 			//fill the arrays
 			for(int v=0; v<vocabSize; v++) {
 				double numerator = MathUtils.expDot(expParam[v], conditionalVector);
@@ -360,7 +358,6 @@ public class InstanceList extends ArrayList<Instance> {
 			}
 			conditionalVocabArrays.normalizer = partition;
 			conditionalVocabArrays.count = conditional.count;
-			//conditionalVocabArrays.topProbs = topProbs;
 			featureNumeratorCache.put(conditional.index, conditionalVocabArrays);
 		}
 		double gradient[][] = new double[parameterMatrix.length][parameterMatrix[0].length];
@@ -429,49 +426,59 @@ public class InstanceList extends ArrayList<Instance> {
 	
 	public double[][] getGradientThreaded(double[][] parameterMatrix) {		
 		Timing timing = new Timing();
-		double[][] expWeights = MathUtils.expArray(parameterMatrix);
+		double[][] expParam = MathUtils.expArray(parameterMatrix);
 		timing.start();
 		//cache for frequent conditonals
 		int vocabSize = Corpus.corpusVocab.get(0).vocabSize;
 		//cache conditional numerators
 		featureNumeratorCache = new HashMap<String, VocabNumeratorArray>();
-		VocabItemProbComparator comparator = new VocabItemProbComparator();
 		for(FrequentConditionalStringVector conditional : Corpus.frequentConditionals) {
 			//initialize
 			VocabNumeratorArray conditionalVocabArrays = new VocabNumeratorArray(vocabSize);
 			double[] conditionalVector = conditional.vector;
-			//MyArray.printVector(conditionalVector, "Conditional vector");
 			double partition = 0.0;
-			//PriorityQueue<VocabItemProbability> topProbs = new PriorityQueue<VocabItemProbability>(VOCAB_UPDATE_COUNT, comparator);
-			//fill the arrays
 			for(int v=0; v<vocabSize; v++) {
-				double numerator = MathUtils.expDot(expWeights[v], conditionalVector);				
+				double numerator = MathUtils.expDot(expParam[v], conditionalVector);				
 				conditionalVocabArrays.array[v] = numerator;
 				partition += numerator;
 			}
 			conditionalVocabArrays.normalizer = partition;
 			conditionalVocabArrays.count = conditional.count;
-			//conditionalVocabArrays.topProbs = topProbs;
 			featureNumeratorCache.put(conditional.index, conditionalVocabArrays);
 		}
-		
-		
 		gradient = new double[parameterMatrix.length][parameterMatrix[0].length];
+		for (int n = 0; n < this.size(); n++) {
+			Instance instance = get(n);
+			for (int t = 0; t < instance.T; t++) {
+				Timing timing2 = new Timing();
+				timing2.start();
+				double[] conditionalVector = instance.getConditionalVector(t);
+				String conditionalString = instance.getConditionalString(t);
+				//positive
+				if(Corpus.frequentConditionals.contains(conditionalString)) {
+					for(int j=0; j<expParam[0].length; j++) {
+						if(conditionalVector[j] != 0) {
+							gradient[instance.words[t][0]][j] += 1; 
+						}
+					}
+				}
+			}
+		}
 		
-		//start parallel processing
-		int divideSize = this.size() / Config.USE_THREAD_COUNT;
+		//start parallel processing based on frequent conditionals
+		int divideSize = Corpus.frequentConditionals.size() / Config.USE_THREAD_COUNT;
 		List<GradientWorker> threadList = new ArrayList<GradientWorker>();
 		int startIndex = 0;
 		int endIndex = divideSize;		
 		for(int i=0; i<Config.USE_THREAD_COUNT; i++) {
-			GradientWorker worker = new GradientWorker(this, startIndex, endIndex, expWeights);
+			GradientWorker worker = new GradientWorker(Corpus.frequentConditionals, startIndex, endIndex, expParam);
 			threadList.add(worker);
 			worker.start();
 			startIndex = endIndex;
 			endIndex = endIndex + divideSize;			
 		}
 		//there might be some remaining
-		GradientWorker finalWorker = new GradientWorker(this, startIndex, this.size(), expWeights);
+		GradientWorker finalWorker = new GradientWorker(Corpus.frequentConditionals, startIndex, Corpus.frequentConditionals.size(), expParam);
 		finalWorker.start();
 		threadList.add(finalWorker);
 		//start all threads and wait for them to complete
@@ -499,62 +506,30 @@ public class InstanceList extends ArrayList<Instance> {
 		final int startIndex;
 		final int endIndex;
 		final double[][] expWeights;
-		InstanceList instanceList;
+		ArrayList<FrequentConditionalStringVector> freqConditionals;
 		
 		// [startIndex, endIndex) i.e. last index is not included
-		public GradientWorker(InstanceList instanceList, int startIndex, int endIndex, double[][] expWeights) {
+		public GradientWorker(ArrayList<FrequentConditionalStringVector> freqConditionals, int startIndex, int endIndex, double[][] expWeights) {
 			this.startIndex = startIndex;
 			this.endIndex = endIndex;
 			this.expWeights = expWeights;
-			this.instanceList = instanceList;
+			this.freqConditionals = freqConditionals;
 		}
 		
 		@Override
 		public void run() {
-			VocabItemProbComparator comparator = new VocabItemProbComparator();
 			gradient = new double[expWeights.length][expWeights[0].length];
 			for(int n=startIndex; n<endIndex; n++) {
-				Instance instance = instanceList.get(n);
-				for (int t = 0; t < instance.T; t++) {
-					double[] conditionalVector = instance.getConditionalVector(t);
-					String conditionalString = instance.getConditionalString(t);
-					//create partition
-					//positive
-					for(int j=0; j<expWeights[0].length; j++) {
-						if(conditionalVector[j] != 0) {
-							gradient[instance.words[t][0]][j] += 1; 
+				FrequentConditionalStringVector f = freqConditionals.get(n);
+				VocabNumeratorArray vna = featureNumeratorCache.get(f.index);
+				double[] conditionalVector = f.vector;
+				for(int j=0; j<expWeights[0].length; j++) {
+					if(conditionalVector[j] != 0) {
+						for(int v=0; v<expWeights.length; v++) {
+							gradient[v][j] -= vna.count * vna.array[v]/ vna.normalizer;
 						}
 					}
-					
-					if(featureNumeratorCache.containsKey(conditionalString)) {
-						VocabNumeratorArray vna = featureNumeratorCache.get(conditionalString);
-						if(! vna.processed) {
-							for(int j=0; j<expWeights[0].length; j++) {
-								if(conditionalVector[j] != 0) {
-									for(int v=0; v<expWeights.length; v++) {
-										gradient[v][j] -= vna.count * vna.array[v]/ vna.normalizer;
-									}
-								}
-							}
-							vna.processed = true;
-						}							
-					} else {
-	                    double normalizer = 0.0;
-						final double[] numeratorCache = new double[expWeights.length];
-						for (int v = 0; v < expWeights.length; v++) {
-							double numerator = MathUtils.expDot(expWeights[v], conditionalVector);
-							numeratorCache[v] = numerator;
-							normalizer += numerator;						
-						}
-						for(int j=0; j<expWeights[0].length; j++) {
-							if(conditionalVector[j] != 0) {
-								for(int v=0; v<expWeights.length; v++) {
-									gradient[v][j] -= numeratorCache[v] / normalizer;
-								}
-							}
-						}				
-					}
-					
+					//vna.processed = true;
 				}
 			}
 		}		

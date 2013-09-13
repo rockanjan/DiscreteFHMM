@@ -43,7 +43,8 @@ public class Corpus {
 	static public ArrayList<Vocabulary> corpusVocab;
 	
 	public static int maxFrequentConditionals = 100000;
-	public static TreeSet<FrequentConditionalStringVector> frequentConditionals;
+	//public static TreeSet<FrequentConditionalStringVector> frequentConditionals;
+	public static ArrayList<FrequentConditionalStringVector> frequentConditionals;
 
 	int vocabThreshold;
 	
@@ -161,6 +162,7 @@ public class Corpus {
 	
 	public static void clearFrequentConditionals() {
 		frequentConditionals = null;
+		frequentConditionalsArrayList = null;
 	}
 	
 	//cache from the training data only
@@ -169,6 +171,7 @@ public class Corpus {
 	 */
 	public static void cacheFrequentConditionals() {
 		HashMap<FrequentConditionalStringVector, Integer> conditionalCountMap = new HashMap<FrequentConditionalStringVector, Integer>();
+		/*
 		frequentConditionals = new TreeSet<FrequentConditionalStringVector>(new Comparator<FrequentConditionalStringVector>() {
 			@Override
 			public int compare(FrequentConditionalStringVector o1,
@@ -177,6 +180,8 @@ public class Corpus {
 			}
 			
 		});
+		*/
+		frequentConditionals = new ArrayList<FrequentConditionalStringVector>();
 		//count frequencies
 		for(int n=0; n<Corpus.trainInstanceMStepSampleList.size(); n++) {
 			Instance instance = Corpus.trainInstanceMStepSampleList.get(n);

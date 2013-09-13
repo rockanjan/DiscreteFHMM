@@ -162,7 +162,6 @@ public class Corpus {
 	
 	public static void clearFrequentConditionals() {
 		frequentConditionals = null;
-		frequentConditionalsArrayList = null;
 	}
 	
 	//cache from the training data only

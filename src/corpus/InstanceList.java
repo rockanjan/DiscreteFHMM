@@ -334,8 +334,8 @@ public class InstanceList extends ArrayList<Instance> {
 
 	public double[][] getGradient(double[][] parameterMatrix) {
 		double[][] gradient;
-		gradient = getGradientNoThread(parameterMatrix);
-		//gradient = getGradientThreaded(parameterMatrix);
+		//gradient = getGradientNoThread(parameterMatrix);
+		gradient = getGradientThreaded(parameterMatrix);
 		return gradient;
 	}
 	
@@ -364,8 +364,6 @@ public class InstanceList extends ArrayList<Instance> {
 		long totalPartitionTime = 0;
 		long totalGradientTime = 0;
 		long totalConditionalTime = 0;
-		long totalSortTime = 0;	
-		VocabItemProbComparator comparator = new VocabItemProbComparator();
 		for (int n = 0; n < this.size(); n++) {
 			Instance instance = get(n);
 			for (int t = 0; t < instance.T; t++) {
@@ -377,48 +375,35 @@ public class InstanceList extends ArrayList<Instance> {
 				//create partition
 				timing2.start();
 				
-				//positive
+				//positive: assuming that all conditionals are stored
+				//if not should only include the ones that have conditionals stored
 				for(int j=0; j<expParam[0].length; j++) {
 					if(conditionalVector[j] != 0) {
 						gradient[instance.words[t][0]][j] += 1; 
 					}
 				}
-				if(featureNumeratorCache.containsKey(conditionalString)) {
-					VocabNumeratorArray vna = featureNumeratorCache.get(conditionalString);
-					if(! vna.processed) {
-						for(int j=0; j<expParam[0].length; j++) {
-							if(conditionalVector[j] != 0) {
-								for(int v=0; v<expParam.length; v++) {
-									gradient[v][j] -= vna.count * vna.array[v]/ vna.normalizer;
-								}
-							}
-						}
-						vna.processed = true;
-					}							
-				} else {
-                    double normalizer = 0.0;
-					final double[] numeratorCache = new double[expParam.length];
-					for (int v = 0; v < expParam.length; v++) {
-						double numerator = MathUtils.expDot(expParam[v], conditionalVector);
-						numeratorCache[v] = numerator;
-						normalizer += numerator;						
-					}
-					for(int j=0; j<expParam[0].length; j++) {
-						if(conditionalVector[j] != 0) {
-							for(int v=0; v<expParam.length; v++) {
-								gradient[v][j] -= numeratorCache[v] / normalizer;
-							}
-						}
-					}				
-				}
-					
 			}
-		}	
+		}
+		
+		for(FrequentConditionalStringVector f : Corpus.frequentConditionals) {
+			String conditionalString = f.index;
+			double[] conditionalVector = f.vector;
+			VocabNumeratorArray vna = featureNumeratorCache.get(conditionalString);
+			if(! vna.processed) {
+				for(int j=0; j<expParam[0].length; j++) {
+					if(conditionalVector[j] != 0) {
+						for(int v=0; v<expParam.length; v++) {
+							gradient[v][j] -= vna.count * vna.array[v]/ vna.normalizer;
+						}
+					}
+				}
+				vna.processed = true;
+			}							
+		} 
 		if(Config.displayDetail) {
 			System.out.println("Total conditional time : " + totalConditionalTime);
 			System.out.println("Total partition time : " + totalPartitionTime);
 			System.out.println("Total gradient update time : " + totalGradientTime);
-			System.out.println("Total sort time : " + totalSortTime);
 			System.out.println("Gradient computation time : " + timing.stop());
 		}
 		return gradient;
@@ -450,18 +435,16 @@ public class InstanceList extends ArrayList<Instance> {
 		for (int n = 0; n < this.size(); n++) {
 			Instance instance = get(n);
 			for (int t = 0; t < instance.T; t++) {
-				Timing timing2 = new Timing();
-				timing2.start();
 				double[] conditionalVector = instance.getConditionalVector(t);
-				String conditionalString = instance.getConditionalString(t);
+				//String conditionalString = instance.getConditionalString(t);
+				//if(Corpus.frequentConditionals.contains(conditionalString)) {
 				//positive
-				if(Corpus.frequentConditionals.contains(conditionalString)) {
-					for(int j=0; j<expParam[0].length; j++) {
-						if(conditionalVector[j] != 0) {
-							gradient[instance.words[t][0]][j] += 1; 
-						}
+				for(int j=0; j<expParam[0].length; j++) {
+					if(conditionalVector[j] != 0) {
+						gradient[instance.words[t][0]][j] += 1; 
 					}
 				}
+				//}
 			}
 		}
 		
@@ -490,19 +473,21 @@ public class InstanceList extends ArrayList<Instance> {
 			}
 			updateGradientComputation(worker);
 		}
-		System.out.println("Gradient computation time : " + timing.stop());
+		if(Config.displayDetail) {
+			System.out.println("Gradient computation time : " + timing.stop());
+		}
 		featureNumeratorCache = null;
 		return gradient;
 	}
 	
 	public void updateGradientComputation(GradientWorker worker) {
         synchronized (gradientLock) {
-        	MathUtils.addMatrix(gradient, worker.gradient);
+        	MathUtils.addMatrix(gradient, worker.gradientLocal);
         }
     }
 	
 	private class GradientWorker extends Thread{
-		public double[][] gradient;
+		public double[][] gradientLocal;
 		final int startIndex;
 		final int endIndex;
 		final double[][] expWeights;
@@ -518,7 +503,7 @@ public class InstanceList extends ArrayList<Instance> {
 		
 		@Override
 		public void run() {
-			gradient = new double[expWeights.length][expWeights[0].length];
+			gradientLocal = new double[expWeights.length][expWeights[0].length];
 			for(int n=startIndex; n<endIndex; n++) {
 				FrequentConditionalStringVector f = freqConditionals.get(n);
 				VocabNumeratorArray vna = featureNumeratorCache.get(f.index);
@@ -526,7 +511,7 @@ public class InstanceList extends ArrayList<Instance> {
 				for(int j=0; j<expWeights[0].length; j++) {
 					if(conditionalVector[j] != 0) {
 						for(int v=0; v<expWeights.length; v++) {
-							gradient[v][j] -= vna.count * vna.array[v]/ vna.normalizer;
+							gradientLocal[v][j] -= vna.count * vna.array[v]/ vna.normalizer;
 						}
 					}
 					//vna.processed = true;

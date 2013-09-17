@@ -58,6 +58,12 @@ public class Main {
 		model.loadModel(filename);
 		corpus.model = model;
 		corpus.readTrain(Config.baseDirData + Config.trainFile);
+		if(Config.testFile != null && !Config.testFile.equals("")) {
+			corpus.readTest(Config.baseDirData + Config.testFile);
+		}
+		if(Config.devFile != null && !Config.devFile.equals("")) { 
+			corpus.readDev(Config.baseDirData + Config.devFile);
+		}
 		model.initializeZerosToBest();
 		Config.printParams();
 		EM em = new EM(Config.numIter, corpus, model);

@@ -208,7 +208,8 @@ public class InstanceList extends ArrayList<Instance> {
 				instance.posteriorDifferenceMax = 0;
 				instance.doInference(model);
 				instance.decode();
-				localLL += getJointLL(instance, model);
+				//localLL += getJointLL(instance, model);
+				localLL += instance.logLikelihood;
 				localExpectationL1Norm += instance.posteriorDifference;
 				if(instance.posteriorDifferenceMax > localExpectationL1Max) {
 					localExpectationL1Max = instance.posteriorDifferenceMax; 

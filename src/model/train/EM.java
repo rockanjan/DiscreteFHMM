@@ -176,7 +176,7 @@ public class EM {
 				}
 			}
 			if (iterCount > 0) {
-				display.append(String.format("LL %.5f Diff %.5f \t Iter %d \t Fixes: %d \t iter time %s\n",LL, diff, iterCount,Stats.totalFixes, oneIterEmTime.stop()));
+				display.append(String.format("jointLL %.5f Diff %.5f \t Iter %d \t Fixes: %d \t iter time %s\n",LL, diff, iterCount,Stats.totalFixes, oneIterEmTime.stop()));
 			}
 			//only check if not check in dev done (because dev was null)
 			if(Corpus.devInstanceList == null) {

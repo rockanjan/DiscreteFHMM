@@ -21,7 +21,7 @@ public class Timing {
 	public String stop() {
 		//stopT = System.currentTimeMillis();
 		stopT = new Date().getTime();
-		String elapsed = df.format((1.0 * (stopT - startT) / 1000 / 60))  + " minutes";
+		String elapsed = df.format((1.0 * (stopT - startT) / 1000 / 60))  + " mins";
 		stopT = 0; startT = 0;
 		return elapsed;
 		
@@ -39,7 +39,7 @@ public class Timing {
 	public String stopMilliseconds() {
 		//stopT = System.currentTimeMillis();
 		stopT = new Date().getTime();
-		String elapsed = (stopT - startT)  + " milliseconds";
+		String elapsed = (stopT - startT)  + " msecs";
 		stopT = 0; startT = 0;
 		return elapsed;
 		

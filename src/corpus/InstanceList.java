@@ -148,12 +148,13 @@ public class InstanceList extends ArrayList<Instance> {
 			StringBuffer updateString = new StringBuffer();
 			updateString.append("\tvar iter=" + iter);
 			expectationL1NormAll = expectationL1NormAll/this.numberOfTokens/model.nrLayers/model.nrStates;
+			LL = LL/Corpus.trainInstanceEStepSampleList.numberOfTokens;
 			updateString.append(String.format(" LL=%.2f time=%s", LL, varIterTime.stop()));
-			updateString.append(String.format(" expectedDiffL1NormAvg=%f", expectationL1NormAll));
-			updateString.append(String.format(" Max=%f", expectationL1NormMax));
+			updateString.append(String.format(" l1avg=%f", expectationL1NormAll));
+			updateString.append(String.format(" max=%f", expectationL1NormMax));
 			System.out.println(updateString.toString());
 			
-			if(expectationL1NormMax < 1e-3) {
+			if(expectationL1NormMax < 1e-2) {
 				System.out.println("variational params converged");
 				break;
 			}

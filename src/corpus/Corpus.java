@@ -42,7 +42,6 @@ public class Corpus {
 
 	static public ArrayList<Vocabulary> corpusVocab;
 	
-	public static int maxFrequentConditionals = 100000;
 	//public static TreeSet<FrequentConditionalStringVector> frequentConditionals;
 	public static ArrayList<FrequentConditionalStringVector> frequentConditionals;
 
@@ -199,12 +198,12 @@ public class Corpus {
 		}
 		
 		FrequentConditionalCountComparator comparator = new FrequentConditionalCountComparator();
-		PriorityQueue<FrequentConditionalStringVector> pq = new PriorityQueue<FrequentConditionalStringVector>(maxFrequentConditionals, comparator);
+		PriorityQueue<FrequentConditionalStringVector> pq = new PriorityQueue<FrequentConditionalStringVector>(Config.maxFrequentConditionals, comparator);
 		//get top freq items
 		for (Map.Entry<FrequentConditionalStringVector, Integer> entry : conditionalCountMap.entrySet()) {
 			FrequentConditionalStringVector fc = entry.getKey();
 			fc.count = entry.getValue();
-			if(pq.size() < maxFrequentConditionals) {
+			if(pq.size() < Config.maxFrequentConditionals) {
 				//just add it
 				pq.add(fc);
 			} else {

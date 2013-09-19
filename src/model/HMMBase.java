@@ -200,7 +200,10 @@ public abstract class HMMBase {
 			modelReader.readLine();
 			// log linear weights
 			//pw.println(param.weights.vocabSize);
-			modelReader.readLine();
+			int vocabSizeFromModel = Integer.parseInt(modelReader.readLine());
+			if(vocabSizeFromModel != Corpus.corpusVocab.get(0).vocabSize) {
+				System.err.format("Vocab size mismatch, from dictionary %d, from model %d\n", Corpus.corpusVocab.get(0).vocabSize, vocabSizeFromModel);
+			}
 			//pw.println(param.weights.conditionalSize);
 			modelReader.readLine();
 			for (int y = 0; y < param.weights.vocabSize; y++) {
@@ -215,6 +218,7 @@ public abstract class HMMBase {
 				System.out.println("Model file loaded successfully");
 			} else {
 				System.err.println("Model file loading failed");
+				System.exit(-1);
 			}
 			modelReader.close();
 		} catch (FileNotFoundException e) {

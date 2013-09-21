@@ -142,6 +142,7 @@ public abstract class HMMBase {
 		}
 		return folder.getAbsolutePath();
 	}
+	
 
 	public void loadModel(String filename) {
 		//load vocab file
@@ -230,4 +231,115 @@ public abstract class HMMBase {
 			System.exit(-1);
 		}
 	}
+	
+	public void loadModelsFromIndependentHMM(String folderName) {
+		//load vocab file
+		File folder = new File(folderName);
+		//read vocab
+		if(Corpus.corpusVocab == null) {
+			Corpus.corpusVocab = new ArrayList<Vocabulary>();
+		}
+		if(Corpus.corpusVocab.size() == 0) {
+			Corpus.corpusVocab.add(new Vocabulary());
+		}
+		Corpus.corpusVocab.get(0).readDictionary(folder.getAbsolutePath() + "/vocab.txt");
+		this.initializeZeros();
+		String[] files = folder.list();
+		int modelCount = 0;
+		for( String modelFilename : files) {
+			if(modelFilename.equals(".") || modelFilename.equals("..") || modelFilename.equals("vocab.txt")) continue;
+			try {
+				BufferedReader br = new BufferedReader(new FileReader(folder.getAbsolutePath() + "/" + modelFilename));
+				try{
+					nrStates = Integer.parseInt(br.readLine());
+					nrStatesWithFake = nrStates;
+					int vocabSizeFromModel = Integer.parseInt(br.readLine());
+					if(vocabSizeFromModel != Corpus.corpusVocab.get(0).vocabSize) {
+						System.err.println("Error: vocab size from model : " + vocabSizeFromModel + " from dictionary : " + Corpus.corpusVocab.get(0).vocabSize);
+						System.exit(-1);
+					}
+					br.readLine();
+					//load initial
+					String splitted[] = br.readLine().split("(\\s+|\\t+)");
+					if(nrStates != splitted.length) {
+						br.close();
+						throw new RuntimeException("Loading model, Initial parameters not matching number of states");
+					}
+					for(int i=0; i<nrStates; i++) {
+						double prob = Double.parseDouble(splitted[i]);
+						if(prob == 0) {
+							prob = Math.log(1e-300);
+						}
+						else {
+							prob = Math.log(prob);
+						}
+						this.param.initial.get(modelCount).set(i, 0, prob);
+					}
+					br.readLine();
+					//transition
+					for(int i=0; i<nrStates; i++) {
+						splitted = br.readLine().split("(\\s+|\\t+)");
+						if(nrStatesWithFake != splitted.length) {
+							br.close();
+							System.err.format("For transition: nrStates=%d, from file=%d\n", nrStatesWithFake, splitted.length);
+							throw new RuntimeException("Loading model, transition parameters not matching number of states");
+						}
+						for(int j=0; j<splitted.length; j++) {
+							double prob = Double.parseDouble(splitted[j]);
+							if(prob == 0) {
+								prob = Math.log(1e-300);
+							}
+							else {
+								prob = Math.log(prob);
+							}
+							this.param.transition.get(modelCount).set(j, i, prob);
+						}
+					}
+					br.readLine();
+					//observation
+					for(int i=0; i<nrStates; i++) {
+						splitted = br.readLine().split("(\\s+|\\t+)");
+						if(Corpus.corpusVocab.get(0).vocabSize != splitted.length) {
+							br.close();
+							System.err.format("nrStates=%d, from file=%d\n", Corpus.corpusVocab.get(0).vocabSize, splitted.length);
+							throw new RuntimeException("Loading model, obs parameters not matching number of states");
+						}
+						for(int j=0; j<splitted.length; j++) {
+							double prob = Double.parseDouble(splitted[j]);
+							if(prob == 0) {
+								System.err.println("Fixing zero observation");
+								prob = Math.log(1e-50);
+							}
+							else {
+								prob = Math.log(prob);
+							}
+							this.param.weights.set(modelCount, i, j, prob);
+						}
+					}
+					br.close();					
+				} catch(NumberFormatException e) {
+					e.printStackTrace();
+					System.err.println("Error loading model");
+					System.exit(-1);
+				}			
+			} 
+			catch (FileNotFoundException fnfe) {
+				fnfe.printStackTrace();
+			}
+			catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			System.out.format("Layer %d, Model loaded successfully with %d states and %d observations \n", modelCount, nrStates, Corpus.corpusVocab.get(0).vocabSize);
+			modelCount++;
+		}
+		//sanity check
+		System.out.println("Performing sanity check...");
+		for(int i=0; i<modelCount; i++) {
+			param.initial.get(i).checkDistribution();
+			param.transition.get(i).checkDistribution();
+		}
+		System.out.println("Done");
+		System.out.println("Model loaded from independent HMM with 7 layers");
+	}	
 }

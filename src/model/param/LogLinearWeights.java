@@ -35,6 +35,11 @@ public class LogLinearWeights {
 		//return weights[v][m*k + k];
 		return weights[v][m * Config.numStates + k];	
 	}
+	
+	public void set(int m, int k, int v,  double value) {
+		weights[v][m * Config.numStates + k] = value;	
+	}
+	
 	public void initializeZeros() {
 		weights = new double[vocabSize][conditionalSize]; 
 	}
@@ -56,7 +61,7 @@ public class LogLinearWeights {
 				weights[y][u] = r.nextDouble() * .1;
 			}
 		}
-	}
+	}	
 	
 	/*
 	public LogLinearWeights getClone() {

@@ -131,7 +131,10 @@ public class Vocabulary {
 				}
 				String[] splitted = line.split("\\s+");
 				String word = splitted[0];
-				int freq = Integer.parseInt(splitted[1]);
+				int freq = 0;
+				if(splitted.length > 1) {
+					freq = Integer.parseInt(splitted[1]);
+				}
 				addItem(word, freq);
 			}
 			System.out.println("Dictionary Loaded Vocab Size: " + wordToIndex.size());

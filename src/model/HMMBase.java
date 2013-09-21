@@ -268,7 +268,7 @@ public abstract class HMMBase {
 					for(int i=0; i<nrStates; i++) {
 						double prob = Double.parseDouble(splitted[i]);
 						if(prob == 0) {
-							prob = Math.log(1e-300);
+							prob = Math.log(1e-50);
 						}
 						else {
 							prob = Math.log(prob);
@@ -287,7 +287,7 @@ public abstract class HMMBase {
 						for(int j=0; j<splitted.length; j++) {
 							double prob = Double.parseDouble(splitted[j]);
 							if(prob == 0) {
-								prob = Math.log(1e-300);
+								prob = Math.log(1e-50);
 							}
 							else {
 								prob = Math.log(prob);
@@ -307,8 +307,8 @@ public abstract class HMMBase {
 						for(int j=0; j<splitted.length; j++) {
 							double prob = Double.parseDouble(splitted[j]);
 							if(prob == 0) {
-								System.err.println("Fixing zero observation");
-								prob = Math.log(1e-50);
+								//System.err.println("Fixing zero observation");
+								prob = Math.log(1e-100);
 							}
 							else {
 								prob = Math.log(prob);

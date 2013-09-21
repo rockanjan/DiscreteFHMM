@@ -41,7 +41,8 @@ public class VariationalParam {
 	
 	public void optimize() {
 		for(int t=0; t<instance.T; t++) {
-			createCache(t);
+			//createCache(t);
+			createCacheLogFix(t);
 			optimizeAlpha(t);
 			//optimizeParamObs(t);
 			optimizeParamObsNew(t);
@@ -63,6 +64,24 @@ public class VariationalParam {
 				}			
 			}
 			prodCache[y] = prod;
+		}
+	}
+	
+	public void createCacheLogFix(int t) {
+		prodCache = new double[V];
+		for(int y=0; y<V; y++) {
+			double prodLog = 0.0;
+			for(int n=0; n<M; n++) {
+				double dot = MathUtils.dot(model.param.expWeights.getStateVector(n, y), 
+						instance.forwardBackwardList.get(n).posterior[t]);
+				if(dot == 0) {
+					dot = 1e-200;
+				} else {
+					dot = Math.log(dot);
+				}
+				prodLog = prodLog + dot;
+			}
+			prodCache[y] = Math.exp(prodLog);
 		}
 	}
 	

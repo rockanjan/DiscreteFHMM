@@ -75,7 +75,7 @@ public class VariationalParam {
 				double dot = MathUtils.dot(model.param.expWeights.getStateVector(n, y), 
 						instance.forwardBackwardList.get(n).posterior[t]);
 				if(dot == 0) {
-					dot = 1e-200;
+					dot = Math.log(1e-200);
 				} else {
 					dot = Math.log(dot);
 				}

@@ -51,7 +51,7 @@ public class Config {
 	 * (some might be repeated some might be skipped)
 	 */
 	public static boolean sampleSequential = true;
-	public static double alpha = 0.8;
+	public static double alpha = 0.6;
 	public static double t0 = 2;
 	public static int sampleSizeEStep = 500;
 	public static int sampleSizeMStep = sampleSizeEStep;
@@ -60,7 +60,7 @@ public class Config {
 	//LBFGS
 	public static double c2 = 0.01; // L2-regularizer constant (higher means higher penalty)
 	
-	public static boolean displayDetail = false;
+	public static boolean displayDetail = true;
 	
 	public static void printParams() {
 		StringBuffer sb = new StringBuffer();

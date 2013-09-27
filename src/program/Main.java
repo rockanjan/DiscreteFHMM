@@ -20,8 +20,8 @@ public class Main {
 	static Corpus corpus;
 	public static void main(String[] args) throws IOException {
 		corpus = new Corpus("\\s+", Config.vocabThreshold);
-		//trainNew();		
-		trainContinue("variational_model_layers_1_states_40_iter_9.txt");
+		trainNew();		
+		//trainContinue("variational_model_layers_1_states_40_iter_9.txt");
 		if(Corpus.testInstanceList != null) {
 			testVariational(model, Corpus.testInstanceList, Config.outFileTest);
 		} else {

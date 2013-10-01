@@ -41,9 +41,11 @@ public class VariationalParam {
 	
 	public void optimize() {
 		for(int t=0; t<instance.T; t++) {
-			//createCache(t);
-			createCacheLogFix(t);
-			optimizeAlpha(t);
+			if(M > 1) {
+				//createCache(t);
+				createCacheLogFix(t);
+				optimizeAlpha(t);
+			}
 			//optimizeParamObs(t);
 			optimizeParamObsNew(t);
 			clearCache();
@@ -91,34 +93,50 @@ public class VariationalParam {
 	
 	
 	public void optimizeParamObsNew(int t) {
-		for(int m=0; m<M; m++) {
-			double[] sumOverY = new double[K];
-			
-			for(int y=0; y<V; y++) {
-				double allProd = prodCache[y];
-				double prod = allProd / MathUtils.dot(model.param.expWeights.getStateVector(m, y), 
-						instance.forwardBackwardList.get(m).posterior[t]); //all prod except m'th layer
+		if(M > 1) {
+			for(int m=0; m<M; m++) {
+				double[] sumOverY = new double[K];
+				
+				for(int y=0; y<V; y++) {
+					double allProd = prodCache[y];
+					double prod = allProd / MathUtils.dot(model.param.expWeights.getStateVector(m, y), 
+							instance.forwardBackwardList.get(m).posterior[t]); //all prod except m'th layer
+					for(int k=0; k<K; k++) {
+						sumOverY[k] += prod * model.param.expWeights.getStateVector(m, y)[k];
+					}
+				}
+				
+				double normalizer = 0;
+				double maxOverK = -Double.MAX_VALUE;
+				double[] updateValue = new double[K];
 				for(int k=0; k<K; k++) {
-					sumOverY[k] += prod * model.param.expWeights.getStateVector(m, y)[k];
+					double prod = alpha.alpha[t] * sumOverY[k];
+					updateValue[k] = model.param.weights.get(m, k, instance.words[t][0]) - prod;
+					if(updateValue[k] > maxOverK) {
+						maxOverK = updateValue[k];
+					}
+				}
+				normalizer = MathUtils.logsumexp(updateValue);
+				//normalize and update				
+				for(int k=0; k<K; k++) {
+					//varParamObs.shi[m][t][k] = updateValue[k] - maxOverK;
+					varParamObs.shi[m][t][k] = updateValue[k] - normalizer;
+					MathUtils.check(varParamObs.shi[m][t][k]);
 				}
 			}
-			
-			double normalizer = 0;
-			double maxOverK = -Double.MAX_VALUE;
-			double[] updateValue = new double[K];
-			for(int k=0; k<K; k++) {
-				double prod = alpha.alpha[t] * sumOverY[k];
-				updateValue[k] = model.param.weights.get(m, k, instance.words[t][0]) - prod;
-				if(updateValue[k] > maxOverK) {
-					maxOverK = updateValue[k];
+		} else {
+			for(int m=0; m<M; m++) {
+				double normalizer = 0;
+				double[] updateValue = new double[K];
+				for(int k=0; k<K; k++) {
+					updateValue[k] = model.param.weights.get(m, k, instance.words[t][0]) - 1;
 				}
-			}
-			normalizer = MathUtils.logsumexp(updateValue);
-			//normalize and update				
-			for(int k=0; k<K; k++) {
-				//varParamObs.shi[m][t][k] = updateValue[k] - maxOverK;
-				varParamObs.shi[m][t][k] = updateValue[k] - normalizer;
-				MathUtils.check(varParamObs.shi[m][t][k]);
+				normalizer = MathUtils.logsumexp(updateValue);
+				for(int k=0; k<K; k++) {
+					//varParamObs.shi[m][t][k] = updateValue[k] - maxOverK;
+					varParamObs.shi[m][t][k] = updateValue[k] - normalizer;
+					MathUtils.check(varParamObs.shi[m][t][k]);
+				}
 			}
 		}
 	}

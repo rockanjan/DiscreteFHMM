@@ -129,14 +129,16 @@ public class VariationalParam {
 				double normalizer = 0;
 				double[] updateValue = new double[K];
 				for(int k=0; k<K; k++) {
-					updateValue[k] = model.param.weights.get(m, k, instance.words[t][0]) - 1;
+					updateValue[k] = model.param.weights.get(m, k, instance.words[t][0]);
 				}
+				/*
 				normalizer = MathUtils.logsumexp(updateValue);
 				for(int k=0; k<K; k++) {
 					//varParamObs.shi[m][t][k] = updateValue[k] - maxOverK;
 					varParamObs.shi[m][t][k] = updateValue[k] - normalizer;
 					MathUtils.check(varParamObs.shi[m][t][k]);
 				}
+				*/
 			}
 		}
 	}

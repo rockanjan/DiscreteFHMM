@@ -216,8 +216,10 @@ public class Corpus {
 		}
 		//iterate over pq list and add into the treeset
 		for(FrequentConditionalStringVector f : pq) {
+			System.out.print(f.index + "=" + f.count + ", ");
 			frequentConditionals.add(f);
 		}
+		System.out.println();
 		System.out.println("Frequent conditional size : " + frequentConditionals.size());
 	}
 	

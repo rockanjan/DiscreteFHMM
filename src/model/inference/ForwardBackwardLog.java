@@ -147,19 +147,25 @@ public class ForwardBackwardLog extends ForwardBackward{
 		throw new UnsupportedOperationException("not implemented");		
 	}
 	
-	//works in normal scale (not log scale)
 	public void addToTransition(MultinomialBase transition) {
 		for(int t=0; t<T-1; t++) {
+			double[] value = new double[nrStates * nrStates];
+			int index = 0;
 			for(int i=0; i<nrStates; i++) {
-				double numerator[] = new double[nrStates];
 				for(int j=0; j<nrStates; j++) {
-					double value = getTransitionPosterior(i, j, t);
-					numerator[j] = value;					
+					value[index] = getTransitionPosterior(i, j, t);
+					index++;
 				}
-				double normalizer = MathUtils.logsumexp(numerator);
+			}
+			//normalize
+			double normalizer = MathUtils.logsumexp(value);
+			index = 0;
+			for(int i=0; i<nrStates; i++) {
 				for(int j=0; j<nrStates; j++) {
-					double value = Math.exp(numerator[j] - normalizer);
-					transition.addToCounts(j, i, value);
+					double transProb = Math.exp(value[index] - normalizer);
+					//System.out.println("transProb = " + transProb);
+					transition.addToCounts(j, i, transProb);
+					index++;
 				}
 			}
 		}

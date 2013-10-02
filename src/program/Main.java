@@ -44,6 +44,7 @@ public class Main {
 		corpus.model = model;
 		//random init		
 		model.initializeRandom(Config.random);
+		//model.initializeZeros();
 		model.initializeZerosToBest();
 		Config.printParams();
 		EM em = new EM(Config.numIter, corpus, model);

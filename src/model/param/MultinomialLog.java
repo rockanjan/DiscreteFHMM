@@ -1,6 +1,8 @@
 package model.param;
 
 import java.util.Random;
+
+import util.MathUtils;
 import util.MyArray;
 import util.Stats;
 
@@ -19,7 +21,8 @@ public class MultinomialLog extends MultinomialBase{
 		for(int i=0; i<y; i++) {
 			double sum = 0;
 			for(int j=0; j<x; j++) {
-				count[j][i] = r.nextDouble() + small;
+				//count[j][i] = r.nextDouble() + small;
+				count[j][i] = 1.0;
 				sum += count[j][i];
 			}
 			//normalize
@@ -47,37 +50,39 @@ public class MultinomialLog extends MultinomialBase{
 	//when reached here, the counts are normal (no logs)
 	@Override
 	public void normalize() {
-		smooth();
+		//do add one smoothing
+		for(int i=0; i<y; i++) {
+			for(int j=0; j<x; j++) {
+				MathUtils.check(count[j][i]);
+				if(count[j][i] < 0) {
+					System.err.println("count negative " + count[j][i]);
+					System.exit(-1);
+				}
+				count[j][i] = count[j][i] + 1;
+			}
+		}
 		for(int i=0; i<y; i++) {
 			double sum = 0;
 			for(int j=0; j<x; j++) {
 				sum += count[j][i];
-			}
-			//MyArray.printTable(count);
-			//normalize
-			if(sum == 0) {
-				throw new RuntimeException("Sum = 0 in normalization");
-			}
-			if(Double.isInfinite(sum)) {
-				throw new RuntimeException("Sum is infinite in normalization");
-			}
-			if(Double.isNaN(sum)) {
-				throw new RuntimeException("Sum is NaN in normalization");
+				MathUtils.check(sum);
 			}
 			for(int j=0; j<x; j++) {
 				count[j][i] = count[j][i] / sum;
-				if(Double.isNaN(count[j][i])) {
-					System.err.format("count[%d][%d] = %f\n", j,i,count[j][i]);
-					System.err.format("sum = %f\n", sum);
-					throw new RuntimeException("Probability after normalization is NaN");
-				}
+				double actualCount = count[j][i];
+				MathUtils.check(count[j][i]);
 				if(count[j][i] == 0) {
-					//System.err.println("Prob distribution zero after normalization");
 					Stats.totalFixes++;
-					//fix
-					count[j][i] = -Double.MAX_EXPONENT;
+					count[j][i] = Math.log(1e-50);
 				} else {
 					count[j][i] = Math.log(count[j][i]);
+				}
+				
+				try {
+				MathUtils.check(count[j][i]);
+				} catch(Exception e) {
+					System.out.println("actual = " + actualCount + " " + count[j][i]);
+					System.exit(-1);
 				}
 			}
 		}
@@ -93,6 +98,11 @@ public class MultinomialLog extends MultinomialBase{
 			double sum = 0;
 			for(int j=0; j<x; j++) {
 				sum += Math.exp(count[j][i]);
+				try{
+					MathUtils.check(sum);
+				} catch(Exception e) {
+					System.err.println(count[j][i]);
+				}
 			}
 			
 			if(Double.isNaN(sum)) {

@@ -9,19 +9,19 @@ import corpus.InstanceList;
  * hyperparams
  */
 public class Config {
-	public final static long seed = 4321;
+	public final static long seed = 2;
 	public static Random random = new Random(seed);
 	public final static int numIter = 100;
-	public final static int nrLayers = 7;
-	public final static int numStates = 10;
-	public final static int USE_THREAD_COUNT = 8;
+	public final static int nrLayers = 1;
+	public final static int numStates = 40;
+	public final static int USE_THREAD_COUNT = 2;
 	public final static int vocabThreshold = 1;
 	
 	public static final String baseDirData = "data/";
 	public static final String baseDirModel = "out/model/";
 	public static final String baseDirDecode = "out/decoded/";
 	
-	public static String trainFile = "wsj_biomed_all.notag.uniq.clean";
+	public static String trainFile = "pos_ul.test.notag";
 	public static String vocabFile = trainFile;
 	public static String testFile = "pos_ul.test.notag";
 	public static String devFile = "onco_test.561.notag";	
@@ -53,7 +53,7 @@ public class Config {
 	public static boolean sampleSequential = true;
 	public static double alpha = 0.65;
 	public static double t0 = 2;
-	public static int sampleSizeEStep = 500;
+	public static int sampleSizeEStep = -1;
 	public static int sampleSizeMStep = sampleSizeEStep;
 	public static int sampleDevSize = 100;
 	

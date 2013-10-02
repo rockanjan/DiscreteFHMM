@@ -49,6 +49,14 @@ public abstract class HMMParamBase {
 		}
 	}
 	
+	public void initializeUniform() {
+		for(int i=0; i<nrLayers; i++) {
+			initial.get(i).initializeUniformCounts();
+			transition.get(i).initializeUniformCounts();
+		}
+		
+	}
+	
 	public void initialize(Random r) {
 		initializeZeros();
 		for(int i=0; i<nrLayers; i++) {

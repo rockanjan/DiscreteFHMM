@@ -106,11 +106,7 @@ public class EM {
 		//model.updateFromCountsWeighted(expectedCounts, adaptiveWeight);
 		model.updateFromCounts(expectedCounts); //unweighted
 		Corpus.trainInstanceEStepSampleList.clearPosteriorProbabilities();
-		Corpus.trainInstanceEStepSampleList.clearDecodedStates();
-		
-		//MyArray.printExpTable(model.param.initial.get(0).count, "initial");
-		
-		//MyArray.printExpTable(model.param.transition.get(0).count, "transition");
+		Corpus.trainInstanceEStepSampleList.clearDecodedStates();		
 	}
 	
 	public void trainLBFGS() {
@@ -119,6 +115,7 @@ public class EM {
 		CLLTrainer optimizable = new CLLTrainer(initParams, c);
 		Optimizer optimizer = new LimitedMemoryBFGS(optimizable);
 		boolean converged = false;
+		//optimizable.checkGradientComputation();
 		try {
 			converged = optimizer.optimize(Config.mStepIter);
 		} catch (IllegalArgumentException e) {

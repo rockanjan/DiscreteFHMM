@@ -9,11 +9,11 @@ import corpus.InstanceList;
  * hyperparams
  */
 public class Config {
-	public final static long seed = 2;
+	public final static long seed = 1;
 	public static Random random = new Random(seed);
 	public final static int numIter = 100;
 	public final static int nrLayers = 1;
-	public final static int numStates = 40;
+	public final static int numStates = 20;
 	public final static int USE_THREAD_COUNT = 2;
 	public final static int vocabThreshold = 1;
 	
@@ -51,7 +51,7 @@ public class Config {
 	 * (some might be repeated some might be skipped)
 	 */
 	public static boolean sampleSequential = true;
-	public static double alpha = 0.65;
+	public static double alpha = 0.5;
 	public static double t0 = 2;
 	public static int sampleSizeEStep = 500;
 	public static int sampleSizeMStep = sampleSizeEStep;
@@ -60,7 +60,7 @@ public class Config {
 	//LBFGS
 	public static double c2 = 0.00; // L2-regularizer constant (higher means higher penalty)
 	
-	public static boolean displayDetail = true;
+	public static boolean displayDetail = false;
 	
 	public static void printParams() {
 		StringBuffer sb = new StringBuffer();

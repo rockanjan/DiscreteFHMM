@@ -510,8 +510,7 @@ public class InstanceList extends ArrayList<Instance> {
 			for(int t=0; t<instance.T; t++) {
 				for(int m=0; m<Config.nrLayers; m++) {
 					for(int k=0; k<Config.numStates; k++) {
-						gradient[instance.words[t][0]][LogLinearWeights.getIndex(m, k)] += 
-								instance.posteriors[m][t][k] * parameterMatrix[instance.words[t][0]][LogLinearWeights.getIndex(m, k)];						 
+						gradient[instance.words[t][0]][LogLinearWeights.getIndex(m, k)] += instance.posteriors[m][t][k];						 
 					}
 				}
 				for(int y=0; y<vocabSize; y++) {
@@ -543,6 +542,43 @@ public class InstanceList extends ArrayList<Instance> {
 		System.out.println("Gradient computation time : " + timing.stop());		
 		return gradient;
 	}
+	
+	/*
+	public double[][] getGradientSoftNaive(double[][] parameterMatrix) {
+		Timing timing = new Timing();
+		timing.start();
+		int vocabSize = Corpus.corpusVocab.get(0).vocabSize;
+		double[][] expParam = MathUtils.expArray(parameterMatrix);
+		double gradient[][] = new double[parameterMatrix.length][parameterMatrix[0].length];
+		
+		for(int m=0; m<Config.nrLayers; m++) {
+			for(int y=0; y<vocabSize; y++) {
+				for(int k=0; k<Config.numStates; k++) {
+					for(int n=0; n<this.size(); n++) {
+						Instance instance = get(n);
+						for(int t=0; t<instance.T; t++) {
+							if(instance.words[t][0] == y) {
+								gradient[y][LogLinearWeights.getIndex(m, k)] += instance.posteriors[m][t][k];// * parameterMatrix[y][LogLinearWeights.getIndex(m, k)];
+							}
+							
+							double prod = 1.0;
+							for(int p=0; p<Config.nrLayers; p++){
+								prod *= instance.posteriors[p][t][k] * expParam[y][LogLinearWeights.getIndex(p, k)];
+								MathUtils.check(prod);
+								if(prod == 0) {
+									throw new RuntimeException("underflow");
+								}
+							}
+							gradient[y][LogLinearWeights.getIndex(m, k)] -= prod;
+						}
+					}	
+				}
+			}
+		}
+		System.out.println("Gradient computation time : " + timing.stop());		
+		return gradient;
+	}
+	*/
 	
 	/*
 	 * old code for the gradient (exactly based on derivation)

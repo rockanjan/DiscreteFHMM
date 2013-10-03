@@ -222,24 +222,20 @@ public class Instance {
 			double vocabSize= weights.length;
 			for(int y=0; y<vocabSize; y++) {
 				double prod = 1.0;
-				double[] cache = new double[model.nrLayers];
 				for(int m=0; m<model.nrLayers; m++) {
-					int dot = 0;
+					double dot = 0;
 					for(int k=0; k<model.nrStates; k++) {
 						dot += posteriors[m][t][k] * expWeights[y][LogLinearWeights.getIndex(m, k)];
 					}
-					/*
 					prod *= dot;
 					MathUtils.check(prod);
 					if(prod == 0) {
 						throw new RuntimeException("underflow");
 					}
-					*/
-					cache[m] = dot;
 				}
-				cll += MathUtils.logsumexp(cache);
+				cll -= prod;
 			}
-			cll = cll - 1; // logx <= x - 1			
+			cll = cll + 1; // logx <= x - 1			
 		}
 		return cll;
 	}

@@ -28,8 +28,7 @@ public class CLLTrainer implements Optimizable.ByGradientValue{
 	@Override
 	public double getValue() {
 		double[][] weights = MyArray.createMatrix(parameters, corpus.corpusVocab.get(0).vocabSize);
-		double cll = corpus.trainInstanceMStepSampleList.getConditionalLogLikelihoodUsingViterbi(weights);
-		//double cll = corpus.trainInstanceMStepSampleList.getApproxConditionalLogLikelihoodUsingPosteriorDistribution(weights);
+		double cll = corpus.trainInstanceMStepSampleList.getCLLSoft(weights);
 		//add regularizer
 		double normSquared = MyArray.getL2NormSquared(parameters);
 		latestValue = cll - Config.c2 * normSquared;
@@ -102,13 +101,13 @@ public class CLLTrainer implements Optimizable.ByGradientValue{
 	private double[][] getFiniteDifferenceGradient() {
 		double[][] weights = MyArray.createMatrix(parameters, corpus.corpusVocab.get(0).vocabSize);
 		double[][] newGradients = new double[weights.length][weights[0].length];
-		double step = 1e-5;
+		double step = 1e-8;
 		for(int i=0; i<weights.length; i++) {
 			for(int j=0; j<weights[0].length; j++) {
 				weights[i][j] = weights[i][j] - step;
-				double valueX = corpus.trainInstanceList.getConditionalLogLikelihoodUsingViterbi(weights);
+				double valueX = corpus.trainInstanceEStepSampleList.getCLLSoft(weights);
 				weights[i][j] = weights[i][j] + step + step;
-				double valueXStepped = corpus.trainInstanceList.getConditionalLogLikelihoodUsingViterbi(weights);
+				double valueXStepped = corpus.trainInstanceEStepSampleList.getCLLSoft(weights);
 				newGradients[i][j] =  valueXStepped/ (2*step) - valueX / (2*step);
 				//System.out.println("grad from finitedifference = " + newGradients[i][j]);
 				//reset weights
@@ -120,7 +119,7 @@ public class CLLTrainer implements Optimizable.ByGradientValue{
 	
 	private double[][] getGradientByEquation() {
 		double[][] weights = MyArray.createMatrix(parameters, corpus.corpusVocab.get(0).vocabSize);
-		double[][] newGradients = corpus.trainInstanceList.getGradient(weights);
+		double[][] newGradients = corpus.trainInstanceEStepSampleList.getGradientSoft(weights);
 		return newGradients;
 	}
 	
@@ -138,7 +137,7 @@ public class CLLTrainer implements Optimizable.ByGradientValue{
 			if(difference[i] < minDiff) {
 				minDiff = difference[i];
 			}
-			System.out.format("%.9f, %.9f, diff=%.9f \n", finiteDifferenceGradient[i], equationGradient[i], difference[i]);
+			//System.out.format("%.9f, %.9f, diff=%.9f \n", finiteDifferenceGradient[i], equationGradient[i], difference[i]);
 		}
 		System.out.format("Gradient Difference: Max %.5f, Min %.5f\n", maxDiff, minDiff);
 	}

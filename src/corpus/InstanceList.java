@@ -5,11 +5,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import javax.management.RuntimeErrorException;
+
 import config.Config;
 
 import model.HMMBase;
 import model.inference.VariationalParam;
 import model.param.HMMParamBase;
+import model.param.LogLinearWeights;
 import util.MathUtils;
 import util.Timing;
 
@@ -87,7 +90,7 @@ public class InstanceList extends ArrayList<Instance> {
 			}
 			instance.decode();
 			jointLL += getJointLL(instance, model);
-			instance.clearInference();
+			//instance.clearInference();
 			instance.varParam = null;
 		}
 		//clear expWeights;				
@@ -231,7 +234,18 @@ public class InstanceList extends ArrayList<Instance> {
 	public double getConditionalLogLikelihoodUsingViterbi(
 			double[][] parameterMatrix) {
 		//return getCLLNoThread(parameterMatrix);
-		return getCLLThreaded(parameterMatrix);
+		//return getCLLThreaded(parameterMatrix);
+		return getCLLSoft(parameterMatrix);
+	}
+	
+	public double getCLLSoft(double[][] parameterMatrix) {
+		double cll = 0;
+		double[][] expWeights = MathUtils.expArray(parameterMatrix);
+		for (int n = 0; n < this.size(); n++) {
+			Instance i = get(n);
+			cll += i.getConditionalLogLikelihoodSoft(parameterMatrix, expWeights);
+		}
+		return cll;
 	}
 	
 	public double getCLLNoThread(double[][] parameterMatrix) {
@@ -483,6 +497,51 @@ public class InstanceList extends ArrayList<Instance> {
 				}
 			}
 		}		
+	}
+	
+	public double[][] getGradientSoft(double[][] parameterMatrix) {
+		Timing timing = new Timing();
+		timing.start();
+		int vocabSize = Corpus.corpusVocab.get(0).vocabSize;
+		double[][] expParam = MathUtils.expArray(parameterMatrix);
+		double gradient[][] = new double[parameterMatrix.length][parameterMatrix[0].length];		
+		for(int n=0; n<this.size(); n++) {
+			Instance instance = get(n);
+			for(int t=0; t<instance.T; t++) {
+				for(int m=0; m<Config.nrLayers; m++) {
+					for(int k=0; k<Config.numStates; k++) {
+						gradient[instance.words[t][0]][LogLinearWeights.getIndex(m, k)] += 
+								instance.posteriors[m][t][k] * parameterMatrix[instance.words[t][0]][LogLinearWeights.getIndex(m, k)];						 
+					}
+				}
+				for(int y=0; y<vocabSize; y++) {
+					double[][] precomputed = new double[Config.nrLayers][Config.numStates];
+					for(int m=0; m<Config.nrLayers; m++) {
+						for(int k=0; k<Config.numStates; k++) {
+							precomputed[m][k] = 1.0;
+						}
+					}
+					for(int m=0; m<Config.nrLayers; m++) {
+						for(int k=0; k<Config.numStates; k++) {
+							precomputed[m][k] *= instance.posteriors[m][t][k] * expParam[y][LogLinearWeights.getIndex(m, k)];
+							MathUtils.check(precomputed[m][k]);
+							if(precomputed[m][k] == 0) {
+								throw new RuntimeException("underflow");
+							}
+						}
+					}
+					//set them now
+					for(int m=0; m<Config.nrLayers; m++) {
+						for(int k=0; k<Config.numStates; k++) {
+							gradient[y][LogLinearWeights.getIndex(m, k)] -= precomputed[m][k];
+						}
+					}
+				}
+				
+			}
+		}
+		System.out.println("Gradient computation time : " + timing.stop());		
+		return gradient;
 	}
 	
 	/*

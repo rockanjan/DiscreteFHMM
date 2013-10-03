@@ -31,6 +31,10 @@ public class LogLinearWeights {
 		return vector;
 	}
 	
+	public static int getIndex(int m, int k) {
+		return m * Config.numStates + k;
+	}
+	
 	public double get(int m, int k, int v) {
 		//return weights[v][m*k + k];
 		return weights[v][m * Config.numStates + k];	

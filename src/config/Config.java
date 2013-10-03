@@ -40,7 +40,7 @@ public class Config {
 	public static double precision = 1e-4;
 	public static int maxConsecutiveDecreaseLimit = 5;
 	public static int maxConsecutiveConvergeLimit = 3;
-	public static int mStepIter = 20;
+	public static int mStepIter = 10;
 	public static int convergenceIterInterval = 5; //after how many iters to check the convergence on dev data
 	
 	//online learning params
@@ -53,14 +53,14 @@ public class Config {
 	public static boolean sampleSequential = true;
 	public static double alpha = 0.65;
 	public static double t0 = 2;
-	public static int sampleSizeEStep = -1;
+	public static int sampleSizeEStep = 500;
 	public static int sampleSizeMStep = sampleSizeEStep;
 	public static int sampleDevSize = 100;
 	
 	//LBFGS
-	public static double c2 = 0.01; // L2-regularizer constant (higher means higher penalty)
+	public static double c2 = 0.00; // L2-regularizer constant (higher means higher penalty)
 	
-	public static boolean displayDetail = false;
+	public static boolean displayDetail = true;
 	
 	public static void printParams() {
 		StringBuffer sb = new StringBuffer();

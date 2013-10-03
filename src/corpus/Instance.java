@@ -210,6 +210,41 @@ public class Instance {
 		}
 		return cll;
 	}
+	
+	public double getConditionalLogLikelihoodSoft(double[][] weights, double[][] expWeights) {
+		double cll = 0.0;
+		for (int t = 0; t < T; t++) {
+			for(int m=0; m < model.nrLayers; m++) {
+				for(int k=0; k<model.nrStates; k++) {
+					cll += posteriors[m][t][k] * weights[words[t][0]][LogLinearWeights.getIndex(m, k)];
+				}
+			}
+			double vocabSize= weights.length;
+			for(int y=0; y<vocabSize; y++) {
+				double prod = 1.0;
+				double[] cache = new double[model.nrLayers];
+				for(int m=0; m<model.nrLayers; m++) {
+					int dot = 0;
+					for(int k=0; k<model.nrStates; k++) {
+						dot += posteriors[m][t][k] * expWeights[y][LogLinearWeights.getIndex(m, k)];
+					}
+					/*
+					prod *= dot;
+					MathUtils.check(prod);
+					if(prod == 0) {
+						throw new RuntimeException("underflow");
+					}
+					*/
+					cache[m] = dot;
+				}
+				cll += MathUtils.logsumexp(cache);
+			}
+			cll = cll - 1; // logx <= x - 1			
+		}
+		return cll;
+	}
+	
+	
 
 	public double getExactNormalizer(int position, double[][] expWeights) {
 		double Z = 0;

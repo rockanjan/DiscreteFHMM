@@ -43,7 +43,8 @@ public class CLLTrainer implements Optimizable.ByGradientValue{
 	public void getValueGradient(double[] gradient) {
 		gradientCallCount++;
 		double[][] weights = MyArray.createMatrix(parameters, corpus.corpusVocab.get(0).vocabSize);
-		double[][] newGradients = corpus.trainInstanceMStepSampleList.getGradient(weights);
+		//double[][] newGradients = corpus.trainInstanceMStepSampleList.getGradient(weights);
+		double[][] newGradients = corpus.trainInstanceMStepSampleList.getGradientSoft(weights);
 		//regularizer
 		for(int i=0; i<newGradients.length; i++) {
 			for(int j=0; j<newGradients[0].length; j++) {

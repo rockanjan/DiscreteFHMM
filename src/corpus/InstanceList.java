@@ -173,8 +173,6 @@ public class InstanceList extends ArrayList<Instance> {
         }
     }
 	
-	
-	
 	private class VariationalWorker extends Thread{
 		double localExpectationL1Norm = 0;
 		double localExpectationL1Max = 0;
@@ -230,15 +228,20 @@ public class InstanceList extends ArrayList<Instance> {
 	}
 	
 	public double getCLL(double[][] parameterMatrix) {
-		
-		return getCLLSoft(parameterMatrix);
-		
+		//return getCLLSoft(parameterMatrix);
+		return getCLLSoftThreaded(parameterMatrix);
+	}
+	
+	public double[][] getGradient(double[][] parameterMatrix) {
+		//return getGradientSoft(parameterMatrix);
+		return getGradientSoftThreaded(parameterMatrix);
+		//return getGradientSoftNaive(parameterMatrix);
 	}
 	
 	//returns the lowerbound value
 	private double getCLLSoft(double[][] parameterMatrix) {
 		Timing t = new Timing();
-		double cll = 0;
+		cll = 0;
 		double[][] expWeights = MathUtils.expArray(parameterMatrix);
 		for (int n = 0; n < this.size(); n++) {
 			Instance i = get(n);
@@ -250,6 +253,264 @@ public class InstanceList extends ArrayList<Instance> {
 		return cll;
 	}
 	
+	private double getCLLSoftThreaded(double[][] parameterMatrix) {
+		Timing timing = new Timing();
+		cll = 0.0;
+		//start parallel processing
+		int divideSize = this.size() / Config.USE_THREAD_COUNT;
+		double[][] expWeights = MathUtils.expArray(parameterMatrix);
+		List<CllSoftWorker> threadList = new ArrayList<CllSoftWorker>();
+		int startIndex = 0;
+		int endIndex = divideSize;		
+		for(int i=0; i<Config.USE_THREAD_COUNT; i++) {
+			CllSoftWorker worker = new CllSoftWorker(startIndex, endIndex, parameterMatrix, expWeights);
+			threadList.add(worker);
+			worker.start();
+			startIndex = endIndex;
+			endIndex = endIndex + divideSize;			
+		}
+		//there might be some remaining
+		CllSoftWorker finalWorker = new CllSoftWorker(startIndex, this.size(), parameterMatrix, expWeights);
+		finalWorker.start();
+		threadList.add(finalWorker);
+		//start all threads and wait for them to complete
+		for(CllSoftWorker worker : threadList) {
+			try {
+				worker.join();
+			} catch (InterruptedException e) {				
+				e.printStackTrace();
+			}
+			updateCLLSoftComputation(worker);
+		}
+		if(Config.displayDetail) {
+			System.out.println("CLL computation time : " + timing.stop());
+		}
+		return cll;
+	}
+	
+	private class CllSoftWorker extends Thread{
+		public double result;
+		final int startIndex;
+		final int endIndex;
+		final double[][] expWeights;		
+		final double[][] weights;
+		
+		// [startIndex, endIndex) i.e. last index is not included
+		public CllSoftWorker(int startIndex, int endIndex, double[][] weights, double[][] expWeights) {
+			this.startIndex = startIndex;
+			this.endIndex = endIndex;
+			this.expWeights = expWeights;
+			this.weights = weights;
+		}
+		
+		@Override
+		public void run() {
+			result = 0.0;
+			for(int n=startIndex; n<endIndex; n++) {
+				Instance i = get(n);
+				result += i.getConditionalLogLikelihoodSoft(weights, expWeights);
+			}
+		}		
+	}
+	
+	private void updateCLLSoftComputation(CllSoftWorker worker) {
+	    synchronized (cllLockSoft) {
+	    	cll += worker.result;
+        }
+    }
+		
+	private double[][] getGradientSoftThreaded(double[][] parameterMatrix) {
+		Timing timing = new Timing();
+		timing.start();
+		double[][] expParam = MathUtils.expArray(parameterMatrix);		
+		gradient = new double[parameterMatrix.length][parameterMatrix[0].length];
+		int divideSize = this.size() / Config.USE_THREAD_COUNT;
+		List<GradientSoftWorker> threadList = new ArrayList<GradientSoftWorker>();
+		int startIndex = 0;
+		int endIndex = divideSize;		
+		for(int i=0; i<Config.USE_THREAD_COUNT; i++) {
+			GradientSoftWorker worker = new GradientSoftWorker(startIndex, endIndex, expParam);
+			threadList.add(worker);
+			worker.start();
+			startIndex = endIndex;
+			endIndex = endIndex + divideSize;			
+		}
+		//there might be some remaining
+		GradientSoftWorker finalWorker = new GradientSoftWorker(startIndex, this.size(), expParam);
+		finalWorker.start();
+		threadList.add(finalWorker);
+		//start all threads and wait for them to complete
+		for(GradientSoftWorker worker : threadList) {
+			try {
+				worker.join();
+			} catch (InterruptedException e) {				
+				e.printStackTrace();
+			}
+			updateGradientSoftComputation(worker);
+		}
+		if(Config.displayDetail) {
+			System.out.println("Gradient computation time : " + timing.stop());
+		}
+		return gradient;
+	}
+	
+	private class GradientSoftWorker extends Thread{
+		public double[][] gradientLocal;
+		final int startIndex;
+		final int endIndex;
+		final double[][] expParam;
+		public GradientSoftWorker(int startIndex, int endIndex, double[][] expParam) {
+			this.startIndex = startIndex;
+			this.endIndex = endIndex;
+			this.expParam = expParam;			
+		}
+		
+		@Override
+		public void run() {
+			gradientLocal = new double[expParam.length][expParam[0].length];
+			for(int n=startIndex; n<endIndex; n++) {
+				Instance instance = get(n);
+				for(int t=0; t<instance.T; t++) {
+					for(int m=0; m<Config.nrLayers; m++) {
+						for(int k=0; k<Config.numStates; k++) {
+							gradientLocal[instance.words[t][0]][LogLinearWeights.getIndex(m, k)] += instance.posteriors[m][t][k];						 
+						}
+					}
+					int vocabSize = Corpus.corpusVocab.get(0).vocabSize;
+					for(int y=0; y<vocabSize; y++) {
+						double dotProdOverAllLayers = 1.0; //to reduce complexity from O(m^2) to O(m)
+						for(int m=0; m<Config.nrLayers; m++) {
+							double dot = 0;
+							for(int k=0; k<Config.numStates; k++) {
+								dot += instance.posteriors[m][t][k] * expParam[y][LogLinearWeights.getIndex(m, k)];
+							}
+							dotProdOverAllLayers *= dot;
+							MathUtils.check(dotProdOverAllLayers);
+							if(dotProdOverAllLayers == 0) {
+								throw new RuntimeException("underflow");
+							}
+						}
+						//set them now
+						for(int m=0; m<Config.nrLayers; m++) {
+							double mLayerDot = 0.0;
+							for(int l=0; l<Config.numStates; l++) {
+								mLayerDot += instance.posteriors[m][t][l] * expParam[y][LogLinearWeights.getIndex(m, l)];
+							}
+							for(int k=0; k<Config.numStates; k++) {
+								//compute the amount that must be multiplied to adjust from dotProdOverAllLayers
+								double factorDifference = instance.posteriors[m][t][k] * expParam[y][LogLinearWeights.getIndex(m, k)] / mLayerDot;
+								gradientLocal[y][LogLinearWeights.getIndex(m, k)] -= dotProdOverAllLayers * factorDifference;
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	
+	private void updateGradientSoftComputation(GradientSoftWorker worker) {
+        synchronized (gradientLockSoft) {
+        	MathUtils.addMatrix(gradient, worker.gradientLocal);
+        }
+    }
+	
+	private double[][] getGradientSoft(double[][] parameterMatrix) {
+		Timing timing = new Timing();
+		timing.start();
+		int vocabSize = Corpus.corpusVocab.get(0).vocabSize;
+		double[][] expParam = MathUtils.expArray(parameterMatrix);
+		gradient = new double[parameterMatrix.length][parameterMatrix[0].length];		
+		for(int n=0; n<this.size(); n++) {
+			Instance instance = get(n);
+			for(int t=0; t<instance.T; t++) {
+				for(int m=0; m<Config.nrLayers; m++) {
+					for(int k=0; k<Config.numStates; k++) {
+						gradient[instance.words[t][0]][LogLinearWeights.getIndex(m, k)] += instance.posteriors[m][t][k];						 
+					}
+				}
+				for(int y=0; y<vocabSize; y++) {
+					double dotProdOverAllLayers = 1.0; //to reduce complexity from O(m^2) to O(m)
+					for(int m=0; m<Config.nrLayers; m++) {
+						double dot = 0;
+						for(int k=0; k<Config.numStates; k++) {
+							dot += instance.posteriors[m][t][k] * expParam[y][LogLinearWeights.getIndex(m, k)];
+						}
+						dotProdOverAllLayers *= dot;
+						MathUtils.check(dotProdOverAllLayers);
+						if(dotProdOverAllLayers == 0) {
+							throw new RuntimeException("underflow");
+						}
+					}
+					//set them now
+					for(int m=0; m<Config.nrLayers; m++) {
+						double mLayerDot = 0.0;
+						for(int l=0; l<Config.numStates; l++) {
+							mLayerDot += instance.posteriors[m][t][l] * expParam[y][LogLinearWeights.getIndex(m, l)];
+						}
+						for(int k=0; k<Config.numStates; k++) {
+							//compute the amount that must be multiplied to adjust from dotProdOverAllLayers
+							double factorDifference = instance.posteriors[m][t][k] * expParam[y][LogLinearWeights.getIndex(m, k)] / mLayerDot;
+							gradient[y][LogLinearWeights.getIndex(m, k)] -= dotProdOverAllLayers * factorDifference;
+						}
+					}
+				}
+				
+			}
+		}
+		if(Config.displayDetail) {
+			System.out.println("Gradient computation time : " + timing.stop());
+		}
+		return gradient;
+	}
+	
+	
+	//implemented according to the derivation in the paper
+	private double[][] getGradientSoftNaive(double[][] parameterMatrix) {
+		Timing timing = new Timing();
+		timing.start();
+		int vocabSize = Corpus.corpusVocab.get(0).vocabSize;
+		double[][] expParam = MathUtils.expArray(parameterMatrix);
+		double gradient[][] = new double[parameterMatrix.length][parameterMatrix[0].length];
+		
+		for(int m=0; m<Config.nrLayers; m++) {
+			for(int y=0; y<vocabSize; y++) {
+				for(int k=0; k<Config.numStates; k++) {
+					for(int n=0; n<this.size(); n++) {
+						Instance instance = get(n);
+						for(int t=0; t<instance.T; t++) {
+							if(instance.words[t][0] == y) {
+								gradient[y][LogLinearWeights.getIndex(m, k)] += instance.posteriors[m][t][k];
+							}
+							double prod = 1.0;
+							for(int p=0; p<Config.nrLayers; p++){
+								if(p == m) {
+									prod *= instance.posteriors[p][t][k] * expParam[y][LogLinearWeights.getIndex(p, k)];
+								} else {
+									double dot = 0.0;
+									for(int l=0; l<Config.numStates; l++) {
+										dot += instance.posteriors[p][t][l] * expParam[y][LogLinearWeights.getIndex(p, l)];
+									}
+									prod *= dot;
+								}
+								MathUtils.check(prod);
+								if(prod == 0) {
+									throw new RuntimeException("underflow");
+								}
+							}
+							gradient[y][LogLinearWeights.getIndex(m, k)] -= prod;
+						}
+					}	
+				}
+			}
+		}
+		if(Config.displayDetail) {
+			System.out.println("Gradient computation time : " + timing.stop());
+		}
+		return gradient;
+	}
+	
+	
+	//BELOW: old codes
 	private double getCLLNoThread(double[][] parameterMatrix) {
 		featurePartitionCache = new ConcurrentHashMap<String, Double>();
 		double cll = 0;
@@ -335,16 +596,9 @@ public class InstanceList extends ArrayList<Instance> {
 			result = 0.0;
 			for(int n=startIndex; n<endIndex; n++) {
 				Instance instance = instanceList.get(n);
-				//result += instance.getConditionalLogLikelihoodUsingViterbi(expWeights);
 				result += instance.getConditionalLogLikelihoodUsingViterbi(expWeights);
 			}
 		}		
-	}
-
-	public double[][] getGradient(double[][] parameterMatrix) {
-		return getGradientSoft(parameterMatrix);
-		//return getGradientSoftNaive(parameterMatrix);
-		
 	}
 	
 	private double[][] getGradientNoThread(double[][] parameterMatrix) {
@@ -500,97 +754,4 @@ public class InstanceList extends ArrayList<Instance> {
 		}		
 	}
 	
-	private double[][] getGradientSoft(double[][] parameterMatrix) {
-		Timing timing = new Timing();
-		timing.start();
-		int vocabSize = Corpus.corpusVocab.get(0).vocabSize;
-		double[][] expParam = MathUtils.expArray(parameterMatrix);
-		double gradient[][] = new double[parameterMatrix.length][parameterMatrix[0].length];		
-		for(int n=0; n<this.size(); n++) {
-			Instance instance = get(n);
-			for(int t=0; t<instance.T; t++) {
-				for(int m=0; m<Config.nrLayers; m++) {
-					for(int k=0; k<Config.numStates; k++) {
-						gradient[instance.words[t][0]][LogLinearWeights.getIndex(m, k)] += instance.posteriors[m][t][k];						 
-					}
-				}
-				for(int y=0; y<vocabSize; y++) {
-					double dotProdOverAllLayers = 1.0; //to reduce complexity from O(m^2) to O(m)
-					for(int m=0; m<Config.nrLayers; m++) {
-						double dot = 0;
-						for(int k=0; k<Config.numStates; k++) {
-							dot += instance.posteriors[m][t][k] * expParam[y][LogLinearWeights.getIndex(m, k)];
-						}
-						dotProdOverAllLayers *= dot;
-						MathUtils.check(dotProdOverAllLayers);
-						if(dotProdOverAllLayers == 0) {
-							throw new RuntimeException("underflow");
-						}
-					}
-					//set them now
-					for(int m=0; m<Config.nrLayers; m++) {
-						double mLayerDot = 0.0;
-						for(int l=0; l<Config.numStates; l++) {
-							mLayerDot += instance.posteriors[m][t][l] * expParam[y][LogLinearWeights.getIndex(m, l)];
-						}
-						for(int k=0; k<Config.numStates; k++) {
-							//compute the amount that must be multiplied to adjust from dotProdOverAllLayers
-							double factorDifference = instance.posteriors[m][t][k] * expParam[y][LogLinearWeights.getIndex(m, k)] / mLayerDot;
-							gradient[y][LogLinearWeights.getIndex(m, k)] -= dotProdOverAllLayers * factorDifference;
-						}
-					}
-				}
-				
-			}
-		}
-		if(Config.displayDetail) {
-			System.out.println("Gradient computation time : " + timing.stop());
-		}
-		return gradient;
-	}
-	
-	//implemented according to the derivation in the paper
-	private double[][] getGradientSoftNaive(double[][] parameterMatrix) {
-		Timing timing = new Timing();
-		timing.start();
-		int vocabSize = Corpus.corpusVocab.get(0).vocabSize;
-		double[][] expParam = MathUtils.expArray(parameterMatrix);
-		double gradient[][] = new double[parameterMatrix.length][parameterMatrix[0].length];
-		
-		for(int m=0; m<Config.nrLayers; m++) {
-			for(int y=0; y<vocabSize; y++) {
-				for(int k=0; k<Config.numStates; k++) {
-					for(int n=0; n<this.size(); n++) {
-						Instance instance = get(n);
-						for(int t=0; t<instance.T; t++) {
-							if(instance.words[t][0] == y) {
-								gradient[y][LogLinearWeights.getIndex(m, k)] += instance.posteriors[m][t][k];
-							}
-							double prod = 1.0;
-							for(int p=0; p<Config.nrLayers; p++){
-								if(p == m) {
-									prod *= instance.posteriors[p][t][k] * expParam[y][LogLinearWeights.getIndex(p, k)];
-								} else {
-									double dot = 0.0;
-									for(int l=0; l<Config.numStates; l++) {
-										dot += instance.posteriors[p][t][l] * expParam[y][LogLinearWeights.getIndex(p, l)];
-									}
-									prod *= dot;
-								}
-								MathUtils.check(prod);
-								if(prod == 0) {
-									throw new RuntimeException("underflow");
-								}
-							}
-							gradient[y][LogLinearWeights.getIndex(m, k)] -= prod;
-						}
-					}	
-				}
-			}
-		}
-		if(Config.displayDetail) {
-			System.out.println("Gradient computation time : " + timing.stop());
-		}
-		return gradient;
-	}
 }

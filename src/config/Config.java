@@ -13,9 +13,9 @@ public class Config {
 	public static Random random = new Random(seed);
 	public final static int numIter = 100;
 	public final static int nrLayers = 2;
-	public final static int numStates = 10;
+	public final static int numStates = 5;
 	public final static int USE_THREAD_COUNT = 2;
-	public final static int vocabThreshold = 1;
+	public final static int vocabThreshold = 20;
 	
 	public static final String baseDirData = "data/";
 	public static final String baseDirModel = "out/model/";
@@ -23,8 +23,8 @@ public class Config {
 	
 	public static String trainFile = "test.txt.SPL";
 	public static String vocabFile = trainFile;
-	public static String testFile = "test.txt.SPL";
-	public static String devFile;	
+	public static String testFile = "pos_ul.test.notag";
+	public static String devFile = "onco_test.561.notag";	
 	
 	public static String outFileTrain = trainFile + ".decoded";
 	public static String outFileTest = testFile + ".decoded";
@@ -53,14 +53,14 @@ public class Config {
 	public static boolean sampleSequential = true;
 	public static double alpha = 0.5;
 	public static double t0 = 2;
-	public static int sampleSizeEStep = 500;
+	public static int sampleSizeEStep = 10;
 	public static int sampleSizeMStep = sampleSizeEStep;
 	public static int sampleDevSize = 100;
 	
 	//LBFGS
 	public static double c2 = 0.00; // L2-regularizer constant (higher means higher penalty)
 	
-	public static boolean displayDetail = true;
+	public static boolean displayDetail = false;
 	
 	public static void printParams() {
 		StringBuffer sb = new StringBuffer();

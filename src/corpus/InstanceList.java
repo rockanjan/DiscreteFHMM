@@ -230,16 +230,22 @@ public class InstanceList extends ArrayList<Instance> {
 	}
 	
 	public double getCLL(double[][] parameterMatrix) {
+		
 		return getCLLSoft(parameterMatrix);
+		
 	}
 	
 	//returns the lowerbound value
 	private double getCLLSoft(double[][] parameterMatrix) {
+		Timing t = new Timing();
 		double cll = 0;
 		double[][] expWeights = MathUtils.expArray(parameterMatrix);
 		for (int n = 0; n < this.size(); n++) {
 			Instance i = get(n);
 			cll += i.getConditionalLogLikelihoodSoft(parameterMatrix, expWeights);
+		}
+		if(Config.displayDetail) {
+			System.out.println("CLL computation time : " + t.stop());
 		}
 		return cll;
 	}
@@ -336,8 +342,8 @@ public class InstanceList extends ArrayList<Instance> {
 	}
 
 	public double[][] getGradient(double[][] parameterMatrix) {
-		//return getGradientSoft(parameterMatrix);
-		return getGradientSoftNaive(parameterMatrix);
+		return getGradientSoft(parameterMatrix);
+		//return getGradientSoftNaive(parameterMatrix);
 		
 	}
 	
@@ -509,35 +515,41 @@ public class InstanceList extends ArrayList<Instance> {
 					}
 				}
 				for(int y=0; y<vocabSize; y++) {
-					double[][] precomputed = new double[Config.nrLayers][Config.numStates];
+					double dotProdOverAllLayers = 1.0; //to reduce complexity from O(m^2) to O(m)
 					for(int m=0; m<Config.nrLayers; m++) {
+						double dot = 0;
 						for(int k=0; k<Config.numStates; k++) {
-							precomputed[m][k] = 1.0;
+							dot += instance.posteriors[m][t][k] * expParam[y][LogLinearWeights.getIndex(m, k)];
 						}
-					}
-					for(int m=0; m<Config.nrLayers; m++) {
-						for(int k=0; k<Config.numStates; k++) {
-							precomputed[m][k] *= instance.posteriors[m][t][k] * expParam[y][LogLinearWeights.getIndex(m, k)];
-							MathUtils.check(precomputed[m][k]);
-							if(precomputed[m][k] == 0) {
-								throw new RuntimeException("underflow");
-							}
+						dotProdOverAllLayers *= dot;
+						MathUtils.check(dotProdOverAllLayers);
+						if(dotProdOverAllLayers == 0) {
+							throw new RuntimeException("underflow");
 						}
 					}
 					//set them now
 					for(int m=0; m<Config.nrLayers; m++) {
+						double mLayerDot = 0.0;
+						for(int l=0; l<Config.numStates; l++) {
+							mLayerDot += instance.posteriors[m][t][l] * expParam[y][LogLinearWeights.getIndex(m, l)];
+						}
 						for(int k=0; k<Config.numStates; k++) {
-							gradient[y][LogLinearWeights.getIndex(m, k)] -= precomputed[m][k];
+							//compute the amount that must be multiplied to adjust from dotProdOverAllLayers
+							double factorDifference = instance.posteriors[m][t][k] * expParam[y][LogLinearWeights.getIndex(m, k)] / mLayerDot;
+							gradient[y][LogLinearWeights.getIndex(m, k)] -= dotProdOverAllLayers * factorDifference;
 						}
 					}
 				}
 				
 			}
 		}
-		System.out.println("Gradient computation time : " + timing.stop());		
+		if(Config.displayDetail) {
+			System.out.println("Gradient computation time : " + timing.stop());
+		}
 		return gradient;
 	}
 	
+	//implemented according to the derivation in the paper
 	private double[][] getGradientSoftNaive(double[][] parameterMatrix) {
 		Timing timing = new Timing();
 		timing.start();
@@ -554,7 +566,6 @@ public class InstanceList extends ArrayList<Instance> {
 							if(instance.words[t][0] == y) {
 								gradient[y][LogLinearWeights.getIndex(m, k)] += instance.posteriors[m][t][k];
 							}
-							
 							double prod = 1.0;
 							for(int p=0; p<Config.nrLayers; p++){
 								if(p == m) {
@@ -577,63 +588,9 @@ public class InstanceList extends ArrayList<Instance> {
 				}
 			}
 		}
-		System.out.println("Gradient computation time : " + timing.stop());		
+		if(Config.displayDetail) {
+			System.out.println("Gradient computation time : " + timing.stop());
+		}
 		return gradient;
 	}
-	
-	/*
-	 * old code for the gradient (exactly based on derivation)
-	 */
-	/*
-		public double[][] getGradient(double[][] parameterMatrix) {
-			Timing timing = new Timing();
-			timing.start();
-			//TODO: can further speed up partitionCache calculation (because for different state in the same timestep, Z's remain fixed)  
-			double[][] partitionCache = new double[this.numberOfTokens][this.get(0).model.nrStates];
-			int tokenIndex = 0;
-			for(int n=0; n<this.size(); n++) {
-				Instance instance = get(n);
-				for(int t=0; t<instance.T; t++) {
-					for(int state=0; state < instance.model.nrStates; state++) {
-						double[] conditionalVector = instance.getConditionalVector(t, state);
-						double normalizer = 0.0;
-						for (int v = 0; v < parameterMatrix.length; v++) {
-							double[] weightVector = parameterMatrix[v];
-							normalizer += Math.exp(MathUtils.dot(weightVector, conditionalVector));
-						}
-						partitionCache[tokenIndex][state] = normalizer;
-					}
-					tokenIndex++;
-				}
-			}
-			
-			System.out.println("Partition Cache creation time : " + timing.stop());
-			
-			timing.start();
-			double gradient[][] = new double[parameterMatrix.length][parameterMatrix[0].length];
-			for (int i = 0; i < parameterMatrix.length; i++) { // all vocab length
-				for (int j = 0; j < parameterMatrix[0].length; j++) {
-					tokenIndex = 0;
-					for (int n = 0; n < this.size(); n++) {
-						Instance instance = get(n);
-						for (int t = 0; t < instance.T; t++) {
-							for (int state = 0; state < instance.model.nrStates; state++) {
-								double posteriorProb = instance.posteriors[t][state];
-								double[] conditionalVector = instance.getConditionalVector(t, state);
-								if (i == instance.words[t][0]) {
-									gradient[i][j] += posteriorProb * conditionalVector[j];
-								}
-								double normalizer = partitionCache[tokenIndex][state];									
-								double numerator = Math.exp(MathUtils.dot(parameterMatrix[i], conditionalVector));
-								gradient[i][j] -= posteriorProb * numerator / normalizer * conditionalVector[j];							
-							}
-							tokenIndex++;						
-						}
-					}
-				}
-			}
-			System.out.println("Gradient computation time : " + timing.stop());		
-			return gradient;
-		}
-	*/
 }

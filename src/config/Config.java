@@ -12,8 +12,8 @@ public class Config {
 	public final static long seed = 1;
 	public static Random random = new Random(seed);
 	public final static int numIter = 100;
-	public final static int nrLayers = 1;
-	public final static int numStates = 20;
+	public final static int nrLayers = 2;
+	public final static int numStates = 10;
 	public final static int USE_THREAD_COUNT = 2;
 	public final static int vocabThreshold = 1;
 	
@@ -21,10 +21,10 @@ public class Config {
 	public static final String baseDirModel = "out/model/";
 	public static final String baseDirDecode = "out/decoded/";
 	
-	public static String trainFile = "pos_ul.test.notag";
+	public static String trainFile = "test.txt.SPL";
 	public static String vocabFile = trainFile;
-	public static String testFile = "pos_ul.test.notag";
-	public static String devFile = "onco_test.561.notag";	
+	public static String testFile = "test.txt.SPL";
+	public static String devFile;	
 	
 	public static String outFileTrain = trainFile + ".decoded";
 	public static String outFileTest = testFile + ".decoded";

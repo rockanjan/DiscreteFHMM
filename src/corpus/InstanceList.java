@@ -336,7 +336,8 @@ public class InstanceList extends ArrayList<Instance> {
 	}
 
 	public double[][] getGradient(double[][] parameterMatrix) {
-		return getGradientSoft(parameterMatrix);
+		//return getGradientSoft(parameterMatrix);
+		return getGradientSoftNaive(parameterMatrix);
 		
 	}
 	
@@ -537,8 +538,7 @@ public class InstanceList extends ArrayList<Instance> {
 		return gradient;
 	}
 	
-	/*
-	public double[][] getGradientSoftNaive(double[][] parameterMatrix) {
+	private double[][] getGradientSoftNaive(double[][] parameterMatrix) {
 		Timing timing = new Timing();
 		timing.start();
 		int vocabSize = Corpus.corpusVocab.get(0).vocabSize;
@@ -552,12 +552,20 @@ public class InstanceList extends ArrayList<Instance> {
 						Instance instance = get(n);
 						for(int t=0; t<instance.T; t++) {
 							if(instance.words[t][0] == y) {
-								gradient[y][LogLinearWeights.getIndex(m, k)] += instance.posteriors[m][t][k];// * parameterMatrix[y][LogLinearWeights.getIndex(m, k)];
+								gradient[y][LogLinearWeights.getIndex(m, k)] += instance.posteriors[m][t][k];
 							}
 							
 							double prod = 1.0;
 							for(int p=0; p<Config.nrLayers; p++){
-								prod *= instance.posteriors[p][t][k] * expParam[y][LogLinearWeights.getIndex(p, k)];
+								if(p == m) {
+									prod *= instance.posteriors[p][t][k] * expParam[y][LogLinearWeights.getIndex(p, k)];
+								} else {
+									double dot = 0.0;
+									for(int l=0; l<Config.numStates; l++) {
+										dot += instance.posteriors[p][t][l] * expParam[y][LogLinearWeights.getIndex(p, l)];
+									}
+									prod *= dot;
+								}
 								MathUtils.check(prod);
 								if(prod == 0) {
 									throw new RuntimeException("underflow");
@@ -572,7 +580,6 @@ public class InstanceList extends ArrayList<Instance> {
 		System.out.println("Gradient computation time : " + timing.stop());		
 		return gradient;
 	}
-	*/
 	
 	/*
 	 * old code for the gradient (exactly based on derivation)

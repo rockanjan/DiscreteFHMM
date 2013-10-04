@@ -60,7 +60,7 @@ public class Config {
 	//LBFGS
 	public static double c2 = 0.00; // L2-regularizer constant (higher means higher penalty)
 	
-	public static boolean displayDetail = false;
+	public static boolean displayDetail = true;
 	
 	public static void printParams() {
 		StringBuffer sb = new StringBuffer();

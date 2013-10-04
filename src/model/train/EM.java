@@ -103,8 +103,8 @@ public class EM {
 		Corpus.cacheFrequentConditionals();
 		trainLBFGS();
 		Corpus.clearFrequentConditionals();
-		//model.updateFromCountsWeighted(expectedCounts, adaptiveWeight);
-		model.updateFromCounts(expectedCounts); //unweighted
+		model.updateFromCountsWeighted(expectedCounts, adaptiveWeight);
+		//model.updateFromCounts(expectedCounts); //unweighted
 		Corpus.trainInstanceEStepSampleList.clearPosteriorProbabilities();
 		Corpus.trainInstanceEStepSampleList.clearDecodedStates();		
 	}

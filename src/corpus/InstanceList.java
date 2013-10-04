@@ -21,9 +21,7 @@ public class InstanceList extends ArrayList<Instance> {
 	public static double expectationL1NormMax=0;
 	
 	//locks used for threads
-	private static final Object gradientLock = new Object();
 	private static final Object gradientLockSoft = new Object();
-	private static final Object cllLock = new Object();
 	private static final Object cllLockSoft = new Object();
 	private static final Object variationalLock = new Object();
 	
@@ -228,13 +226,19 @@ public class InstanceList extends ArrayList<Instance> {
 	}
 	
 	public double getCLL(double[][] parameterMatrix) {
-		//return getCLLSoft(parameterMatrix);
-		return getCLLSoftThreaded(parameterMatrix);
+		if(Config.USE_THREAD_COUNT < 2) {
+			return getCLLSoft(parameterMatrix);
+		} else {
+			return getCLLSoftThreaded(parameterMatrix);
+		}
 	}
 	
 	public double[][] getGradient(double[][] parameterMatrix) {
-		//return getGradientSoft(parameterMatrix);
-		return getGradientSoftThreaded(parameterMatrix);
+		if(Config.USE_THREAD_COUNT < 2) {
+			return getGradientSoft(parameterMatrix);
+		} else {
+			return getGradientSoftThreaded(parameterMatrix);
+		}
 		//return getGradientSoftNaive(parameterMatrix);
 	}
 	
@@ -507,251 +511,6 @@ public class InstanceList extends ArrayList<Instance> {
 			System.out.println("Gradient computation time : " + timing.stop());
 		}
 		return gradient;
-	}
-	
-	
-	//BELOW: old codes
-	private double getCLLNoThread(double[][] parameterMatrix) {
-		featurePartitionCache = new ConcurrentHashMap<String, Double>();
-		double cll = 0;
-		Timing timing = new Timing();
-		timing.start();
-		double[][] expWeights = MathUtils.expArray(parameterMatrix);
-		
-		for (int n = 0; n < this.size(); n++) {
-			Instance i = get(n);
-			cll += i.getConditionalLogLikelihoodUsingViterbi(expWeights);
-		}
-		if(Config.displayDetail) {
-			System.out.println("CLL computation time : " + timing.stop());
-		}
-		featurePartitionCache = null;
-		return cll;
-		
-	}
-	
-	private double getCLLThreaded(double[][] parameterMatrix) {
-		featurePartitionCache = new ConcurrentHashMap<String, Double>();
-		cll = 0;
-		Timing timing = new Timing();
-		timing.start();
-		double[][] expWeights = MathUtils.expArray(parameterMatrix);
-		
-		//start parallel processing
-		int divideSize = this.size() / Config.USE_THREAD_COUNT;
-		List<CllWorker> threadList = new ArrayList<CllWorker>();
-		int startIndex = 0;
-		int endIndex = divideSize;		
-		for(int i=0; i<Config.USE_THREAD_COUNT; i++) {
-			CllWorker worker = new CllWorker(this, startIndex, endIndex, expWeights);
-			threadList.add(worker);
-			worker.start();
-			startIndex = endIndex;
-			endIndex = endIndex + divideSize;			
-		}
-		//there might be some remaining
-		CllWorker finalWorker = new CllWorker(this, startIndex, this.size(), expWeights);
-		finalWorker.start();
-		threadList.add(finalWorker);
-		//start all threads and wait for them to complete
-		for(CllWorker worker : threadList) {
-			try {
-				worker.join();
-			} catch (InterruptedException e) {				
-				e.printStackTrace();
-			}
-			updateCLLComputation(worker);
-		}
-		if(Config.displayDetail) {
-			System.out.println("CLL computation time : " + timing.stop());
-		}
-		featurePartitionCache = null;
-		return cll;
-	}
-	
-	private void updateCLLComputation(CllWorker worker) {
-	    synchronized (cllLock) {
-	    	cll += worker.result;
-        }
-    }
-	
-	private class CllWorker extends Thread{
-		public double result;
-		
-		InstanceList instanceList;
-		final int startIndex;
-		final int endIndex;
-		final double[][] expWeights;		
-		
-		// [startIndex, endIndex) i.e. last index is not included
-		public CllWorker(InstanceList instanceList, int startIndex, int endIndex, double[][] expWeights) {
-			this.instanceList = instanceList;
-			this.startIndex = startIndex;
-			this.endIndex = endIndex;
-			this.expWeights = expWeights;
-		}
-		
-		@Override
-		public void run() {
-			result = 0.0;
-			for(int n=startIndex; n<endIndex; n++) {
-				Instance instance = instanceList.get(n);
-				result += instance.getConditionalLogLikelihoodUsingViterbi(expWeights);
-			}
-		}		
-	}
-	
-	private double[][] getGradientNoThread(double[][] parameterMatrix) {
-		Timing timing = new Timing();
-		double[][] expParam = MathUtils.expArray(parameterMatrix);
-		timing.start();
-		int vocabSize = Corpus.corpusVocab.get(0).vocabSize;
-		
-		double gradient[][] = new double[parameterMatrix.length][parameterMatrix[0].length];
-		long totalPartitionTime = 0;
-		long totalGradientTime = 0;
-		long totalConditionalTime = 0;
-		for (int n = 0; n < this.size(); n++) {
-			Instance instance = get(n);
-			for (int t = 0; t < instance.T; t++) {
-				Timing timing2 = new Timing();
-				timing2.start();
-				double[] conditionalVector = instance.getConditionalVector(t);
-				totalConditionalTime += timing2.stopGetLong();
-				//create partition
-				timing2.start();
-				for(int j=0; j<expParam[0].length; j++) {
-					if(conditionalVector[j] != 0) {
-						gradient[instance.words[t][0]][j] += 1; 
-					}
-				}
-			}
-		}
-		
-		for(FrequentConditionalStringVector f : Corpus.frequentConditionals) {
-			double[] conditionalVector = f.vector;
-			double partition = 0.0;
-			double[] numeratorArray = new double[vocabSize];
-			//fill the arrays
-			for(int v=0; v<vocabSize; v++) {
-				double numerator = MathUtils.expDot(expParam[v], conditionalVector);
-				numeratorArray[v] = numerator;
-				partition += numerator;
-			}
-			for(int j=0; j<expParam[0].length; j++) {
-				if(conditionalVector[j] != 0) {
-					for(int v=0; v<expParam.length; v++) {
-						gradient[v][j] -= f.count * numeratorArray[v]/ partition;
-					}
-				}
-			}										
-		} 
-		if(Config.displayDetail) {
-			System.out.println("Total conditional time : " + totalConditionalTime);
-			System.out.println("Total partition time : " + totalPartitionTime);
-			System.out.println("Total gradient update time : " + totalGradientTime);
-			System.out.println("Gradient computation time : " + timing.stop());
-		}
-		return gradient;
-	}
-	
-	private double[][] getGradientThreaded(double[][] parameterMatrix) {		
-		Timing timing = new Timing();
-		double[][] expParam = MathUtils.expArray(parameterMatrix);
-		timing.start();
-		//cache for frequent conditonals
-		int vocabSize = Corpus.corpusVocab.get(0).vocabSize;
-		gradient = new double[parameterMatrix.length][parameterMatrix[0].length];
-		for (int n = 0; n < this.size(); n++) {
-			Instance instance = get(n);
-			for (int t = 0; t < instance.T; t++) {
-				double[] conditionalVector = instance.getConditionalVector(t);
-				//String conditionalString = instance.getConditionalString(t);
-				//if(Corpus.frequentConditionals.contains(conditionalString)) {
-				//positive
-				for(int j=0; j<expParam[0].length; j++) {
-					if(conditionalVector[j] != 0) {
-						gradient[instance.words[t][0]][j] += 1; 
-					}
-				}
-				//}
-			}
-		}
-		
-		//start parallel processing based on frequent conditionals
-		int divideSize = Corpus.frequentConditionals.size() / Config.USE_THREAD_COUNT;
-		List<GradientWorker> threadList = new ArrayList<GradientWorker>();
-		int startIndex = 0;
-		int endIndex = divideSize;		
-		for(int i=0; i<Config.USE_THREAD_COUNT; i++) {
-			GradientWorker worker = new GradientWorker(Corpus.frequentConditionals, startIndex, endIndex, expParam);
-			threadList.add(worker);
-			worker.start();
-			startIndex = endIndex;
-			endIndex = endIndex + divideSize;			
-		}
-		//there might be some remaining
-		GradientWorker finalWorker = new GradientWorker(Corpus.frequentConditionals, startIndex, Corpus.frequentConditionals.size(), expParam);
-		finalWorker.start();
-		threadList.add(finalWorker);
-		//start all threads and wait for them to complete
-		for(GradientWorker worker : threadList) {
-			try {
-				worker.join();
-			} catch (InterruptedException e) {				
-				e.printStackTrace();
-			}
-			updateGradientComputation(worker);
-		}
-		if(Config.displayDetail) {
-			System.out.println("Gradient computation time : " + timing.stop());
-		}
-		return gradient;
-	}
-	
-	private void updateGradientComputation(GradientWorker worker) {
-        synchronized (gradientLock) {
-        	MathUtils.addMatrix(gradient, worker.gradientLocal);
-        }
-    }
-	
-	private class GradientWorker extends Thread{
-		public double[][] gradientLocal;
-		final int startIndex;
-		final int endIndex;
-		final double[][] expParam;
-		ArrayList<FrequentConditionalStringVector> freqConditionals;
-		
-		// [startIndex, endIndex) i.e. last index is not included
-		public GradientWorker(ArrayList<FrequentConditionalStringVector> freqConditionals, int startIndex, int endIndex, double[][] expParam) {
-			this.startIndex = startIndex;
-			this.endIndex = endIndex;
-			this.expParam = expParam;
-			this.freqConditionals = freqConditionals;
-		}
-		
-		@Override
-		public void run() {
-			gradientLocal = new double[expParam.length][expParam[0].length];
-			for(int n=startIndex; n<endIndex; n++) {
-				FrequentConditionalStringVector conditional = freqConditionals.get(n);
-				double[] conditionalVector = conditional.vector;
-				double partition = 0.0;
-				double[] numeratorArray = new double[Corpus.corpusVocab.get(0).vocabSize];
-				for(int v=0; v<Corpus.corpusVocab.get(0).vocabSize; v++) {
-					double numerator = MathUtils.expDot(expParam[v], conditionalVector);				
-					numeratorArray[v] = numerator;
-					partition += numerator;
-				}
-				for(int j=0; j<expParam[0].length; j++) {
-					if(conditionalVector[j] != 0) {
-						for(int v=0; v<expParam.length; v++) {
-							gradientLocal[v][j] -= conditional.count * numeratorArray[v]/ partition;
-						}
-					}
-				}
-			}
-		}		
 	}
 	
 }

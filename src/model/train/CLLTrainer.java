@@ -28,7 +28,7 @@ public class CLLTrainer implements Optimizable.ByGradientValue{
 	@Override
 	public double getValue() {
 		double[][] weights = MyArray.createMatrix(parameters, corpus.corpusVocab.get(0).vocabSize);
-		double cll = corpus.trainInstanceMStepSampleList.getCLLSoft(weights);
+		double cll = corpus.trainInstanceMStepSampleList.getCLL(weights);
 		//add regularizer
 		double normSquared = MyArray.getL2NormSquared(parameters);
 		latestValue = cll - Config.c2 * normSquared;
@@ -43,7 +43,7 @@ public class CLLTrainer implements Optimizable.ByGradientValue{
 		gradientCallCount++;
 		double[][] weights = MyArray.createMatrix(parameters, corpus.corpusVocab.get(0).vocabSize);
 		//double[][] newGradients = corpus.trainInstanceMStepSampleList.getGradient(weights);
-		double[][] newGradients = corpus.trainInstanceMStepSampleList.getGradientSoft(weights);
+		double[][] newGradients = corpus.trainInstanceMStepSampleList.getGradient(weights);
 		//regularizer
 		for(int i=0; i<newGradients.length; i++) {
 			for(int j=0; j<newGradients[0].length; j++) {
@@ -105,9 +105,9 @@ public class CLLTrainer implements Optimizable.ByGradientValue{
 		for(int i=0; i<weights.length; i++) {
 			for(int j=0; j<weights[0].length; j++) {
 				weights[i][j] = weights[i][j] - step;
-				double valueX = corpus.trainInstanceEStepSampleList.getCLLSoft(weights);
+				double valueX = corpus.trainInstanceEStepSampleList.getCLL(weights);
 				weights[i][j] = weights[i][j] + step + step;
-				double valueXStepped = corpus.trainInstanceEStepSampleList.getCLLSoft(weights);
+				double valueXStepped = corpus.trainInstanceEStepSampleList.getCLL(weights);
 				newGradients[i][j] =  valueXStepped/ (2*step) - valueX / (2*step);
 				//System.out.println("grad from finitedifference = " + newGradients[i][j]);
 				//reset weights
@@ -119,7 +119,7 @@ public class CLLTrainer implements Optimizable.ByGradientValue{
 	
 	private double[][] getGradientByEquation() {
 		double[][] weights = MyArray.createMatrix(parameters, corpus.corpusVocab.get(0).vocabSize);
-		double[][] newGradients = corpus.trainInstanceEStepSampleList.getGradientSoft(weights);
+		double[][] newGradients = corpus.trainInstanceEStepSampleList.getGradient(weights);
 		return newGradients;
 	}
 	

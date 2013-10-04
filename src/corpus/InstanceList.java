@@ -4,11 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-
-import javax.management.RuntimeErrorException;
-
 import config.Config;
-
 import model.HMMBase;
 import model.inference.VariationalParam;
 import model.param.HMMParamBase;
@@ -26,7 +22,9 @@ public class InstanceList extends ArrayList<Instance> {
 	
 	//locks used for threads
 	private static final Object gradientLock = new Object();
+	private static final Object gradientLockSoft = new Object();
 	private static final Object cllLock = new Object();
+	private static final Object cllLockSoft = new Object();
 	private static final Object variationalLock = new Object();
 	
 	public double LL = 0;
@@ -231,14 +229,12 @@ public class InstanceList extends ArrayList<Instance> {
 		}		
 	}
 	
-	public double getConditionalLogLikelihoodUsingViterbi(
-			double[][] parameterMatrix) {
-		//return getCLLNoThread(parameterMatrix);
-		//return getCLLThreaded(parameterMatrix);
+	public double getCLL(double[][] parameterMatrix) {
 		return getCLLSoft(parameterMatrix);
 	}
 	
-	public double getCLLSoft(double[][] parameterMatrix) {
+	//returns the lowerbound value
+	private double getCLLSoft(double[][] parameterMatrix) {
 		double cll = 0;
 		double[][] expWeights = MathUtils.expArray(parameterMatrix);
 		for (int n = 0; n < this.size(); n++) {
@@ -248,7 +244,7 @@ public class InstanceList extends ArrayList<Instance> {
 		return cll;
 	}
 	
-	public double getCLLNoThread(double[][] parameterMatrix) {
+	private double getCLLNoThread(double[][] parameterMatrix) {
 		featurePartitionCache = new ConcurrentHashMap<String, Double>();
 		double cll = 0;
 		Timing timing = new Timing();
@@ -267,7 +263,7 @@ public class InstanceList extends ArrayList<Instance> {
 		
 	}
 	
-	public double getCLLThreaded(double[][] parameterMatrix) {
+	private double getCLLThreaded(double[][] parameterMatrix) {
 		featurePartitionCache = new ConcurrentHashMap<String, Double>();
 		cll = 0;
 		Timing timing = new Timing();
@@ -306,7 +302,7 @@ public class InstanceList extends ArrayList<Instance> {
 		return cll;
 	}
 	
-	public void updateCLLComputation(CllWorker worker) {
+	private void updateCLLComputation(CllWorker worker) {
 	    synchronized (cllLock) {
 	    	cll += worker.result;
         }
@@ -340,13 +336,11 @@ public class InstanceList extends ArrayList<Instance> {
 	}
 
 	public double[][] getGradient(double[][] parameterMatrix) {
-		double[][] gradient;
-		//gradient = getGradientNoThread(parameterMatrix);
-		gradient = getGradientThreaded(parameterMatrix);
-		return gradient;
+		return getGradientSoft(parameterMatrix);
+		
 	}
 	
-	public double[][] getGradientNoThread(double[][] parameterMatrix) {
+	private double[][] getGradientNoThread(double[][] parameterMatrix) {
 		Timing timing = new Timing();
 		double[][] expParam = MathUtils.expArray(parameterMatrix);
 		timing.start();
@@ -400,7 +394,7 @@ public class InstanceList extends ArrayList<Instance> {
 		return gradient;
 	}
 	
-	public double[][] getGradientThreaded(double[][] parameterMatrix) {		
+	private double[][] getGradientThreaded(double[][] parameterMatrix) {		
 		Timing timing = new Timing();
 		double[][] expParam = MathUtils.expArray(parameterMatrix);
 		timing.start();
@@ -454,7 +448,7 @@ public class InstanceList extends ArrayList<Instance> {
 		return gradient;
 	}
 	
-	public void updateGradientComputation(GradientWorker worker) {
+	private void updateGradientComputation(GradientWorker worker) {
         synchronized (gradientLock) {
         	MathUtils.addMatrix(gradient, worker.gradientLocal);
         }
@@ -499,7 +493,7 @@ public class InstanceList extends ArrayList<Instance> {
 		}		
 	}
 	
-	public double[][] getGradientSoft(double[][] parameterMatrix) {
+	private double[][] getGradientSoft(double[][] parameterMatrix) {
 		Timing timing = new Timing();
 		timing.start();
 		int vocabSize = Corpus.corpusVocab.get(0).vocabSize;

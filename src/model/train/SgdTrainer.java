@@ -8,7 +8,7 @@ import cc.mallet.optimize.Optimizable;
 import cc.mallet.optimize.Optimizer;
 
 public class SgdTrainer{
-	
+	/*
 	double[] parameters;
 	double latestValue = 0.0;
 	Corpus corpus;
@@ -25,10 +25,6 @@ public class SgdTrainer{
 		}
 	}
 	
-	/*
-	 * returns the Conditional Log likelihood of the training corpus
-	 * 
-	 */
 	public double getValue() {
 		double[][] weights = MyArray.createMatrix(parameters, corpus.corpusVocab.get(0).vocabSize);
 		double cll = corpus.trainInstanceMStepSampleList.getConditionalLogLikelihoodUsingViterbi(weights);
@@ -97,4 +93,5 @@ public class SgdTrainer{
 			
 		}
 	}
+	*/
 }

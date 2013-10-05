@@ -26,6 +26,7 @@ public class InstanceList extends ArrayList<Instance> {
 	private static final Object variationalLock = new Object();
 	
 	public double LL = 0;
+	public double jointObjective = 0;
 	double cll = 0;
 	double gradient[][];
 	
@@ -77,10 +78,12 @@ public class InstanceList extends ArrayList<Instance> {
 		//decode the most likely states and compute joint likelihood to return
 		double jointLL = 0;
 		LL = 0;
+		jointObjective = 0;
 		for (int n = 0; n < this.size(); n++) {
 			Instance instance = this.get(n);
 			instance.doInference(model);
 			LL += instance.logLikelihood;
+			jointObjective += instance.jointObjective;
 			for(int l=0; l<model.nrLayers; l++) {
 				instance.forwardBackwardList.get(l).addToCounts(expectedCounts);
 			}
@@ -93,7 +96,7 @@ public class InstanceList extends ArrayList<Instance> {
 		model.param.expWeights = null;
 		featurePartitionCache = null;
 		System.out.println("LL = " + (LL/numberOfTokens));
-		return jointLL;
+		return jointObjective;
 	}
 	
 	public void clearPosteriorProbabilities() {
@@ -114,6 +117,7 @@ public class InstanceList extends ArrayList<Instance> {
 		//optimize variational parameters
 		for(int iter=0; iter < Config.variationalIter; iter++) {
 			LL = 0;
+			jointObjective = 0;
 			expectationL1NormAll = 0;
 			expectationL1NormMax = 0;
 			Timing varIterTime = new Timing();
@@ -148,12 +152,14 @@ public class InstanceList extends ArrayList<Instance> {
 			updateString.append("\tvar iter=" + iter);
 			expectationL1NormAll = expectationL1NormAll/this.numberOfTokens/model.nrLayers/model.nrStates;
 			LL = LL/this.numberOfTokens;
-			updateString.append(String.format(" LL=%.3f time=%s", LL, varIterTime.stop()));
+			jointObjective = jointObjective/this.numberOfTokens;
+			updateString.append(String.format(" LL=%.5f time=%s", LL, varIterTime.stop()));
+			updateString.append(String.format(" obj=%.5f", jointObjective));
 			updateString.append(String.format(" l1avg=%f", expectationL1NormAll));
 			updateString.append(String.format(" max=%f", expectationL1NormMax));
 			System.out.println(updateString.toString());
 			
-			if(expectationL1NormMax < 1e-2) {
+			if(expectationL1NormMax < 1e-5) {
 				System.out.println("variational params converged");
 				break;
 			}
@@ -165,6 +171,7 @@ public class InstanceList extends ArrayList<Instance> {
         synchronized (variationalLock) {
         	expectationL1NormAll += worker.localExpectationL1Norm;
 			LL += worker.localLL;
+			jointObjective += worker.localObjective;
 			if(worker.localExpectationL1Max > expectationL1NormMax) {
 				expectationL1NormMax = worker.localExpectationL1Max; 
 			}
@@ -175,6 +182,7 @@ public class InstanceList extends ArrayList<Instance> {
 		double localExpectationL1Norm = 0;
 		double localExpectationL1Max = 0;
 		double localLL = 0;
+		double localObjective = 0;
 		InstanceList instanceList;
 		final int startIndex;
 		final int endIndex;
@@ -207,6 +215,7 @@ public class InstanceList extends ArrayList<Instance> {
 				instance.decode();
 				//localLL += getJointLL(instance, model);
 				localLL += instance.logLikelihood;
+				localObjective += instance.jointObjective;
 				localExpectationL1Norm += instance.posteriorDifference;
 				if(instance.posteriorDifferenceMax > localExpectationL1Max) {
 					localExpectationL1Max = instance.posteriorDifferenceMax; 

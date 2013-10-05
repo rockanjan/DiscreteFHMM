@@ -5,20 +5,17 @@ import java.util.List;
 
 import config.Config;
 
-import program.Main;
 import model.HMMBase;
 import model.HMMType;
 import model.inference.ForwardBackward;
 import model.inference.ForwardBackwardLog;
 import model.inference.VariationalParam;
-import model.inference.VariationalParamObservation;
-import model.param.HMMParamBase;
 import model.param.LogLinearWeights;
 import util.MathUtils;
-import util.MyArray;
 import util.SmoothWord;
 
 public class Instance {
+	
 	public VariationalParam varParam;
 	public int[][] words;
 	public int T; // sentence length
@@ -41,6 +38,9 @@ public class Instance {
 	public double[] observationCache;
 
 	public double logLikelihood;
+	public double stateObjective;
+	public double observationObjective;
+	public double jointObjective; //expected joint log-likelihood E[P(S,Y)]
 	
 	public double posteriorDifference = 0;
 	public double posteriorDifferenceMax = 0;
@@ -60,6 +60,9 @@ public class Instance {
 			posteriors = new double[model.nrLayers][][];
 		}
 		logLikelihood = 0;
+		stateObjective = 0;
+		observationObjective = 0;
+		jointObjective = 0;
 		if(forwardBackwardList == null) {
 			forwardBackwardList = new ArrayList<ForwardBackward>();
 			for (int l = 0; l < model.nrLayers; l++) {
@@ -75,7 +78,12 @@ public class Instance {
 				tempFB.doInference();
 				logLikelihood += tempFB.logLikelihood;
 			}
-		}	
+		}
+		//compute the final objective
+		//state objective are already calculated
+		//exp weights are already cached right inside updateCounts()
+		observationObjective = getConditionalLogLikelihoodSoft(model.param.weights.weights, model.param.expWeights.weights);
+		jointObjective = stateObjective + observationObjective;
 	}
 
 	public void clearInference() {

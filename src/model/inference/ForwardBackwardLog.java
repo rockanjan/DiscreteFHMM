@@ -108,6 +108,11 @@ public class ForwardBackwardLog extends ForwardBackward{
 					
 				}
 			}
+			if(t == 0) {
+				for(int k=0; k<nrStates; k++) {
+					instance.stateObjective += posterior[0][k] * model.param.initial.get(layer).get(k, 0);
+				}
+			}
 		}
 		checkStatePosterior();		
 	}
@@ -163,7 +168,7 @@ public class ForwardBackwardLog extends ForwardBackward{
 			for(int i=0; i<nrStates; i++) {
 				for(int j=0; j<nrStates; j++) {
 					double transProb = Math.exp(value[index] - normalizer);
-					//System.out.println("transProb = " + transProb);
+					instance.stateObjective += transProb * model.param.transition.get(layer).get(j, i);
 					transition.addToCounts(j, i, transProb);
 					index++;
 				}

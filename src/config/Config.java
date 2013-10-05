@@ -12,16 +12,16 @@ public class Config {
 	public final static long seed = 1;
 	public static Random random = new Random(seed);
 	public final static int numIter = 200;
-	public final static int nrLayers = 5;
-	public final static int numStates = 10;
+	public final static int nrLayers = 3;
+	public final static int numStates = 5;
 	public final static int USE_THREAD_COUNT = 8;
-	public final static int vocabThreshold = 1;
+	public final static int vocabThreshold = 2;
 	
 	public static final String baseDirData = "data/";
 	public static final String baseDirModel = "out/model/";
 	public static final String baseDirDecode = "out/decoded/";
 	
-	public static String trainFile = "wsj_biomed_all.notag.uniq.clean";
+	public static String trainFile = "test.txt.SPL";
 	public static String vocabFile = trainFile;
 	public static String testFile = "pos_ul.test.notag";
 	public static String devFile;	
@@ -51,9 +51,9 @@ public class Config {
 	 * (some might be repeated some might be skipped)
 	 */
 	public static boolean sampleSequential = true;
-	public static double alpha = 0.6;
+	public static double alpha = 0.8;
 	public static double t0 = 2;
-	public static int sampleSizeEStep = 1000;
+	public static int sampleSizeEStep = -1;
 	public static int sampleSizeMStep = sampleSizeEStep;
 	public static int sampleDevSize = 100;
 	
@@ -66,6 +66,7 @@ public class Config {
 		StringBuffer sb = new StringBuffer();
 		sb.append("\n---------params------------");
 		sb.append("\nRandom seed : " + seed);
+		sb.append("\nVocab thres : " + vocabThreshold);
 		sb.append("\nTrain file : " + trainFile);
 		sb.append("\nVocab file : " + vocabFile);
 		sb.append("\nTest file : " + testFile);

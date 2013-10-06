@@ -244,8 +244,7 @@ public class Instance {
 				}
 				sumOverY += prod;
 			}
-			cll -= Math.log(sumOverY);
-			//cll = cll + 1; // logx <= x - 1			
+			cll -= Math.log(sumOverY);						
 		}
 		return cll;
 	}

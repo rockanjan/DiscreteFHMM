@@ -431,7 +431,7 @@ public class InstanceList extends ArrayList<Instance> {
 							for(int k=0; k<Config.numStates; k++) {
 								//compute the amount that must be multiplied to adjust from dotProdOverAllLayers
 								double factorDifference = instance.posteriors[m][t][k] * expParam[y][LogLinearWeights.getIndex(m, k)] / mLayerDot;
-								gradientLocal[y][LogLinearWeights.getIndex(m, k)] -= (phi - Math.log(phi) / phi) * dotProdOverAllLayers * factorDifference;
+								gradientLocal[y][LogLinearWeights.getIndex(m, k)] -= phi * dotProdOverAllLayers * factorDifference;
 							}
 						}
 					}

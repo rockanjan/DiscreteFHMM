@@ -14,7 +14,7 @@ public class Config {
 	public final static int numIter = 200;
 	public final static int nrLayers = 2;
 	public final static int numStates = 5;
-	public final static int USE_THREAD_COUNT = 8;
+	public final static int USE_THREAD_COUNT = 2;
 	public final static int vocabThreshold = 20;
 	
 	public static final String baseDirData = "data/";

@@ -390,6 +390,25 @@ public class InstanceList extends ArrayList<Instance> {
 						}
 					}
 					int vocabSize = Corpus.corpusVocab.get(0).vocabSize;
+					//compute phi, variational param phi for this token
+					double sumOverY = 0;
+					for(int y=0; y<vocabSize; y++) {
+						double prod = 1.0;
+						for(int m=0; m<Config.nrLayers; m++) {
+							double dot = 0;
+							for(int k=0; k<Config.numStates; k++) {
+								dot += instance.posteriors[m][t][k] * expParam[y][LogLinearWeights.getIndex(m, k)];
+							}
+							prod *= dot;
+							MathUtils.check(prod);
+							if(prod == 0) {
+								throw new RuntimeException("underflow");
+							}
+						}
+						sumOverY += prod;
+					}
+					double phi = 1.0 / sumOverY;
+					
 					for(int y=0; y<vocabSize; y++) {
 						double dotProdOverAllLayers = 1.0; //to reduce complexity from O(m^2) to O(m)
 						for(int m=0; m<Config.nrLayers; m++) {
@@ -412,7 +431,7 @@ public class InstanceList extends ArrayList<Instance> {
 							for(int k=0; k<Config.numStates; k++) {
 								//compute the amount that must be multiplied to adjust from dotProdOverAllLayers
 								double factorDifference = instance.posteriors[m][t][k] * expParam[y][LogLinearWeights.getIndex(m, k)] / mLayerDot;
-								gradientLocal[y][LogLinearWeights.getIndex(m, k)] -= dotProdOverAllLayers * factorDifference;
+								gradientLocal[y][LogLinearWeights.getIndex(m, k)] -= (phi - Math.log(phi) / phi) * dotProdOverAllLayers * factorDifference;
 							}
 						}
 					}
@@ -441,6 +460,24 @@ public class InstanceList extends ArrayList<Instance> {
 						gradient[instance.words[t][0]][LogLinearWeights.getIndex(m, k)] += instance.posteriors[m][t][k];						 
 					}
 				}
+				//compute phi, variational param phi for this token
+				double sumOverY = 0;
+				for(int y=0; y<vocabSize; y++) {
+					double dotProdOverAllLayers = 1.0;
+					for(int m=0; m<Config.nrLayers; m++) {
+						double dot = 0;
+						for(int k=0; k<Config.numStates; k++) {
+							dot += instance.posteriors[m][t][k] * expParam[y][LogLinearWeights.getIndex(m, k)];
+						}
+						dotProdOverAllLayers *= dot;
+						MathUtils.check(dotProdOverAllLayers);
+						if(dotProdOverAllLayers == 0) {
+							throw new RuntimeException("underflow");
+						}
+					}
+					sumOverY += dotProdOverAllLayers;
+				}
+				double phi = 1.0 / sumOverY;
 				for(int y=0; y<vocabSize; y++) {
 					double dotProdOverAllLayers = 1.0; //to reduce complexity from O(m^2) to O(m)
 					for(int m=0; m<Config.nrLayers; m++) {
@@ -463,7 +500,7 @@ public class InstanceList extends ArrayList<Instance> {
 						for(int k=0; k<Config.numStates; k++) {
 							//compute the amount that must be multiplied to adjust from dotProdOverAllLayers
 							double factorDifference = instance.posteriors[m][t][k] * expParam[y][LogLinearWeights.getIndex(m, k)] / mLayerDot;
-							gradient[y][LogLinearWeights.getIndex(m, k)] -= dotProdOverAllLayers * factorDifference;
+							gradient[y][LogLinearWeights.getIndex(m, k)] -= phi * dotProdOverAllLayers * factorDifference;
 						}
 					}
 				}
@@ -484,7 +521,6 @@ public class InstanceList extends ArrayList<Instance> {
 		int vocabSize = Corpus.corpusVocab.get(0).vocabSize;
 		double[][] expParam = MathUtils.expArray(parameterMatrix);
 		double gradient[][] = new double[parameterMatrix.length][parameterMatrix[0].length];
-		
 		for(int m=0; m<Config.nrLayers; m++) {
 			for(int y=0; y<vocabSize; y++) {
 				for(int k=0; k<Config.numStates; k++) {

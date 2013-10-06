@@ -21,7 +21,7 @@ public class Main {
 	public static void main(String[] args) throws IOException {
 		corpus = new Corpus("\\s+", Config.vocabThreshold);
 		trainNew();		
-		//trainContinue("variational_model_layers_1_states_40_iter_9.txt");
+		//trainContinue("variational_model_layers_5_states_20_iter_39.txt");
 		if(Corpus.testInstanceList != null) {
 			testVariational(model, Corpus.testInstanceList, Config.outFileTest);
 		} else {
@@ -56,8 +56,8 @@ public class Main {
 		corpus = new Corpus("\\s+", Config.vocabThreshold);
 		model = new HMMNoFinalStateLog(Config.nrLayers, Config.numStates, corpus);
 		//load model for continuing training
-		//model.loadModel(filename);
-		model.loadModelsFromIndependentHMM("out/model/softEM");
+		model.loadModel(filename);
+		//model.loadModelsFromIndependentHMM("out/model/softEM");
 		corpus.model = model;
 		corpus.readTrain(Config.baseDirData + Config.trainFile);
 		if(Config.testFile != null && !Config.testFile.equals("")) {

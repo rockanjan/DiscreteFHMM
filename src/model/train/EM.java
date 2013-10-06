@@ -115,7 +115,7 @@ public class EM {
 		CLLTrainer optimizable = new CLLTrainer(initParams, c);
 		Optimizer optimizer = new LimitedMemoryBFGS(optimizable);
 		boolean converged = false;
-		//optimizable.checkGradientComputation();
+		optimizable.checkGradientComputation();
 		try {
 			converged = optimizer.optimize(Config.mStepIter);
 		} catch (IllegalArgumentException e) {

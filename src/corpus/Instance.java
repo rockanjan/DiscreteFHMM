@@ -228,6 +228,7 @@ public class Instance {
 				}
 			}
 			double vocabSize= weights.length;
+			double sumOverY = 0;
 			for(int y=0; y<vocabSize; y++) {
 				double prod = 1.0;
 				for(int m=0; m<model.nrLayers; m++) {
@@ -241,9 +242,10 @@ public class Instance {
 						throw new RuntimeException("underflow");
 					}
 				}
-				cll -= prod;
+				sumOverY += prod;
 			}
-			cll = cll + 1; // logx <= x - 1			
+			cll -= Math.log(sumOverY);
+			//cll = cll + 1; // logx <= x - 1			
 		}
 		return cll;
 	}

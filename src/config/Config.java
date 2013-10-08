@@ -15,7 +15,7 @@ public class Config {
 	public final static int nrLayers = 3;
 	public final static int numStates = 5;
 	public final static int USE_THREAD_COUNT = 2;
-	public final static int vocabThreshold = 20;
+	public final static int vocabThreshold = 1;
 	
 	public static final String baseDirData = "data/";
 	public static final String baseDirModel = "out/model/";
@@ -56,11 +56,15 @@ public class Config {
 	public static int sampleSizeEStep = -1;
 	public static int sampleSizeMStep = sampleSizeEStep;
 	public static int sampleDevSize = 100;
+	public static String vocabSamplingType = "unigram";
+	public static int VOCAB_SAMPLE_SIZE = 100;
 	
 	//LBFGS
 	public static double c2 = 0.000; // L2-regularizer constant (higher means higher penalty)
 	
 	public static boolean displayDetail = false;
+	
+	
 	
 	public static void printParams() {
 		StringBuffer sb = new StringBuffer();

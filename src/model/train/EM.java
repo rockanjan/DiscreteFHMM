@@ -150,6 +150,9 @@ public class EM {
 			oneIterEmTime.start();
 			eStep();
 			System.out.println("E-step time: " + eStepTime.stop());
+			double trainPerplexityJoint = Math.pow(2, -LL/Math.log(2));
+			System.out.println("Train perplexity : " + trainPerplexityJoint);
+			
 			double diff = LL - bestOldLL;
 			// m-step
 			c.generateRandomTrainingMStepSample(Config.sampleSizeMStep);

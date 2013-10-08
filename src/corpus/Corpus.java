@@ -223,6 +223,16 @@ public class Corpus {
 		System.out.println("Frequent conditional size : " + frequentConditionals.size());
 	}
 	
+	public static double getProbability(int y) {
+		if(Config.vocabSamplingType.equals("unigram")) {
+			return Corpus.vocabSampler.distribution.get(y);
+		}
+		else if(Config.vocabSamplingType.equals("uniform")) {
+			return 1.0 / Config.VOCAB_SAMPLE_SIZE;
+		}
+		throw new RuntimeException("sampling type unrecognized : " + Config.vocabSamplingType);
+	}
+	
 	public void setupSampler() {
 		computeUnigramProbabilities();
 		System.out.println("Vocab sample size: " + VOCAB_SAMPLE_SIZE);

@@ -87,8 +87,8 @@ public class InstanceList extends ArrayList<Instance> {
 			for(int l=0; l<model.nrLayers; l++) {
 				instance.forwardBackwardList.get(l).addToCounts(expectedCounts);
 			}
-			instance.decode();
-			jointLL += getJointLL(instance, model);
+			//instance.decode();
+			//jointLL += getJointLL(instance, model);
 			//instance.clearInference();
 			instance.varParam = null;
 		}
@@ -212,7 +212,7 @@ public class InstanceList extends ArrayList<Instance> {
 				instance.posteriorDifference = 0;
 				instance.posteriorDifferenceMax = 0;
 				instance.doInference(model);
-				instance.decode();
+				//instance.decode();
 				//localLL += getJointLL(instance, model);
 				localLL += instance.logLikelihood;
 				localObjective += instance.jointObjective;

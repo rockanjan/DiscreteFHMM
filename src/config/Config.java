@@ -12,19 +12,19 @@ public class Config {
 	public final static long seed = 1;
 	public static Random random = new Random(seed);
 	public final static int numIter = 200;
-	public final static int nrLayers = 3;
-	public final static int numStates = 5;
-	public final static int USE_THREAD_COUNT = 2;
-	public final static int vocabThreshold = 1;
+	public final static int nrLayers = 20;
+	public final static int numStates = 2;
+	public final static int USE_THREAD_COUNT = 8;
+	public final static int vocabThreshold = 3;
 	
 	public static final String baseDirData = "data/";
 	public static final String baseDirModel = "out/model/";
 	public static final String baseDirDecode = "out/decoded/";
 	
-	public static String trainFile = "test.txt.SPL";
+	public static String trainFile = "brown_train.txt";
 	public static String vocabFile = trainFile;
-	public static String testFile = "test.txt.SPL";
-	public static String devFile;	
+	public static String testFile = "brown_test.txt";
+	public static String devFile = "brown_dev.txt";
 	
 	public static String outFileTrain = trainFile + ".decoded";
 	public static String outFileTest = testFile + ".decoded";
@@ -38,9 +38,9 @@ public class Config {
 	//EM related
 	// convergence criteria
 	public static double precision = 1e-4;
-	public static int maxConsecutiveDecreaseLimit = 5;
+	public static int maxConsecutiveDecreaseLimit = 10;
 	public static int maxConsecutiveConvergeLimit = 3;
-	public static int mStepIter = 5;
+	public static int mStepIter = 20;
 	public static int convergenceIterInterval = 10; //after how many iters to check the convergence on dev data
 	
 	//online learning params
@@ -53,11 +53,11 @@ public class Config {
 	public static boolean sampleSequential = true;
 	public static double alpha = 0.8;
 	public static double t0 = 2;
-	public static int sampleSizeEStep = -1;
+	public static int sampleSizeEStep = 300;
 	public static int sampleSizeMStep = sampleSizeEStep;
 	public static int sampleDevSize = 100;
 	public static String vocabSamplingType = "unigram";
-	public static int VOCAB_SAMPLE_SIZE = 100;
+	public static int VOCAB_SAMPLE_SIZE = 0;
 	
 	//LBFGS
 	public static double c2 = 0.000; // L2-regularizer constant (higher means higher penalty)

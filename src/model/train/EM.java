@@ -100,9 +100,9 @@ public class EM {
 		System.out.format("Mstep #sentences = %d, #tokens = %d\n", 
 				Corpus.trainInstanceMStepSampleList.size(), 
 				Corpus.trainInstanceMStepSampleList.numberOfTokens);
-		Corpus.cacheFrequentConditionals();
+		//Corpus.cacheFrequentConditionals();
 		trainLBFGS();
-		Corpus.clearFrequentConditionals();
+		//Corpus.clearFrequentConditionals();
 		model.updateFromCountsWeighted(expectedCounts, adaptiveWeight);
 		//model.updateFromCounts(expectedCounts); //unweighted
 		Corpus.trainInstanceEStepSampleList.clearPosteriorProbabilities();
@@ -141,7 +141,7 @@ public class EM {
 		Timing eStepTime = new Timing();
 		Timing mStepTime = new Timing();
 		Timing oneIterEmTime = new Timing();
-		for (iterCount = 0; iterCount < numIter; iterCount++) {
+		for (iterCount = 22; iterCount < numIter; iterCount++) {
 			//sample new train instances
 			c.generateRandomTrainingEStepSample(Config.sampleSizeEStep, iterCount);
 			LL = 0;
@@ -194,6 +194,10 @@ public class EM {
 			model.saveModel(iterCount); //save every iteration
 			System.out.println(display.toString());
 		}
+		double testLL = Corpus.testInstanceList.updateExpectedCounts(model, expectedCounts);
+		testLL = testLL / Corpus.testInstanceList.numberOfTokens;
+		double testPerplexity = Math.pow(2, -testLL/Math.log(2));
+		System.out.println("Test Perplexity : " + testPerplexity);
 		System.out.println("Total EM Time : " + totalEMTime.stop());
 	}
 

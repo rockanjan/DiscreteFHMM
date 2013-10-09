@@ -51,7 +51,7 @@ public class Config {
 	 * (some might be repeated some might be skipped)
 	 */
 	public static boolean sampleSequential = true;
-	public static double alpha = 0.8;
+	public static double alpha = 0.95;
 	public static double t0 = 2;
 	public static int sampleSizeEStep = 300;
 	public static int sampleSizeMStep = sampleSizeEStep;

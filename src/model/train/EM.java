@@ -52,11 +52,7 @@ public class EM {
 		} else {
 			//standard adaptiveWeight technique
 			//adaptiveWeight = (t0 + iterCount)^(-alpha)
-			if(iterCount == 0) {
-				adaptiveWeight = 1.0;
-			} else {
-				adaptiveWeight = Math.pow((Config.t0 + iterCount), - Config.alpha);
-			}
+			adaptiveWeight = Math.pow((Config.t0 + iterCount), - Config.alpha);			
 		}
 		
 		/*

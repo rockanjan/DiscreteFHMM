@@ -137,7 +137,7 @@ public class EM {
 		Timing eStepTime = new Timing();
 		Timing mStepTime = new Timing();
 		Timing oneIterEmTime = new Timing();
-		for (iterCount = 22; iterCount < numIter; iterCount++) {
+		for (iterCount = 0; iterCount < numIter; iterCount++) {
 			//sample new train instances
 			c.generateRandomTrainingEStepSample(Config.sampleSizeEStep, iterCount);
 			LL = 0;

@@ -155,11 +155,11 @@ public class InstanceList extends ArrayList<Instance> {
 			jointObjective = jointObjective/this.numberOfTokens;
 			updateString.append(String.format(" LL=%.5f time=%s", LL, varIterTime.stop()));
 			updateString.append(String.format(" obj=%.5f", jointObjective));
-			updateString.append(String.format(" l1avg=%f", expectationL1NormAll));
-			updateString.append(String.format(" max=%f", expectationL1NormMax));
+			updateString.append(String.format(" l1avg=%.10f", expectationL1NormAll));
+			updateString.append(String.format(" max=%.10f", expectationL1NormMax));
 			System.out.println(updateString.toString());
 			
-			if(expectationL1NormMax < 1e-5) {
+			if(expectationL1NormMax < Config.variationalConvergence) {
 				System.out.println("variational params converged");
 				break;
 			}

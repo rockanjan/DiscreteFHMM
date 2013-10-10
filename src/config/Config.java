@@ -11,7 +11,7 @@ import corpus.InstanceList;
 public class Config {
 	public final static long seed = 1;
 	public static Random random = new Random(seed);
-	public final static int numIter = 200;
+	public final static int numIter = 400;
 	public final static int nrLayers = 20;
 	public final static int numStates = 2;
 	public final static int USE_THREAD_COUNT = 8;
@@ -34,6 +34,7 @@ public class Config {
 	public static int maxFrequentConditionals = 100000;
 
 	public static int variationalIter = 5;
+	public static double variationalConvergence = 1e-8;
 	
 	//EM related
 	// convergence criteria
@@ -53,9 +54,9 @@ public class Config {
 	public static boolean sampleSequential = true;
 	public static double alpha = 0.95;
 	public static double t0 = 2;
-	public static int sampleSizeEStep = 300;
+	public static int sampleSizeEStep = 200;
 	public static int sampleSizeMStep = sampleSizeEStep;
-	public static int sampleDevSize = 100;
+	public static int sampleDevSize = 200;
 	public static String vocabSamplingType = "unigram";
 	public static int VOCAB_SAMPLE_SIZE = 0;
 	

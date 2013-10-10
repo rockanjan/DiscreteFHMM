@@ -62,7 +62,7 @@ public class LogLinearWeights {
 		for(int y=0; y<vocabSize; y++) {
 			for(int u=0; u<conditionalSize; u++) {
 				//weights[y][u] = r.nextGaussian();
-				weights[y][u] = r.nextDouble() * .1;
+				weights[y][u] = r.nextDouble() * 1e-3;
 			}
 		}
 	}	

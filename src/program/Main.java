@@ -44,7 +44,7 @@ public class Main {
 		corpus.model = model;
 		//random init		
 		model.initializeRandom(Config.random);
-		model.param.weights.initializeZeros();
+		//model.param.weights.initializeZeros();
 		//model.initializeZeros();
 		model.initializeZerosToBest();
 		Config.printParams();

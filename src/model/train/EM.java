@@ -25,10 +25,10 @@ public class EM {
 
 	double bestOldLL = -Double.MAX_VALUE;
 	double LL = 0;
-	
+
 	double bestOldLLDev = -Double.MAX_VALUE;
 	double devLL = 0;
-	
+
 	HMMParamBase expectedCounts;
 
 	int convergeCount = 0;
@@ -36,13 +36,13 @@ public class EM {
 						// best
 	int iterCount = 0;
 	double adaptiveWeight;
-	
+
 	public EM(int numIter, Corpus c, HMMBase model) {
 		this.numIter = numIter;
 		this.c = c;
 		this.model = model;
 	}
-	
+
 	public void setAdaptiveWeight() {
 		//fraction of data
 		double f = 1.0 * Corpus.trainInstanceEStepSampleList.numberOfTokens / Corpus.trainInstanceList.numberOfTokens;
@@ -52,9 +52,9 @@ public class EM {
 		} else {
 			//standard adaptiveWeight technique
 			//adaptiveWeight = (t0 + iterCount)^(-alpha)
-			adaptiveWeight = Math.pow((Config.t0 + iterCount), - Config.alpha);			
+			adaptiveWeight = Math.pow((Config.t0 + iterCount), - Config.alpha);
 		}
-		
+
 		/*
 		 * my approach based on iterations and fraction of samples selected
 		 */
@@ -68,12 +68,12 @@ public class EM {
 			a = f * numIter / (1-f);
 			adaptiveWeight = a / (a + iterCount);
 		}
-		*/		
-		
+		*/
+
 	}
 
 	public void eStep() {
-		
+
 		if (model.hmmType == HMMType.WITH_NO_FINAL_STATE) {
 			expectedCounts = new HMMParamNoFinalState(model);
 		} else if (model.hmmType == HMMType.WITH_FINAL_STATE) {
@@ -82,8 +82,8 @@ public class EM {
 			expectedCounts = new HMMParamNoFinalStateLog(model);
 		}
 		expectedCounts.initializeZeros();
-		System.out.format("Estep #sentences = %d, #tokens = %d\n", 
-				Corpus.trainInstanceEStepSampleList.size(), 
+		System.out.format("Estep #sentences = %d, #tokens = %d\n",
+				Corpus.trainInstanceEStepSampleList.size(),
 				Corpus.trainInstanceEStepSampleList.numberOfTokens);
 		LL = Corpus.trainInstanceEStepSampleList.updateExpectedCounts(model, expectedCounts);
 		LL = LL/Corpus.trainInstanceEStepSampleList.numberOfTokens; //per token
@@ -92,9 +92,9 @@ public class EM {
 	public void mStep() {
 		setAdaptiveWeight();
 		System.out.println("Iter : " + iterCount + " adaptiveWeight : " + adaptiveWeight);
-		
-		System.out.format("Mstep #sentences = %d, #tokens = %d\n", 
-				Corpus.trainInstanceMStepSampleList.size(), 
+
+		System.out.format("Mstep #sentences = %d, #tokens = %d\n",
+				Corpus.trainInstanceMStepSampleList.size(),
 				Corpus.trainInstanceMStepSampleList.numberOfTokens);
 		//Corpus.cacheFrequentConditionals();
 		trainLBFGS();
@@ -102,9 +102,9 @@ public class EM {
 		model.updateFromCountsWeighted(expectedCounts, adaptiveWeight);
 		//model.updateFromCounts(expectedCounts); //unweighted
 		Corpus.trainInstanceEStepSampleList.clearPosteriorProbabilities();
-		Corpus.trainInstanceEStepSampleList.clearDecodedStates();		
+		Corpus.trainInstanceEStepSampleList.clearDecodedStates();
 	}
-	
+
 	public void trainLBFGS() {
 		// maximize CLL of the data
 		double[] initParams = MyArray.createVector(model.param.weights.weights);
@@ -125,9 +125,17 @@ public class EM {
 		cll = cll / Corpus.trainInstanceMStepSampleList.numberOfTokens; //per token CLL
 		System.out.println("CLL = " + cll);
 		//model.param.weights.weights = optimizable.getParameterMatrix(); //unweighted
-		model.param.weights.weights = MathUtils.weightedAverageMatrix(optimizable.getParameterMatrix(), 
-				model.param.weights.weights, 
-				adaptiveWeight);		
+		
+		//geometric mean
+		/*
+		model.param.weights.weights = MathUtils.weightedAverageMatrix(optimizable.getParameterMatrix(),
+				model.param.weights.weights,
+				adaptiveWeight);
+		*/
+		//arithmetic mean
+		model.param.weights.weights = MathUtils.weightedAverageofLog(optimizable.getParameterMatrix(),
+				model.param.weights.weights,
+				adaptiveWeight);
 	}
 
 	public void start() {
@@ -137,7 +145,7 @@ public class EM {
 		Timing eStepTime = new Timing();
 		Timing mStepTime = new Timing();
 		Timing oneIterEmTime = new Timing();
-		for (iterCount = 0; iterCount < numIter; iterCount++) {
+		for (iterCount = 13; iterCount < numIter; iterCount++) {
 			//sample new train instances
 			c.generateRandomTrainingEStepSample(Config.sampleSizeEStep, iterCount);
 			LL = 0;
@@ -148,7 +156,7 @@ public class EM {
 			System.out.println("E-step time: " + eStepTime.stop());
 			double trainPerplexityJoint = Math.pow(2, -LL/Math.log(2));
 			System.out.println("Train perplexity : " + trainPerplexityJoint);
-			
+
 			double diff = LL - bestOldLL;
 			// m-step
 			c.generateRandomTrainingMStepSample(Config.sampleSizeMStep);
@@ -201,9 +209,9 @@ public class EM {
 		//if no dev data, use training data itself for convergence test
 		if(Corpus.devInstanceList == null) {
 			devLL = LL;
-			bestOldLLDev = bestOldLL;			
-		} 
-		
+			bestOldLLDev = bestOldLL;
+		}
+
 		double decreaseRatio = (devLL - bestOldLLDev) / Math.abs(bestOldLLDev);
 		// System.out.println("Decrease Ratio: %.5f " + decreaseRatio);
 		if (Config.precision > decreaseRatio && decreaseRatio > 0) {
@@ -221,7 +229,7 @@ public class EM {
 				System.out.println("Caching the best model so far");
 				if (model.bestParam != null) {
 					model.bestParam.cloneFrom(model.param);
-				}				
+				}
 			}
 			lowerCount++;
 			if (lowerCount == Config.maxConsecutiveDecreaseLimit) {

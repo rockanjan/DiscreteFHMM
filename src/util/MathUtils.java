@@ -118,7 +118,7 @@ public class MathUtils {
 	}
 	
 	/*
-	 * first matrix weighted by weight and second by (1-weight)
+	 * first matrix weighted by weight and second by (1-weight), if in log scale, geometric mean
 	 */
 	public static double[][] weightedAverageMatrix(double[][] first, double[][] second, double weight) {
 		if(weight < 0 || weight > 1) {
@@ -134,6 +134,32 @@ public class MathUtils {
 		for(int i=0; i<m; i++) {
 			for(int j=0; j<n; j++) {
 				averageMatrix[i][j] = weight * first[i][j] + (1.0-weight) * second[i][j];
+			}
+		}
+		return averageMatrix;
+	}
+	
+	/*
+	 * first matrix weighted by weight and second by (1-weight), if in log scale, arithmetic mean
+	 */
+	public static double[][] weightedAverageofLog(double[][] first, double[][] second, double weight) {
+		if(weight < 0 || weight > 1) {
+			throw new RuntimeException(String.format("Invalid weight %f, should be [0,1]", weight));
+		}
+		int m = first.length;
+		int n = first[0].length;
+		
+		if(second.length != m || second[0].length != n) {
+			throw new RuntimeException("Matrix dimensions mismatch");
+		}
+		double[][] averageMatrix = new double[m][n];
+		for(int i=0; i<m; i++) {
+			for(int j=0; j<n; j++) {
+				double value = weight * Math.exp(first[i][j]) + (1.0-weight) * Math.exp(second[i][j]);
+				if(value == 0) {
+					value = 1e-200;
+				}
+				averageMatrix[i][j] = Math.log(value);
 			}
 		}
 		return averageMatrix;

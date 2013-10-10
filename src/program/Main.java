@@ -20,8 +20,8 @@ public class Main {
 	static Corpus corpus;
 	public static void main(String[] args) throws IOException {
 		corpus = new Corpus("\\s+", Config.vocabThreshold);
-		trainNew();		
-		//trainContinue("variational_model_layers_20_states_2_iter_21.txt");
+		//trainNew();
+		trainContinue("variational_model_layers_3_states_10_iter_12.txt");
 		if(Corpus.testInstanceList != null) {
 			testVariational(model, Corpus.testInstanceList, Config.outFileTest);
 		} else {
@@ -37,12 +37,12 @@ public class Main {
 		if(Config.testFile != null && !Config.testFile.equals("")) {
 			corpus.readTest(Config.baseDirData + Config.testFile);
 		}
-		if(Config.devFile != null && !Config.devFile.equals("")) { 
+		if(Config.devFile != null && !Config.devFile.equals("")) {
 			corpus.readDev(Config.baseDirData + Config.devFile);
 		}
 		model = new HMMNoFinalStateLog(Config.nrLayers, Config.numStates, corpus);
 		corpus.model = model;
-		//random init		
+		//random init
 		model.initializeRandom(Config.random);
 		//model.param.weights.initializeZeros();
 		//model.initializeZeros();
@@ -52,8 +52,8 @@ public class Main {
 		em.start();
 		model.saveModel();
 	}
-	
-	public static void trainContinue(String filename) throws IOException {		
+
+	public static void trainContinue(String filename) throws IOException {
 		corpus = new Corpus("\\s+", Config.vocabThreshold);
 		model = new HMMNoFinalStateLog(Config.nrLayers, Config.numStates, corpus);
 		//load model for continuing training
@@ -64,7 +64,7 @@ public class Main {
 		if(Config.testFile != null && !Config.testFile.equals("")) {
 			corpus.readTest(Config.baseDirData + Config.testFile);
 		}
-		if(Config.devFile != null && !Config.devFile.equals("")) { 
+		if(Config.devFile != null && !Config.devFile.equals("")) {
 			corpus.readDev(Config.baseDirData + Config.devFile);
 		}
 		model.initializeZerosToBest();
@@ -73,7 +73,7 @@ public class Main {
 		em.start();
 		model.saveModel();
 	}
-	
+
 	public static void testVariational(HMMBase model, InstanceList instanceList, String outFile) {
 		System.out.println("Decoding variational");
 		Timing decodeTiming = new Timing();
@@ -110,5 +110,5 @@ public class Main {
 		InstanceList.featurePartitionCache = null;
 		System.out.println("Finished decoding");
 		System.out.println("Total decoding time : " + decodeTiming.stop());
-	}	
+	}
 }

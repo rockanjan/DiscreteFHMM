@@ -59,7 +59,6 @@ public class LogLinearWeights {
 		weights = new double[vocabSize][conditionalSize];
 		for(int y=0; y<vocabSize; y++) {
 			for(int u=0; u<conditionalSize; u++) {
-				//weights[y][u] = r.nextGaussian();
 				weights[y][u] = r.nextDouble();
 			}
 		}

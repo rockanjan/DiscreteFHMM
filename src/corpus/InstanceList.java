@@ -4,13 +4,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import config.Config;
+
 import model.HMMBase;
 import model.inference.VariationalParam;
 import model.param.HMMParamBase;
 import model.param.LogLinearWeights;
 import util.MathUtils;
 import util.Timing;
+import config.Config;
 
 public class InstanceList extends ArrayList<Instance> {
 	/*
@@ -38,30 +39,6 @@ public class InstanceList extends ArrayList<Instance> {
 	}
 	
 	static public Map<String, Double> featurePartitionCache;
-
-	/*
-	 * just to get the LL of the data
-	 */
-	public double getLL(HMMBase model) {
-		throw new UnsupportedOperationException("Not yet implemented");				
-	}
-	
-	public double getJointLL(Instance instance, HMMBase model) {
-		double jointLL = 0;
-		//for t=0;
-		for(int l=0; l<model.nrLayers; l++) {
-			jointLL += model.param.initial.get(l).get(instance.decodedStates[l][0], 0);			
-		}
-		jointLL += instance.getObservationProbabilityUsingLLModel(0);
-		
-		for(int t=1; t<instance.T; t++) {
-			for(int l=0; l<model.nrLayers; l++) {
-				jointLL += model.param.transition.get(l).get(instance.decodedStates[l][t], instance.decodedStates[l][t-1]);
-			}
-			jointLL += instance.getObservationProbabilityUsingLLModel(t);
-		}
-		return jointLL;
-	}
 	
 	/*
 	 * called by the E-step of EM. 
@@ -71,25 +48,18 @@ public class InstanceList extends ArrayList<Instance> {
 	public double updateExpectedCounts(HMMBase model, HMMParamBase expectedCounts) {
 		//cache expWeights for the model
 		model.param.expWeights = model.param.weights.getCloneExp();
-		
 		featurePartitionCache = new ConcurrentHashMap<String, Double>();
 		doVariationalInference(model);
-		
-		//decode the most likely states and compute joint likelihood to return
-		double jointLL = 0;
 		LL = 0;
 		jointObjective = 0;
 		for (int n = 0; n < this.size(); n++) {
 			Instance instance = this.get(n);
 			instance.doInference(model);
 			LL += instance.logLikelihood;
-			jointObjective += instance.jointObjective;
+			jointObjective += instance.getJointObjective();
 			for(int l=0; l<model.nrLayers; l++) {
 				instance.forwardBackwardList.get(l).addToCounts(expectedCounts);
 			}
-			//instance.decode();
-			//jointLL += getJointLL(instance, model);
-			//instance.clearInference();
 			instance.varParam = null;
 		}
 		//clear expWeights;				
@@ -158,7 +128,6 @@ public class InstanceList extends ArrayList<Instance> {
 			updateString.append(String.format(" l1avg=%.10f", expectationL1NormAll));
 			updateString.append(String.format(" max=%.10f", expectationL1NormMax));
 			System.out.println(updateString.toString());
-			
 			if(expectationL1NormMax < Config.variationalConvergence) {
 				System.out.println("variational params converged");
 				break;
@@ -212,15 +181,12 @@ public class InstanceList extends ArrayList<Instance> {
 				instance.posteriorDifference = 0;
 				instance.posteriorDifferenceMax = 0;
 				instance.doInference(model);
-				//instance.decode();
-				//localLL += getJointLL(instance, model);
 				localLL += instance.logLikelihood;
-				localObjective += instance.jointObjective;
+				localObjective += instance.getJointObjective();
 				localExpectationL1Norm += instance.posteriorDifference;
 				if(instance.posteriorDifferenceMax > localExpectationL1Max) {
 					localExpectationL1Max = instance.posteriorDifferenceMax; 
 				}
-				
 			}
 		}		
 	}

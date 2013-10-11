@@ -3,8 +3,6 @@ package corpus;
 import java.util.ArrayList;
 import java.util.List;
 
-import config.Config;
-
 import model.HMMBase;
 import model.HMMType;
 import model.inference.ForwardBackward;
@@ -13,6 +11,7 @@ import model.inference.VariationalParam;
 import model.param.LogLinearWeights;
 import util.MathUtils;
 import util.SmoothWord;
+import config.Config;
 
 public class Instance {
 	
@@ -38,9 +37,7 @@ public class Instance {
 	public double[] observationCache;
 
 	public double logLikelihood;
-	public double stateObjective;
-	public double observationObjective;
-	public double jointObjective; //expected joint log-likelihood E[P(S,Y)]
+	public double jointObjective;
 	
 	public double posteriorDifference = 0;
 	public double posteriorDifferenceMax = 0;
@@ -60,9 +57,7 @@ public class Instance {
 			posteriors = new double[model.nrLayers][][];
 		}
 		logLikelihood = 0;
-		stateObjective = 0;
-		observationObjective = 0;
-		jointObjective = 0;
+		
 		if(forwardBackwardList == null) {
 			forwardBackwardList = new ArrayList<ForwardBackward>();
 			for (int l = 0; l < model.nrLayers; l++) {
@@ -78,12 +73,7 @@ public class Instance {
 				tempFB.doInference();
 				logLikelihood += tempFB.logLikelihood;
 			}
-		}
-		//compute the final objective
-		//state objective are already calculated
-		//exp weights are already cached right inside updateCounts()
-		observationObjective = getConditionalLogLikelihoodSoft(model.param.weights.weights, model.param.expWeights.weights);
-		jointObjective = stateObjective + observationObjective;
+		}		
 	}
 
 	public void clearInference() {
@@ -171,6 +161,46 @@ public class Instance {
 			}
 		}
 		return observationCache[position];
+	}
+	
+	public double getJointObjective() {
+		//TODO: important: inference should have already been done before calling this
+		double jointObjective = 0.0;
+		double observationObjective = getConditionalLogLikelihoodSoft(model.param.weights.weights, model.param.expWeights.weights);
+		double stateObjective = 0.0;
+		
+		//initial
+		for(int m=0; m<Config.nrLayers; m++) {
+			for(int k=0; k<nrStates; k++) {
+				stateObjective += forwardBackwardList.get(m).getStatePosterior(0, k) * 
+						model.param.initial.get(m).get(k, 0);  
+			}
+		}
+		//transition
+		for(int m=0; m<Config.nrLayers; m++) {
+			for(int t=0; t<T-1; t++) {
+				double[] value = new double[nrStates * nrStates];
+				int index = 0;
+				for(int i=0; i<nrStates; i++) {
+					for(int j=0; j<nrStates; j++) {
+						value[index] = forwardBackwardList.get(m).getTransitionPosterior(i, j, t); //gets log value (unnormalized)
+						index++;
+					}
+				}
+				//normalize
+				double normalizer = MathUtils.logsumexp(value);
+				index = 0;
+				for(int i=0; i<nrStates; i++) {
+					for(int j=0; j<nrStates; j++) {
+						double transProb = Math.exp(value[index] - normalizer);
+						stateObjective += transProb * model.param.transition.get(m).get(j, i); 
+					}
+				}
+			}
+		}		
+		jointObjective = stateObjective + observationObjective;
+		return jointObjective;
+		
 	}
 
 	public String getConditionalString(int t) {

@@ -1,21 +1,19 @@
 package model.train;
 
-import config.Config;
-import program.Main;
-import cc.mallet.optimize.LimitedMemoryBFGS;
-import cc.mallet.optimize.OptimizationException;
-import cc.mallet.optimize.Optimizer;
 import model.HMMBase;
 import model.HMMType;
 import model.param.HMMParamBase;
 import model.param.HMMParamFinalState;
 import model.param.HMMParamNoFinalState;
 import model.param.HMMParamNoFinalStateLog;
-
 import util.MathUtils;
 import util.MyArray;
 import util.Stats;
 import util.Timing;
+import cc.mallet.optimize.LimitedMemoryBFGS;
+import cc.mallet.optimize.OptimizationException;
+import cc.mallet.optimize.Optimizer;
+import config.Config;
 import corpus.Corpus;
 
 public class EM {
@@ -145,7 +143,7 @@ public class EM {
 		Timing eStepTime = new Timing();
 		Timing mStepTime = new Timing();
 		Timing oneIterEmTime = new Timing();
-		for (iterCount = 13; iterCount < numIter; iterCount++) {
+		for (iterCount = 0; iterCount < numIter; iterCount++) {
 			//sample new train instances
 			c.generateRandomTrainingEStepSample(Config.sampleSizeEStep, iterCount);
 			LL = 0;

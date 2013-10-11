@@ -17,12 +17,12 @@ public class MultinomialLog extends MultinomialBase{
 	@Override
 	public void initializeRandom(Random r) {
 		System.out.println("initializing multinomial log");
-		double small = 1e-100;
+		double small = 1e-10;
 		for(int i=0; i<y; i++) {
 			double sum = 0;
 			for(int j=0; j<x; j++) {
-				//count[j][i] = r.nextDouble() + small;
-				count[j][i] = 1.0;
+				count[j][i] = r.nextDouble() + small;
+				//count[j][i] = 1.0;
 				sum += count[j][i];
 			}
 			//normalize
@@ -36,7 +36,7 @@ public class MultinomialLog extends MultinomialBase{
 	@Override
 	public void smooth() {
 		//hyperparameter
-		double small = 1;
+		double small = 1e-10;
 		for(int i=0; i<y; i++) {
 			for(int j=0; j<x; j++) {
 				if(count[j][i] == 0) {
@@ -50,17 +50,7 @@ public class MultinomialLog extends MultinomialBase{
 	//when reached here, the counts are normal (no logs)
 	@Override
 	public void normalize() {
-		//do add one smoothing
-		for(int i=0; i<y; i++) {
-			for(int j=0; j<x; j++) {
-				MathUtils.check(count[j][i]);
-				if(count[j][i] < 0) {
-					System.err.println("count negative " + count[j][i]);
-					System.exit(-1);
-				}
-				count[j][i] = count[j][i] + 1;
-			}
-		}
+		smooth();
 		for(int i=0; i<y; i++) {
 			double sum = 0;
 			for(int j=0; j<x; j++) {

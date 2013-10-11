@@ -4,8 +4,6 @@ import java.util.Random;
 
 import config.Config;
 
-import program.Main;
-
 public class LogLinearWeights {
 	public double[][] weights; //weights for the log-linear model
 	
@@ -62,7 +60,7 @@ public class LogLinearWeights {
 		for(int y=0; y<vocabSize; y++) {
 			for(int u=0; u<conditionalSize; u++) {
 				//weights[y][u] = r.nextGaussian();
-				weights[y][u] = r.nextDouble() * 1e-3;
+				weights[y][u] = r.nextDouble();
 			}
 		}
 	}	

@@ -150,29 +150,17 @@ public class ForwardBackwardLog extends ForwardBackward{
 	
 	public void addToTransition(MultinomialBase transition) {
 		for(int t=0; t<T-1; t++) {
-			double[] value = new double[nrStates * nrStates];
-			int index = 0;
 			for(int i=0; i<nrStates; i++) {
 				for(int j=0; j<nrStates; j++) {
-					value[index] = getTransitionPosterior(i, j, t);
-					index++;
-				}
-			}
-			//normalize
-			double normalizer = MathUtils.logsumexp(value);
-			index = 0;
-			for(int i=0; i<nrStates; i++) {
-				for(int j=0; j<nrStates; j++) {
-					double transProb = Math.exp(value[index] - normalizer);
-					transition.addToCounts(j, i, transProb);
-					index++;
+					transition.addToCounts(j, i, getTransitionPosterior(i, j, t));
 				}
 			}
 		}
 	}
 	
 	/*
-	 * Gives the log of transition posterior probability (normalized by logLikelihood)
+	 * Gives the numerator of transition posterior probability
+	 * P(S_t-1, S_t | O)
 	 */
 	public double getTransitionPosterior(int currentState, int nextState, int position) {
 		//xi in Rabiner Tutorial
@@ -180,7 +168,11 @@ public class ForwardBackwardLog extends ForwardBackward{
 		double trans = transition.get(nextState, currentState); //transition to next given current
 		double obs = instance.varParam.varParamObs.shi[layer][position+1][nextState];		
 		double betaValue = beta[position+1][nextState];		
-		double value = alphaValue + trans + obs + betaValue;
+		double value = alphaValue + trans + obs + betaValue - logLikelihood;
+		value = Math.exp(value);
+		if(value > 1 + 1e-2) {
+			throw new RuntimeException("transition posterior value : " + value);
+		}
 		return value;
 	}
 	

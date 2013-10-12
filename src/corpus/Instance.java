@@ -179,21 +179,10 @@ public class Instance {
 		//transition
 		for(int m=0; m<Config.nrLayers; m++) {
 			for(int t=0; t<T-1; t++) {
-				double[] value = new double[nrStates * nrStates];
-				int index = 0;
 				for(int i=0; i<nrStates; i++) {
 					for(int j=0; j<nrStates; j++) {
-						value[index] = forwardBackwardList.get(m).getTransitionPosterior(i, j, t); //gets log value (unnormalized)
-						index++;
-					}
-				}
-				//normalize
-				double normalizer = MathUtils.logsumexp(value);
-				index = 0;
-				for(int i=0; i<nrStates; i++) {
-					for(int j=0; j<nrStates; j++) {
-						double transProb = Math.exp(value[index] - normalizer);
-						stateObjective += transProb * model.param.transition.get(m).get(j, i); 
+						double transPosterior = forwardBackwardList.get(m).getTransitionPosterior(i, j, t);
+						stateObjective += transPosterior * model.param.transition.get(m).get(j, i); 
 					}
 				}
 			}

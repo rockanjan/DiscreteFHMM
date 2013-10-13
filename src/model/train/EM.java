@@ -71,14 +71,6 @@ public class EM {
 	}
 
 	public void eStep() {
-
-		if (model.hmmType == HMMType.WITH_NO_FINAL_STATE) {
-			expectedCounts = new HMMParamNoFinalState(model);
-		} else if (model.hmmType == HMMType.WITH_FINAL_STATE) {
-			expectedCounts = new HMMParamFinalState(model);
-		} else if (model.hmmType == HMMType.LOG_SCALE) {
-			expectedCounts = new HMMParamNoFinalStateLog(model);
-		}
 		expectedCounts.initializeZeros();
 		System.out.format("Estep #sentences = %d, #tokens = %d\n",
 				Corpus.trainInstanceEStepSampleList.size(),
@@ -137,6 +129,13 @@ public class EM {
 	}
 
 	public void start() {
+		if (model.hmmType == HMMType.WITH_NO_FINAL_STATE) {
+			expectedCounts = new HMMParamNoFinalState(model);
+		} else if (model.hmmType == HMMType.WITH_FINAL_STATE) {
+			expectedCounts = new HMMParamFinalState(model);
+		} else if (model.hmmType == HMMType.LOG_SCALE) {
+			expectedCounts = new HMMParamNoFinalStateLog(model);
+		}
 		System.out.println("Starting EM");
 		Timing totalEMTime = new Timing();
 		totalEMTime.start();
@@ -196,10 +195,12 @@ public class EM {
 			model.saveModel(iterCount); //save every iteration
 			System.out.println(display.toString());
 		}
-		double testLL = Corpus.testInstanceList.updateExpectedCounts(model, expectedCounts);
-		testLL = testLL / Corpus.testInstanceList.numberOfTokens;
-		double testPerplexity = Math.pow(2, -testLL/Math.log(2));
-		System.out.println("Test Perplexity : " + testPerplexity);
+		if(Corpus.testInstanceList != null) {
+			double testLL = Corpus.testInstanceList.updateExpectedCounts(model, expectedCounts);
+			testLL = testLL / Corpus.testInstanceList.numberOfTokens;
+			double testPerplexity = Math.pow(2, -testLL/Math.log(2));
+			System.out.println("Test Perplexity : " + testPerplexity);
+		}
 		System.out.println("Total EM Time : " + totalEMTime.stop());
 	}
 

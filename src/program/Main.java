@@ -21,7 +21,7 @@ public class Main {
 	public static void main(String[] args) throws IOException {
 		corpus = new Corpus("\\s+", Config.vocabThreshold);
 		trainNew();
-		//trainContinue("variational_model_layers_3_states_10_iter_73.txt");
+		//trainContinue("variational_model_layers_3_states_10_iter_100.txt");
 		if(Corpus.testInstanceList != null) {
 			testVariational(model, Corpus.testInstanceList, Config.outFileTest);
 		} else {
@@ -69,9 +69,11 @@ public class Main {
 		}
 		model.initializeZerosToBest();
 		Config.printParams();
+		/*
 		EM em = new EM(Config.numIter, corpus, model);
-		em.start();
+		em.start();		
 		model.saveModel();
+		*/
 	}
 
 	public static void testVariational(HMMBase model, InstanceList instanceList, String outFile) {
@@ -100,8 +102,7 @@ public class Main {
 					pw.println(sb.toString());
 					pw.flush();
 				}
-				pw.println();
-				i.clearInference();
+				pw.println();				
 			}
 			pw.close();
 			//posterior expectations

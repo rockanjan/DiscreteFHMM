@@ -5,12 +5,12 @@ import java.io.PrintWriter;
 import java.util.Date;
 import java.util.concurrent.ConcurrentHashMap;
 
-import config.Config;
-
-import util.Timing;
 import model.HMMBase;
 import model.HMMNoFinalStateLog;
 import model.train.EM;
+import util.Timing;
+import config.Config;
+import config.LastIter;
 import corpus.Corpus;
 import corpus.Instance;
 import corpus.InstanceList;
@@ -18,14 +18,21 @@ import corpus.InstanceList;
 public class Main {
 	static HMMBase model;
 	static Corpus corpus;
+	static int lastIter;
 	public static void main(String[] args) throws IOException {
 		corpus = new Corpus("\\s+", Config.vocabThreshold);
-		trainNew();
-		//trainContinue("variational_model_layers_3_states_10_iter_12.txt");
-		if(Corpus.testInstanceList != null) {
-			testVariational(model, Corpus.testInstanceList, Config.outFileTest);
+		lastIter = LastIter.read();
+		if(lastIter < 0) {
+			trainNew();
 		} else {
-			testVariational(model, Corpus.trainInstanceList, Config.outFileTrain);
+			trainContinue("variational_model_layers_" + Config.nrLayers + 
+					"_states_" + Config.numStates + 
+					"_iter_" + lastIter + ".txt");
+			if(Corpus.testInstanceList != null) {
+				testVariational(model, Corpus.testInstanceList, Config.outFileTest);
+			} else {
+				testVariational(model, Corpus.trainInstanceList, Config.outFileTrain);
+			}
 		}
 	}
 
@@ -70,6 +77,7 @@ public class Main {
 		model.initializeZerosToBest();
 		Config.printParams();
 		EM em = new EM(Config.numIter, corpus, model);
+		em.iterCount = lastIter + 1;
 		em.start();
 		model.saveModel();
 	}

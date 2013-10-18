@@ -1,5 +1,7 @@
 package model.train;
 
+import java.io.FileNotFoundException;
+
 import model.HMMBase;
 import model.HMMType;
 import model.param.HMMParamBase;
@@ -14,6 +16,7 @@ import cc.mallet.optimize.LimitedMemoryBFGS;
 import cc.mallet.optimize.OptimizationException;
 import cc.mallet.optimize.Optimizer;
 import config.Config;
+import config.LastIter;
 import corpus.Corpus;
 
 public class EM {
@@ -32,7 +35,7 @@ public class EM {
 	int convergeCount = 0;
 	int lowerCount = 0; // number of times LL could not increase from previous
 						// best
-	int iterCount = 0;
+	public int iterCount = 0;
 	double adaptiveWeight;
 
 	public EM(int numIter, Corpus c, HMMBase model) {
@@ -136,7 +139,7 @@ public class EM {
 				adaptiveWeight);
 	}
 
-	public void start() {
+	public void start() throws FileNotFoundException {
 		System.out.println("Starting EM");
 		Timing totalEMTime = new Timing();
 		totalEMTime.start();
@@ -194,6 +197,9 @@ public class EM {
 				bestOldLL = LL;
 			}
 			model.saveModel(iterCount); //save every iteration
+			//also save the file with the itercount
+			LastIter.write(iterCount);
+			
 			System.out.println(display.toString());
 		}
 		double testLL = Corpus.testInstanceList.updateExpectedCounts(model, expectedCounts);

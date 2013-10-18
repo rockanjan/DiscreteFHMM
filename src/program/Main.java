@@ -18,7 +18,7 @@ import corpus.InstanceList;
 public class Main {
 	static HMMBase model;
 	static Corpus corpus;
-	static int lastIter;
+	public static int lastIter;
 	public static void main(String[] args) throws IOException {
 		corpus = new Corpus("\\s+", Config.vocabThreshold);
 		lastIter = LastIter.read();
@@ -77,7 +77,6 @@ public class Main {
 		model.initializeZerosToBest();
 		Config.printParams();
 		EM em = new EM(Config.numIter, corpus, model);
-		em.iterCount = lastIter + 1;
 		em.start();
 		model.saveModel();
 	}
@@ -89,12 +88,14 @@ public class Main {
 		System.out.println("Decoding started on :" + new Date().toString());
 		model.param.expWeights = model.param.weights.getCloneExp();
 		InstanceList.featurePartitionCache = new ConcurrentHashMap<String, Double>();
-		instanceList.doVariationalInference(model); //also decodes
+		Config.variationalIter = 20;
+		instanceList.doVariationalInference(model);
 		try{
 			PrintWriter pw = new PrintWriter(Config.baseDirDecode + outFile);
+			//viterbi decoded states
 			for (int n = 0; n < instanceList.size(); n++) {
 				Instance i = instanceList.get(n);
-				//i.decode();
+				i.decode();
 				for (int t = 0; t < i.T; t++) {
 					String word = i.getWord(t);
 					StringBuffer sb = new StringBuffer();
@@ -106,10 +107,29 @@ public class Main {
 					pw.println(sb.toString());
 					pw.flush();
 				}
+				pw.println();				
+			}
+			pw.close();
+			//posterior expectations
+			PrintWriter pwPosterior = new PrintWriter(Config.baseDirDecode + outFile + ".posterior");
+			for (int n = 0; n < instanceList.size(); n++) {
+				Instance i = instanceList.get(n);
+				for (int t = 0; t < i.T; t++) {
+					String word = i.getWord(t);
+					StringBuffer sb = new StringBuffer();
+					sb.append(word + " ");
+					for(int m=0; m<model.nrLayers; m++) {
+						for(int state=0; state<model.nrStates; state++) {
+							sb.append("|" + i.posteriors[m][t][state]);
+						}
+					}
+					pw.println(sb.toString());
+					pw.flush();
+				}
 				pw.println();
 				i.clearInference();
 			}
-			pw.close();
+			pwPosterior.close();
 		}
 		catch(Exception e) {
 			e.printStackTrace();

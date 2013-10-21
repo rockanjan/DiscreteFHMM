@@ -9,8 +9,8 @@ public class Config {
 	public final static long seed = 1;
 	public static Random random = new Random(seed);
 	public final static int numIter = 400;
-	public final static int nrLayers = 5;
-	public final static int numStates = 10;
+	public static int nrLayers = 5;
+	public static int numStates = 10;
 	public final static int USE_THREAD_COUNT = 8;
 	public final static int vocabThreshold = 3;
 

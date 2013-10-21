@@ -159,6 +159,19 @@ public class Corpus {
 		readVocabFromCorpus(inFile);
 	}
 	
+	public void createArtificialVocab(int artificial_vocab_size) {
+		corpusVocab = new ArrayList<Vocabulary>();
+		Vocabulary v = new Vocabulary(); //base vocabulary
+		v.vocabReadIndex = 0;
+		v.vocabThreshold = 0;
+		v.smooth = false;
+		for(int i=0; i<artificial_vocab_size; i++) {
+			v.addItem(i + "");
+		}
+		v.vocabSize = artificial_vocab_size;
+		corpusVocab.add(v);
+	}
+	
 	public static void clearFrequentConditionals() {
 		frequentConditionals = null;
 	}

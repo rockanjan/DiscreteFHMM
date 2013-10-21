@@ -24,6 +24,7 @@ public class DiscreteSampler {
 	
 	public DiscreteSampler(List<Double> distribution) {
 		this.distribution = distribution;
+		checkDistribution();
 		N = distribution.size();
 		setupAliasMethod();
 	}
@@ -32,11 +33,21 @@ public class DiscreteSampler {
 		this.distribution = new ArrayList<Double>();
 		for(int i=0; i<dist.length; i++) {
 			this.distribution.add(dist[i]);
-		}		
+		}
+		checkDistribution();
 		N = distribution.size();
 		setupAliasMethod();
 	}
 	
+	public void checkDistribution() {
+		double sum = 0.0;
+		for(int i=0; i<distribution.size(); i++) {
+			sum += distribution.get(i);
+		}
+		if(Math.abs(sum - 1.0) > 1e-5) {
+			throw new RuntimeException("Distribution does not sum to one : " + sum);
+		}
+	}
 	/*
 	 * Alias method by Walker (1977)
 	 * O(1) sampling time to sample a RV from the distribution

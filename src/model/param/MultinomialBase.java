@@ -22,6 +22,14 @@ public abstract class MultinomialBase {
 		}
 	}
 	
+	public double[] getDistributionGivenState(int state) {
+		double[] dist = new double[x];
+		for(int i=0; i<x; i++) {
+			dist[i] = Math.exp(count[i][state]);
+		}
+		return dist;
+	}
+	
 	public MultinomialBase(int x, int y) {
 		this.x = x; this.y = y;
 		count = new double[x][y];

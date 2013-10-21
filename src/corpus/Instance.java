@@ -48,6 +48,17 @@ public class Instance {
 		// read from line
 		populateWordArray(line);
 	}
+	
+	public Instance(Corpus c, int[] words) {
+		this.c = c;
+		unknownCount = 0;
+		T = words.length;
+		//System.out.println(Corpus.oneTimeStepObsSize);
+		this.words = new int[words.length][Corpus.oneTimeStepObsSize];
+		for(int t=0; t<T; t++) {
+			this.words[t][0] = words[t];
+		}
+	}
 
 	public void doInference(HMMBase model) {
 		// TODO: to save memory free this right after its use

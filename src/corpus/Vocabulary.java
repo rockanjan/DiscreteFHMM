@@ -14,9 +14,9 @@ import cc.mallet.grmm.learning.ACRF.UnigramTemplate;
 import util.SmoothWord;
 
 public class Vocabulary {
-	boolean debug = false;
-	boolean smooth = true;
-	boolean lower = true;
+	public boolean debug = false;
+	public boolean smooth = true;
+	public boolean lower = true;
 	public int vocabThreshold = 1;
 	//index zero reserved for *unk* (low freq features)
 	

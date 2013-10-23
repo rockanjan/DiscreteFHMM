@@ -76,7 +76,7 @@ public abstract class MultinomialBase {
 		boolean result = true;
 		for(int i=0; i<y; i++) {
 			for(int j=0; j<x; j++) {
-				if(count[j][i] == other.get(j,i)) {
+				if(count[j][i] != other.get(j,i)) {
 					result = false;
 				}
 			}

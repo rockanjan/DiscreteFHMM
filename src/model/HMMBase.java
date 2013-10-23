@@ -176,7 +176,6 @@ public abstract class HMMBase {
 				//modelReader.readLine();
 			}
 			modelReader.readLine();
-			// transition
 			for (int z = 0; z < nrLayers; z++) {
 				//pw.println(param.transition.get(z).getConditionalSize());
 				//pw.println(param.transition.get(z).getConditionedSize());
@@ -186,7 +185,7 @@ public abstract class HMMBase {
 				for (int j = 0; j < param.transition.get(z).getConditionalSize(); j++) {
 					String[] probs = modelReader.readLine().split("\\s+");
 					for (int i = 0; i < param.transition.get(z).getConditionedSize(); i++) {
-						param.transition.get(z).count[j][i] = Double.parseDouble(probs[i]);
+						param.transition.get(z).count[i][j] = Double.parseDouble(probs[i]);
 					}
 					//modelReader.readLine();
 				}
@@ -216,6 +215,7 @@ public abstract class HMMBase {
 				System.exit(-1);
 			}
 			modelReader.close();
+			//param.check();
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 			System.exit(-1);
@@ -224,6 +224,7 @@ public abstract class HMMBase {
 			e.printStackTrace();
 			System.exit(-1);
 		}
+		
 	}
 	
 	public void loadModelsFromIndependentHMM(String folderName) {
@@ -336,4 +337,30 @@ public abstract class HMMBase {
 		System.out.println("Done");
 		System.out.println("Model loaded from independent HMM with 7 layers");
 	}	
+	
+	public static void main(String[] args) {
+		Corpus corpus;
+		corpus = new Corpus("\\s+", Config.vocabThreshold);
+		corpus.createArtificialVocab(100);
+		corpus.corpusVocab.get(0).writeDictionary(Config.baseDirModel + "vocab.txt");
+		HMMBase model = new HMMNoFinalStateLog(Config.nrLayers, Config.numStates, corpus);
+		corpus.model = model;
+		model.initializeRandom(Config.random);
+		model.initializeZerosToBest();
+		model.param.expWeights = model.param.weights.getCloneExp();
+		model.param.check();
+		model.saveModel(20000);
+		HMMBase loadedModel = new HMMNoFinalStateLog(Config.nrLayers, Config.numStates, corpus);
+		loadedModel.loadModel("variational_model_layers_" + Config.nrLayers + 
+					"_states_" + Config.numStates + 
+					"_iter_" + 20000 + ".txt");
+		if(model.param.equalsExact(loadedModel.param)) {
+			System.out.println("Two models equal exactly");
+		} else {
+			System.err.println("Two models do not equal exactly");
+		}
+		//model.param.check();
+		
+		
+	}
 }

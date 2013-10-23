@@ -139,7 +139,7 @@ public abstract class HMMParamBase {
 		}
 		
 		for(int m=0; m<nrLayers; m++) {
-			if(! this.initial.get(m).equalsExact(other.initial.get(m)) && this.transition.get(m).equalsExact(other.transition.get(m))) {
+			if(! this.initial.get(m).equalsExact(other.initial.get(m)) || ! this.transition.get(m).equalsExact(other.transition.get(m))) {
 				System.err.println("initial or transition mismatch");
 				result = false;
 			}

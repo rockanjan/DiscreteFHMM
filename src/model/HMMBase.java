@@ -215,7 +215,7 @@ public abstract class HMMBase {
 				System.exit(-1);
 			}
 			modelReader.close();
-			//param.check();
+			param.check();
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 			System.exit(-1);

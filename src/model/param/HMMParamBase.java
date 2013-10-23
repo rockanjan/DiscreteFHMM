@@ -3,12 +3,10 @@ package model.param;
 import java.util.ArrayList;
 import java.util.Random;
 
-import corpus.Corpus;
-
-import util.MyArray;
-
 import model.HMMBase;
 import model.HMMType;
+import util.MyArray;
+import corpus.Corpus;
 
 public abstract class HMMParamBase {
 	public int nrLayers;
@@ -21,7 +19,7 @@ public abstract class HMMParamBase {
 	public HMMBase model;
 
 	int nrStatesWithFake = -1; //the extending class should initialize this (for no fake, equals nrStates)
-	int nrStates = -1;
+	public int nrStates = -1;
 	public int nrObs = -1;
 	
 	

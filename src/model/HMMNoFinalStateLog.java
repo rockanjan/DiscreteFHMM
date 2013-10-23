@@ -2,10 +2,10 @@ package model;
 
 import java.util.Random;
 
-import corpus.Corpus;
-import corpus.Instance;
 import model.param.HMMParamNoFinalState;
 import model.param.HMMParamNoFinalStateLog;
+import corpus.Corpus;
+import corpus.Instance;
 
 public class HMMNoFinalStateLog extends HMMBase{
 	public HMMNoFinalStateLog() {
@@ -63,6 +63,4 @@ public class HMMNoFinalStateLog extends HMMBase{
 			this.param.transition.get(z).checkDistribution();			
 		}
 	}
-	
-	
 }

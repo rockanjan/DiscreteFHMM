@@ -1,4 +1,4 @@
-package corpus;
+package model;
 
 import java.util.HashMap;
 import java.util.Map;

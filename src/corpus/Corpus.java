@@ -7,20 +7,15 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
-import java.util.Random;
 import java.util.TreeSet;
 
-import config.Config;
-
 import model.HMMBase;
-
-import program.Main;
 import util.SmoothWord;
+import config.Config;
 
 public class Corpus {
 	public static String delimiter = "\\s+";
@@ -159,16 +154,16 @@ public class Corpus {
 		readVocabFromCorpus(inFile);
 	}
 	
-	public void createArtificialVocab(int artificial_vocab_size) {
+	public void createArtificialVocab(int artificialVocabSize) {
 		corpusVocab = new ArrayList<Vocabulary>();
 		Vocabulary v = new Vocabulary(); //base vocabulary
 		v.vocabReadIndex = 0;
 		v.vocabThreshold = 0;
 		v.smooth = false;
-		for(int i=0; i<artificial_vocab_size; i++) {
+		for(int i=0; i<artificialVocabSize; i++) {
 			v.addItem(i + "");
 		}
-		v.vocabSize = artificial_vocab_size;
+		v.vocabSize = artificialVocabSize;
 		corpusVocab.add(v);
 	}
 	

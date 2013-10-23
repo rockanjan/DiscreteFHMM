@@ -9,17 +9,11 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Random;
 
+import model.param.HMMParamBase;
+import model.param.HMMParamNoFinalStateLog;
 import config.Config;
-
 import corpus.Corpus;
 import corpus.Vocabulary;
-
-import model.param.HMMParamBase;
-import model.param.HMMParamNoFinalState;
-import model.param.HMMParamNoFinalStateLog;
-import model.param.LogLinearWeights;
-import model.param.MultinomialBase;
-import model.param.MultinomialLog;
 
 public abstract class HMMBase {
 	public int nrLayers;
@@ -29,7 +23,7 @@ public abstract class HMMBase {
 	public int nrStates = -1;
 	public HMMParamBase param;
 	public HMMParamBase bestParam; // best found so far
-
+	
 	public HMMType hmmType;
 	
 	public abstract void initializeRandom(Random r);
@@ -47,7 +41,7 @@ public abstract class HMMBase {
 	public void checkModel() {
 		param.check();
 	}
-
+	
 	public void updateFromCounts(HMMParamBase counts) {
 		//update sufficient statistics
 		for(int m=0; m<nrLayers; m++) {

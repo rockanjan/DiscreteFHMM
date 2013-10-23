@@ -103,7 +103,8 @@ public class MultinomialLog extends MultinomialBase{
 			}
 			if(Math.abs(sum - 1.0) > tolerance) {
 				//System.err.println("Distribution sums to : " + sum);
-				throw new RuntimeException("Distribution sums to : " + sum);
+				MyArray.printExpTable(count);
+				throw new RuntimeException("Distribution sums to : " + sum);				
 			}
 		}
 	}

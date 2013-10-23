@@ -4,12 +4,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 import model.HMMBase;
+import model.HMMPowModel;
 import model.HMMType;
 import model.inference.ForwardBackward;
 import model.inference.ForwardBackwardLog;
 import model.inference.VariationalParam;
 import model.param.LogLinearWeights;
 import util.MathUtils;
+import util.MyArray;
 import util.SmoothWord;
 import config.Config;
 
@@ -297,6 +299,43 @@ public class Instance {
 			InstanceList.featurePartitionCache.put(conditionalString, Z);
 		}
 		return Z;
+	}
+	
+	/*
+	 * Gives variational LL for the instance
+	 * takes O(T K^(2*M)) : expensive
+	 * should be called after calling variational inference
+	 * posterior expectations should not be empty
+	 */
+	public double getVariationalLL(HMMPowModel powModel) {
+		double variationalLL = 0.0;
+		//create alpha table using K^M states
+		double[][] alpha = new double[T][powModel.powStateSize];
+		//do forward computation
+		for(int i=0; i<powModel.powStateSize; i++) {
+			double pi = powModel.initial.get(i, 0);
+			double obs = powModel.observation.get(words[0][0], i);
+			alpha[0][i] = pi + obs; //these prob are in logscale			
+		}
+		
+		//induction
+		for(int t = 1; t < T; t++) {
+			for(int j=0; j<powModel.powStateSize; j++) {
+				double[] expParams = new double[powModel.powStateSize];
+				for(int i=0; i<powModel.powStateSize; i++) {
+					expParams[i] = alpha[t-1][i] + powModel.transition.get(j, i); 
+				}
+				double obs;
+				obs = powModel.observation.get(words[t][0], j);
+				alpha[t][j] = MathUtils.logsumexp(expParams) + obs; 
+			}			
+		}
+		variationalLL = MathUtils.logsumexp(alpha[T-1]);
+		if(variationalLL > 0) {
+			MyArray.printTable(alpha, "alpha");
+			throw new RuntimeException("variationalLL greater than 0");
+		}
+		return variationalLL;
 	}
 
 	/*

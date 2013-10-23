@@ -311,6 +311,7 @@ public abstract class HMMBase {
 							this.param.weights.set(modelCount, i, j, prob);
 						}
 					}
+					param.check();
 					br.close();					
 				} catch(NumberFormatException e) {
 					e.printStackTrace();

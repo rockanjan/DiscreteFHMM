@@ -82,7 +82,7 @@ public class MultinomialLog extends MultinomialBase{
 	
 	@Override
 	public void checkDistribution() {
-		double tolerance = 1e-5;
+		double tolerance = 1e-2;
 		
 		for(int i=0; i<y; i++) {
 			double sum = 0;

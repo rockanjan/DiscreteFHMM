@@ -286,6 +286,28 @@ public class MathUtils {
 		}
 	}
 	
+	public static double getMean(double[] vector) {
+		double mean = 0.0;
+		for(int i=0; i<vector.length; i++) {
+			mean += vector[i];
+		}
+		mean = mean / vector.length;
+		return mean;
+	}
+	
+	public static double getStd(double[] vector) {
+		if(vector.length == 1) {
+			return 0;
+		}
+		double mean = getMean(vector);
+		double std = 0.0;
+		for(int i=0; i<vector.length; i++) {
+			std += Math.pow(vector[i] - mean , 2);
+		}
+		std = Math.sqrt(std / (vector.length - 1));
+		return std;
+	}
+	
 	public static void main(String[] args) {
 		double a = 0.12;
 		double b = -20;

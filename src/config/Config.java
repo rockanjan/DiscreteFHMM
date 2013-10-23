@@ -10,9 +10,9 @@ public class Config {
 	public static Random random = new Random(seed);
 	public static int numIter = 400;
 	public static int nrLayers = 5;
-	public static int numStates = 10;
-	public final static int USE_THREAD_COUNT = 8;
-	public final static int vocabThreshold = 3;
+	public static int numStates = 2;
+	public final static int USE_THREAD_COUNT = 3;
+	public static int vocabThreshold = 3;
 
 	public static final String baseDirData = "data/";
 	public static final String baseDirModel = "out/model/";

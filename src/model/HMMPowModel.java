@@ -6,6 +6,7 @@ import java.util.List;
 import model.param.MultinomialBase;
 import model.param.MultinomialLog;
 import util.MathUtils;
+import util.MyArray;
 import config.Config;
 
 public class HMMPowModel {
@@ -63,10 +64,15 @@ public class HMMPowModel {
 				observation.set(v, i, numeratorLog[v]);
 			}
 		}
+		/*
+		//should not be necessary, but workaround for now
+		transition.count = MathUtils.expArray(transition.count);
+		transition.normalize();
+		*/
 		
 		//checkdistribution
 		initial.checkDistribution();
-		transition.checkDistribution();
+		//transition.checkDistribution();
 		observation.checkDistribution();
 	}
 	

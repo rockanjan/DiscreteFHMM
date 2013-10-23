@@ -7,6 +7,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import model.HMMBase;
 import model.HMMNoFinalStateLog;
+import model.HMMPowModel;
 import model.train.EM;
 import util.Timing;
 import config.Config;
@@ -25,14 +26,19 @@ public class Main {
 		if(lastIter < 0) {
 			trainNew();
 		} else {
-			trainContinue("variational_model_layers_" + Config.nrLayers + 
+			String filename = "variational_model_layers_" + Config.nrLayers + 
 					"_states_" + Config.numStates + 
-					"_iter_" + lastIter + ".txt");
+					"_iter_" + lastIter + ".txt";
+			checkTestPerplexity(filename);
+			
+			/*
+			trainContinue(filename);
 			if(Corpus.testInstanceList != null) {
 				testVariational(model, Corpus.testInstanceList, Config.outFileTest);
 			} else {
 				testVariational(model, Corpus.trainInstanceList, Config.outFileTrain);
 			}
+			*/
 		}
 	}
 
@@ -79,6 +85,38 @@ public class Main {
 		EM em = new EM(Config.numIter, corpus, model);
 		em.start();
 		model.saveModel();
+	}
+	
+	public static void checkTestPerplexity(String filename) throws IOException {
+		corpus = new Corpus("\\s+", Config.vocabThreshold);
+		model = new HMMNoFinalStateLog(Config.nrLayers, Config.numStates, corpus);
+		//load model for continuing training
+		model.loadModel(filename);
+		//model.loadModelsFromIndependentHMM("out/model/softEM");
+		corpus.model = model;
+		corpus.readTrain(Config.baseDirData + Config.trainFile);
+		if(Config.testFile != null && !Config.testFile.equals("")) {
+			corpus.readTest(Config.baseDirData + Config.testFile);
+		}
+		if(Config.devFile != null && !Config.devFile.equals("")) {
+			corpus.readDev(Config.baseDirData + Config.devFile);
+		}
+		model.initializeZerosToBest();
+		HMMPowModel powModel = new HMMPowModel(model);
+		System.out.println("Power model created");
+		if(Corpus.testInstanceList != null) {
+			double varLL = 0.0;
+			for(int n=0; n<Corpus.testInstanceList.size(); n++) {
+				if(n % 1000 == 0) {
+					System.out.print(n + " ");
+				}
+				varLL += Corpus.testInstanceList.get(n).getVariationalLL(powModel);
+			}
+			System.out.println();
+			varLL = varLL / Corpus.testInstanceList.numberOfTokens;
+			double perplexity = Math.pow(2, -varLL/Math.log(2));
+			System.out.println("varLL = " + varLL + " perplexity = " + perplexity);
+		}
 	}
 
 	public static void testVariational(HMMBase model, InstanceList instanceList, String outFile) {

@@ -5,6 +5,8 @@ import java.io.PrintWriter;
 import java.util.Arrays;
 import java.util.Random;
 
+import util.MathUtils;
+
 import model.HMMBase;
 import model.HMMNoFinalStateLog;
 import model.HMMPowModel;
@@ -20,27 +22,73 @@ public class ArtificialDataExperiment {
 	static int artificialVocabSize = 4;
 	static int sampleSize = 20;
 	static int T = 20; //sample length
+	
+	static int repeatCount = 15; //15 sets of experiments
 	public static void main(String[] args) throws FileNotFoundException {
-		Config.nrLayers = 2;
-		Config.numStates = 5;
-		corpus = new Corpus("\\s+", Config.vocabThreshold);
-		corpus.createArtificialVocab(artificialVocabSize);
-		//corpus.corpusVocab.get(0).debug();
-		corpus.corpusVocab.get(0).writeDictionary("vocab.txt");
-		model = new HMMNoFinalStateLog(Config.nrLayers, Config.numStates, corpus);
-		corpus.model = model;
-		model.initializeRandom(Config.random);
-		model.initializeZerosToBest();
-		model.param.expWeights = model.param.weights.getCloneExp();
-		generateArtificialTest();
-		generateArtificialTrain();
+		Config.nrLayers = 5;
+		Config.numStates = 3;
+		
+		//start
+		double[] trainActualLL = new double[repeatCount];
+		double[] trainTrainedLL = new double[repeatCount];
+		double[] testActualLL = new double[repeatCount];
+		double[] testTrainedLL = new double[repeatCount];
+		
+		for(int r=0; r<repeatCount; r++) {
+			Config.random = new Random();
+			Config.vocabThreshold = 0;
+			corpus = new Corpus("\\s+", Config.vocabThreshold);
+			corpus.createArtificialVocab(artificialVocabSize);
+			//corpus.corpusVocab.get(0).debug();
+			corpus.corpusVocab.get(0).writeDictionary("artificial_vocab.txt");
+			model = new HMMNoFinalStateLog(Config.nrLayers, Config.numStates, corpus);
+			corpus.model = model;
+			model.initializeRandom(Config.random);
+			model.initializeZerosToBest();
+			model.param.expWeights = model.param.weights.getCloneExp();
+			generateArtificialTest();
+			generateArtificialTrain();
+			double[] actual = getLLActual();
+			double[] trained = getLLTrained();
+			trainActualLL[r] = actual[0];
+			trainTrainedLL[r] = trained[0];
+			testActualLL[r] = actual[1];
+			testTrainedLL[r] = trained[1];
+		}
+		System.out.println("TrainActual: mean = " + MathUtils.getMean(trainActualLL) + " std = " + MathUtils.getStd(trainActualLL));
+		System.out.println("TestActual: mean = " + MathUtils.getMean(testActualLL) + " std = " + MathUtils.getStd(testActualLL));
+		
+		System.out.println("TrainTrained: mean = " + MathUtils.getMean(trainTrainedLL) + " std = " + MathUtils.getStd(trainTrainedLL));
+		System.out.println("TestTrained: mean = " + MathUtils.getMean(testTrainedLL) + " std = " + MathUtils.getStd(testTrainedLL));
 		
 		
+	}
+	
+	public static double[] getLLActual() throws FileNotFoundException {
+		double[] result = new double[2];
+		//get actual model LL
+		HMMPowModel powModelActual = new HMMPowModel(model);
+		double varLLTrainActual = 0.0;
+		for(int n=0; n<sampleSize; n++) {
+			varLLTrainActual += Corpus.trainInstanceList.get(n).getVariationalLL(powModelActual);
+		}
+		//actual test
+		double varLLTestActual = 0.0;
+		for(int n=0; n<sampleSize; n++) {
+			varLLTestActual += Corpus.testInstanceList.get(n).getVariationalLL(powModelActual);
+		}
+		result[0] = varLLTrainActual;
+		result[1] = varLLTestActual;
+		return result;
+	}
+	
+	public static double[] getLLTrained() throws FileNotFoundException {
 		/********** Begin Trained ************/
 		//get actual model LL
+		double[] result = new double[2];
 		Config.sampleSizeEStep = -1; //use all samples in training
 		Config.numIter = 100;
-		Config.seed = new Random().nextLong();
+		Config.random = new Random();
 		HMMBase trainModel = new HMMNoFinalStateLog(Config.nrLayers, Config.numStates, corpus);
 		corpus.model = trainModel;
 		trainModel.initializeRandom(Config.random);
@@ -53,42 +101,14 @@ public class ArtificialDataExperiment {
 		for(int n=0; n<sampleSize; n++) {
 			varLLTrainTrained += Corpus.trainInstanceList.get(n).getVariationalLL(powModelTrained);
 		}
-		System.out.println("varLLTrainTrained = " + varLLTrainTrained);
-		//varLLTrainTrained /= Corpus.trainInstanceList.numberOfTokens;
-		//System.out.println("varLLTrainTrainedNormalized = " + varLLTrainTrained);
-		
 		//trained test
 		double varLLTestTrained = 0.0;
 		for(int n=0; n<sampleSize; n++) {
 			varLLTestTrained += Corpus.testInstanceList.get(n).getVariationalLL(powModelTrained);
 		}
-		System.out.println("varLLTestTrained = " + varLLTestTrained);
-		//varLLTestTrained /= Corpus.testInstanceList.numberOfTokens;
-		//System.out.println("varLLTestTrainedNormalized = " + varLLTestTrained);
-		/********** End Trained ************/
-		
-		
-		/********** Begin Actual ************/
-		//get actual model LL
-		HMMPowModel powModelActual = new HMMPowModel(model);
-		double varLLTrainActual = 0.0;
-		for(int n=0; n<sampleSize; n++) {
-			varLLTrainActual += Corpus.trainInstanceList.get(n).getVariationalLL(powModelActual);
-		}
-		System.out.println("varLLTrainActual = " + varLLTrainActual);
-		//varLLTrainActual /= Corpus.trainInstanceList.numberOfTokens;
-		//System.out.println("varLLTrainActualNormalized = " + varLLTrainActual);
-		
-		//actual test
-		double varLLTestActual = 0.0;
-		for(int n=0; n<sampleSize; n++) {
-			varLLTestActual += Corpus.testInstanceList.get(n).getVariationalLL(powModelActual);
-		}
-		System.out.println("varLLTestActual = " + varLLTestActual);
-		//varLLTestActual /= Corpus.testInstanceList.numberOfTokens;
-		//System.out.println("varLLTestActualNormalized = " + varLLTestActual);
-		/********** End Actual ************/
-		
+		result[0] = varLLTrainTrained;
+		result[1] = varLLTestTrained;
+		return result;
 	}
 	
 	public static double[] getObservationDistribution(int[] states) {
@@ -159,7 +179,7 @@ public class ArtificialDataExperiment {
 	}
 	
 	public static void generateArtificialTest() throws FileNotFoundException {
-		// generate random training data based on the model
+		// generate random test data based on the model
 		// based on urn and ball model (Rabiner's HMM Tutorial)
 		Corpus.testInstanceList = new InstanceList();
 		DiscreteSampler sampler;
@@ -190,7 +210,7 @@ public class ArtificialDataExperiment {
 			Corpus.testInstanceList.add(instance);
 			Corpus.testInstanceList.numberOfTokens += instance.words.length;
 		}
-		PrintWriter testCorpusWriter = new PrintWriter("artificial_train.txt");
+		PrintWriter testCorpusWriter = new PrintWriter("artificial_test.txt");
 		for(int n=0; n<sampleSize; n++) {
 			Instance instance = Corpus.testInstanceList.get(n);
 			for(int t=0; t<instance.T; t++) {

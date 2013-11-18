@@ -112,6 +112,34 @@ public abstract class HMMParamBase {
 		this.weights.weights = MyArray.getCloneOfMatrix(source.weights.weights);
 	}
 	
+	public void cloneFromDifferentLayerModel(HMMParamBase source) {
+		if(this.nrStates != source.nrStates) {
+			throw new RuntimeException("Number of states must match, found source=" + source.nrStates + " this = " + nrStates);
+		}
+		if(this.nrLayers > source.nrLayers) {
+			//this means few layers have to be initialized either uniformly or randomly
+			for(int i=0; i<source.nrLayers; i++) {
+				initial.get(i).cloneFrom(source.initial.get(i));
+				transition.get(i).cloneFrom(source.transition.get(i));
+			}
+			//other layers will have same value as in initialization
+			//initialize observation weights
+			this.weights.initializeFromDifferentLayerModel(source.weights);
+			
+		} else if( this.nrLayers < source.nrLayers) {
+			//this means we will only use the first few layers to initialize the smaller model
+			for(int i=0; i<this.nrLayers; i++) {
+				initial.get(i).cloneFrom(source.initial.get(i));
+				transition.get(i).cloneFrom(source.transition.get(i));
+			}
+			//initialize observation weights
+			this.weights.initializeFromDifferentLayerModel(source.weights);
+		} else {
+			System.out.println("Both models have same number of layers... simplying cloning");
+			cloneFrom(source);
+		}
+	}
+	
 	public void clear() {
 		initial = null;
 		transition = null;		

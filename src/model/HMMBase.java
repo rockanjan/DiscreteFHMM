@@ -137,7 +137,6 @@ public abstract class HMMBase {
 		return folder.getAbsolutePath();
 	}
 	
-
 	public void loadModel(String filename) {
 		//load vocab file
 		File folder = new File(Config.baseDirModel);
@@ -155,8 +154,19 @@ public abstract class HMMBase {
 		BufferedReader modelReader;
 		try {
 			modelReader = new BufferedReader(new FileReader(modelFile));
-			this.nrStates = Integer.parseInt(modelReader.readLine());
-			this.nrLayers = Integer.parseInt(modelReader.readLine());
+			int nrStatesRead = Integer.parseInt(modelReader.readLine());
+			int nrLayersRead = Integer.parseInt(modelReader.readLine());
+			if(nrStatesRead != nrStates) {
+				System.out.format("WARNING: read number of states = %d, model = %d \n", nrStatesRead, nrStates);
+				System.exit(-1);
+			}
+			if(nrLayersRead != nrLayers) {
+				System.out.format("WARNING: read number of layers = %d, model = %d \n", nrLayersRead, nrLayers);
+				System.exit(-1);
+			}
+			this.nrStates = nrStatesRead;
+			this.nrLayers = nrLayersRead;
+			
 			this.nrStatesWithFake = this.nrStates;
 			
 			modelReader.readLine(); //empty line
@@ -226,7 +236,7 @@ public abstract class HMMBase {
 		}
 		
 	}
-	
+
 	public void loadModelsFromIndependentHMM(String folderName) {
 		//load vocab file
 		File folder = new File(folderName);
@@ -355,7 +365,5 @@ public abstract class HMMBase {
 			System.err.println("Two models do not equal exactly");
 		}
 		//model.param.check();
-		
-		
 	}
 }

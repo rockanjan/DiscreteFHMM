@@ -64,6 +64,29 @@ public class LogLinearWeights {
 		}
 	}	
 	
+	public void initializeFromDifferentLayerModel(LogLinearWeights source) {
+		int sourceNrLayers = source.weights[0].length / Config.numStates;
+		int thisNrLayers = this.weights[0].length / Config.numStates;
+		if(sourceNrLayers < thisNrLayers) {
+			for(int m=0; m<sourceNrLayers; m++) {
+				for(int k=0; k<Config.numStates; k++) {
+					for(int v=0; v<weights.length; v++) {
+						this.set(m,k,v, source.get(m,k,v));
+					}
+				}
+			}
+			//other layers will remain the same as in initialization
+		} else {
+			for(int m=0; m<thisNrLayers; m++) {
+				for(int k=0; k<Config.numStates; k++) {
+					for(int v=0; v<weights.length; v++) {
+						this.set(m,k,v, source.get(m,k,v));
+					}
+				}
+			}
+		}
+	}
+	
 	/*
 	public LogLinearWeights getClone() {
 		LogLinearWeights clone = new LogLinearWeights(vocabSize, conditionalSize);

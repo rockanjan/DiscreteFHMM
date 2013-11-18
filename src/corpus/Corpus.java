@@ -79,7 +79,8 @@ public class Corpus {
 		devInstanceList.numberOfTokens = totalWords;
 		System.out.println("Dev Instances: " + devInstanceList.size());
 		System.out.println("Dev token count: " + totalWords);
-		System.out.println("Dev unknown count : " + totalUnknown);
+		double percent = 100.0 * totalUnknown / totalWords;
+                System.out.format("Dev Unknown Count = %d, precent = %.2f\n", totalUnknown, percent);
 		br.close();
 	}
 
@@ -106,8 +107,10 @@ public class Corpus {
 		testInstanceList.numberOfTokens = totalWords;
 		System.out.println("Test Instances: " + testInstanceList.size());
 		System.out.println("Test token count: " + totalWords);
-		System.out.println("Test unknown count : " + totalUnknown);
+		double percent = 100.0 * totalUnknown / totalWords;
+                System.out.format("Test Unknown Count = %d, precent = %.2f\n", totalUnknown, percent);
 		br.close();
+
 	}
 
 	public void readTrain(String inFile) throws IOException {
@@ -133,7 +136,8 @@ public class Corpus {
 		trainInstanceList.numberOfTokens = totalWords;
 		System.out.println("Train Instances: " + trainInstanceList.size());
 		System.out.println("Train token count: " + totalWords);
-		System.out.println("Train unknown count : " + totalUnknown);
+		double percent = 100.0 * totalUnknown / totalWords;
+		System.out.format("Train Unknown Count = %d, precent = %.2f\n", totalUnknown, percent);
 		br.close();
 	}
 

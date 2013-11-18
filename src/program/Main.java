@@ -35,13 +35,14 @@ public class Main {
 		
 		lastIter = LastIter.read();
 		if(lastIter < 0) {
-			initializeNewModel();
+			//initializeNewModel();
+			loadFromDifferentLayerHMM(3);
 		} else {
 			load();
 			//checkTestPerplexity();
 		}
-		
 		Config.printParams();
+		readData();
 		train();
 		saveModel();
 		test();
@@ -106,7 +107,7 @@ public class Main {
 		model = new HMMNoFinalStateLog(Config.nrLayers, Config.numStates, corpus);
 		
 		/*** load other model ***/
-		HMMBase otherModel = new HMMNoFinalStateLog(nrLayers, Config.nrLayers, corpus);
+		HMMBase otherModel = new HMMNoFinalStateLog(nrLayers, Config.numStates, corpus);
 		String filename = "variational_model_layers_" + nrLayers + 
 				"_states_" + Config.numStates + 
 				//"_iter_" + lastIter + ".txt";

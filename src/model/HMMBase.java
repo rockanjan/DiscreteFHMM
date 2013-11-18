@@ -301,9 +301,8 @@ public abstract class HMMBase {
 						}
 						for(int j=0; j<splitted.length; j++) {
 							double prob = Double.parseDouble(splitted[j]);
-							if(prob == 0) {
-								//System.err.println("Fixing zero observation");
-								prob = Math.log(1e-100);
+							if(prob <= 1e-5) {
+								prob = Math.log(1e-3);
 							}
 							else {
 								prob = Math.log(prob);
@@ -311,14 +310,13 @@ public abstract class HMMBase {
 							this.param.weights.set(modelCount, i, j, prob);
 						}
 					}
-					param.check();
 					br.close();					
 				} catch(NumberFormatException e) {
 					e.printStackTrace();
 					System.err.println("Error loading model");
 					System.exit(-1);
 				}			
-			} 
+			}
 			catch (FileNotFoundException fnfe) {
 				fnfe.printStackTrace();
 			}
@@ -329,12 +327,8 @@ public abstract class HMMBase {
 			System.out.format("Layer %d, Model loaded successfully with %d states and %d observations \n", modelCount, nrStates, Corpus.corpusVocab.get(0).vocabSize);
 			modelCount++;
 		}
-		//sanity check
-		System.out.println("Performing sanity check...");
-		for(int i=0; i<modelCount; i++) {
-			param.initial.get(i).checkDistribution();
-			param.transition.get(i).checkDistribution();
-		}
+		param.weights.initializeUniform(0.01);
+		param.check();
 		System.out.println("Done");
 		System.out.println("Model loaded from independent HMM with 7 layers");
 	}	

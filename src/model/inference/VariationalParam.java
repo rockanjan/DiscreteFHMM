@@ -1,12 +1,9 @@
 package model.inference;
 
+import model.HMMBase;
 import util.MathUtils;
-import util.MyArray;
 import corpus.Corpus;
 import corpus.Instance;
-import corpus.InstanceList;
-import model.HMMBase;
-import model.param.HMMParamBase;
 
 public class VariationalParam {
 	public VariationalParamObservation varParamObs;
@@ -131,14 +128,6 @@ public class VariationalParam {
 				for(int k=0; k<K; k++) {
 					updateValue[k] = model.param.weights.get(m, k, instance.words[t][0]);
 				}
-				/*
-				normalizer = MathUtils.logsumexp(updateValue);
-				for(int k=0; k<K; k++) {
-					//varParamObs.shi[m][t][k] = updateValue[k] - maxOverK;
-					varParamObs.shi[m][t][k] = updateValue[k] - normalizer;
-					MathUtils.check(varParamObs.shi[m][t][k]);
-				}
-				*/
 			}
 		}
 	}

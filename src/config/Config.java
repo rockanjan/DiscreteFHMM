@@ -8,10 +8,10 @@ import java.util.Random;
 public class Config {
 	public static long seed = 1;
 	public static Random random = new Random(seed);
-	public static int numIter = 400;
-	public static int nrLayers = 5;
-	public static int numStates = 2;
-	public final static int USE_THREAD_COUNT = 3;
+	public static int numIter = 200;
+	public static int nrLayers = 3;
+	public static int numStates = 10;
+	public final static int USE_THREAD_COUNT = 8;
 	public static int vocabThreshold = 3;
 
 	public static final String baseDirData = "data/";
@@ -30,7 +30,7 @@ public class Config {
 	public static int FEATURE_PARTITION_CACHE_SIZE = 100000;
 	public static int maxFrequentConditionals = 100000;
 
-	public static int variationalIter = 5;
+	public static int variationalIter = 10;
 	public static double variationalConvergence = 1e-8;
 
 	//EM related
@@ -49,16 +49,16 @@ public class Config {
 	 * (some might be repeated some might be skipped)
 	 */
 	public static boolean sampleSequential = true;
-	public static double alpha = 0.95;
+	public static double alpha = 0.5;
 	public static double t0 = 2;
-	public static int sampleSizeEStep = 200;
+	public static int sampleSizeEStep = 5000;
 	public static int sampleSizeMStep = sampleSizeEStep;
-	public static int sampleDevSize = 200;
+	public static int sampleDevSize = 1000;
 	public static String vocabSamplingType = "unigram";
 	public static int VOCAB_SAMPLE_SIZE = 0;
 
 	//LBFGS
-	public static double c2 = 0.000; // L2-regularizer constant (higher means higher penalty)
+	public static double c2 = 0.00001; // L2-regularizer constant (higher means higher penalty)
 
 	public static boolean displayDetail = false;
 

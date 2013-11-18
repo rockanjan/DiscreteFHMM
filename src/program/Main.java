@@ -19,9 +19,12 @@ import corpus.InstanceList;
 public class Main {
 	static HMMBase model;
 	static Corpus corpus;
-	public static int lastIter;
+	public static int lastIter = -1;
 	public static void main(String[] args) throws IOException {
 		corpus = new Corpus("\\s+", Config.vocabThreshold);
+		//trainContinueFromIndependentHMM("out/model/brown_baumwelch_10states");
+		
+		
 		lastIter = LastIter.read();
 		if(lastIter < 0) {
 			trainNew();
@@ -30,16 +33,16 @@ public class Main {
 					"_states_" + Config.numStates + 
 					"_iter_" + lastIter + ".txt";
 			checkTestPerplexity(filename);
-			
-			/*
-			trainContinue(filename);
-			if(Corpus.testInstanceList != null) {
-				testVariational(model, Corpus.testInstanceList, Config.outFileTest);
-			} else {
-				testVariational(model, Corpus.trainInstanceList, Config.outFileTrain);
-			}
-			*/
+			//trainContinue(filename);
 		}
+		
+		
+		if(Corpus.testInstanceList != null) {
+			testVariational(model, Corpus.testInstanceList, Config.outFileTest);
+		} else {
+			testVariational(model, Corpus.trainInstanceList, Config.outFileTrain);
+		}
+		
 	}
 
 	public static void trainNew() throws IOException {
@@ -65,13 +68,31 @@ public class Main {
 		em.start();
 		model.saveModel();
 	}
+	
+	public static void trainContinueFromIndependentHMM(String folder) throws IOException {
+		corpus = new Corpus("\\s+", Config.vocabThreshold);
+		model = new HMMNoFinalStateLog(Config.nrLayers, Config.numStates, corpus);
+		model.loadModelsFromIndependentHMM(folder);
+		corpus.model = model;
+		corpus.readTrain(Config.baseDirData + Config.trainFile);
+		if(Config.testFile != null && !Config.testFile.equals("")) {
+			corpus.readTest(Config.baseDirData + Config.testFile);
+		}
+		if(Config.devFile != null && !Config.devFile.equals("")) {
+			corpus.readDev(Config.baseDirData + Config.devFile);
+		}
+		model.initializeZerosToBest();
+		Config.printParams();
+		EM em = new EM(Config.numIter, corpus, model);
+		em.start();
+		model.saveModel();
+	}
 
 	public static void trainContinue(String filename) throws IOException {
 		corpus = new Corpus("\\s+", Config.vocabThreshold);
 		model = new HMMNoFinalStateLog(Config.nrLayers, Config.numStates, corpus);
 		//load model for continuing training
-		model.loadModel(filename);
-		//model.loadModelsFromIndependentHMM("out/model/softEM");
+		model.loadModel(filename);		
 		corpus.model = model;
 		corpus.readTrain(Config.baseDirData + Config.trainFile);
 		if(Config.testFile != null && !Config.testFile.equals("")) {

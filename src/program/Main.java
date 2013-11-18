@@ -1,8 +1,13 @@
 package program;
 
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.concurrent.ConcurrentHashMap;
 
 import model.HMMBase;
@@ -20,11 +25,12 @@ public class Main {
 	static HMMBase model;
 	static Corpus corpus;
 	public static int lastIter = -1;
+	public static HashMap<String, String> wordToCluster;
+	public static HashMap<String, HashSet<String>> clusterToWords;
 	public static void main(String[] args) throws IOException {
+		//populateBrownInfo();
 		corpus = new Corpus("\\s+", Config.vocabThreshold);
 		//trainContinueFromIndependentHMM("out/model/brown_baumwelch_10states");
-		
-		
 		lastIter = LastIter.read();
 		if(lastIter < 0) {
 			trainNew();
@@ -32,8 +38,8 @@ public class Main {
 			String filename = "variational_model_layers_" + Config.nrLayers + 
 					"_states_" + Config.numStates + 
 					"_iter_" + lastIter + ".txt";
-			checkTestPerplexity(filename);
-			//trainContinue(filename);
+			//checkTestPerplexity(filename);
+			trainContinue(filename);
 		}
 		
 		
@@ -42,7 +48,33 @@ public class Main {
 		} else {
 			testVariational(model, Corpus.trainInstanceList, Config.outFileTrain);
 		}
-		
+	}
+	
+	public static void populateBrownInfo() throws IOException {
+		String file = "brown-brown-cluster.txt";
+		wordToCluster = new HashMap<String, String>();
+		clusterToWords = new HashMap<String, HashSet<String>>();
+		BufferedReader br = new BufferedReader(new FileReader(file));
+		String line;
+		while( (line = br.readLine()) != null) {
+			String[] splitted = line.trim().split("\\s+");
+			String cluster = splitted[0];
+			String word = splitted[1];
+			wordToCluster.put(word, cluster);
+			if(! clusterToWords.containsKey(cluster)) {
+				HashSet<String> temp = new HashSet<String>();
+				temp.add(word);
+				clusterToWords.put(cluster, temp);
+			} else {
+				clusterToWords.get(cluster).add(word);
+			}
+		}
+		//view one cluster
+		for( String word : clusterToWords.get(wordToCluster.get("million"))) {
+			System.out.print(word + " ");
+		}
+		System.out.println("Total clusters = " + clusterToWords.size());
+		br.close();
 	}
 
 	public static void trainNew() throws IOException {

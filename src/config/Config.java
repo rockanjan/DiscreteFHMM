@@ -9,9 +9,9 @@ public class Config {
 	public static long seed = 1;
 	public static Random random = new Random(seed);
 	public static int numIter = 200;
-	public static int nrLayers = 2;
+	public static int nrLayers = 3;
 	public static int numStates = 10;
-	public final static int USE_THREAD_COUNT = 4;
+	public final static int USE_THREAD_COUNT = 8;
 	public static int vocabThreshold = 3;
 
 	public static final String baseDirData = "data/";
@@ -51,9 +51,9 @@ public class Config {
 	public static boolean sampleSequential = true;
 	public static double alpha = 0.5;
 	public static double t0 = 2;
-	public static int sampleSizeEStep = 1000;
+	public static int sampleSizeEStep = 5000;
 	public static int sampleSizeMStep = sampleSizeEStep;
-	public static int sampleDevSize = 500;
+	public static int sampleDevSize = 5000;
 	public static String vocabSamplingType = "unigram";
 	public static int VOCAB_SAMPLE_SIZE = 0;
 

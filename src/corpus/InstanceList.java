@@ -9,7 +9,6 @@ import model.HMMBase;
 import model.inference.VariationalParam;
 import model.param.HMMParamBase;
 import model.param.LogLinearWeights;
-import program.Main;
 import util.MathUtils;
 import util.Timing;
 import config.Config;
@@ -361,9 +360,9 @@ public class InstanceList extends ArrayList<Instance> {
 					if(Config.VOCAB_SAMPLE_SIZE <= 0) { //exact
 						//compute phi, variational param phi for this token
 						
-						Integer currentWordIndex = instance.words[t][0];
-						String currentWord = Corpus.corpusVocab.get(0).indexToWord.get(currentWordIndex);
-						String currentCluster = Main.wordToCluster.get(currentWord);
+						//Integer currentWordIndex = instance.words[t][0];
+						//String currentWord = Corpus.corpusVocab.get(0).indexToWord.get(currentWordIndex);
+						//String currentCluster = Main.wordToCluster.get(currentWord);
 						//HashSet<String> clusteredWords = Main.clusterToWords.get(currentCluster);
 						
 						double sumOverY = 0;

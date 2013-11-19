@@ -1,19 +1,15 @@
 package corpus;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-
-import cc.mallet.util.CommandOption.Set;
-
-import program.Main;
 
 import model.HMMBase;
 import model.inference.VariationalParam;
 import model.param.HMMParamBase;
 import model.param.LogLinearWeights;
+import program.Main;
 import util.MathUtils;
 import util.Timing;
 import config.Config;
@@ -368,12 +364,12 @@ public class InstanceList extends ArrayList<Instance> {
 						Integer currentWordIndex = instance.words[t][0];
 						String currentWord = Corpus.corpusVocab.get(0).indexToWord.get(currentWordIndex);
 						String currentCluster = Main.wordToCluster.get(currentWord);
-						HashSet<String> clusteredWords = Main.clusterToWords.get(currentCluster);
+						//HashSet<String> clusteredWords = Main.clusterToWords.get(currentCluster);
 						
 						double sumOverY = 0;
-						//for(int y=0; y<vocabSize; y++) {
-						for(String word : clusteredWords) {
-							int y = Corpus.corpusVocab.get(0).wordToIndex.get(word);
+						for(int y=0; y<vocabSize; y++) {
+						//for(String word : clusteredWords) {
+							//int y = Corpus.corpusVocab.get(0).wordToIndex.get(word);
 							double prod = 1.0;
 							for(int m=0; m<Config.nrLayers; m++) {
 								double dot = 0;
@@ -390,9 +386,9 @@ public class InstanceList extends ArrayList<Instance> {
 						}
 						double phi = 1.0 / sumOverY;
 						
-						//for(int y=0; y<vocabSize; y++) {
-						for(String word : clusteredWords) {
-							int y = Corpus.corpusVocab.get(0).wordToIndex.get(word);
+						for(int y=0; y<vocabSize; y++) {
+						//for(String word : clusteredWords) {
+							//int y = Corpus.corpusVocab.get(0).wordToIndex.get(word);
 							double dotProdOverAllLayers = 1.0; //to reduce complexity from O(m^2) to O(m)
 							for(int m=0; m<Config.nrLayers; m++) {
 								double dot = 0;

@@ -180,6 +180,10 @@ public class EM {
 				if(iterCount > 0) {
 					display.append(String.format("DevLL %.5f devDiff %.5f ", devLL, devDiff));
 				}
+				if(Math.pow(model.nrStates, model.nrLayers) <= 100) {
+                                        System.out.println("Checking Test Perplexity");
+                                        Main.checkTestPerplexity();
+                                }
 				if(isConverged()) {
 					break;
 				}

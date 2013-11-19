@@ -122,7 +122,7 @@ public class Main {
 		model.initializeZerosToBest();
 	}
 	
-	public static void checkTestPerplexity() throws IOException {
+	public static void checkTestPerplexity() {
 		HMMPowModel powModel = new HMMPowModel(model);
 		System.out.println("Power model created");
 		if(Corpus.testInstanceList != null) {

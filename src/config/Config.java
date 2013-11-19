@@ -30,8 +30,8 @@ public class Config {
 	public static int FEATURE_PARTITION_CACHE_SIZE = 100000;
 	public static int maxFrequentConditionals = 100000;
 
-	public static int variationalIter = 10;
-	public static double variationalConvergence = 1e-8;
+	public static int variationalIter = 5;
+	public static double variationalConvergence = 1e-5;
 
 	//EM related
 	// convergence criteria
@@ -51,9 +51,9 @@ public class Config {
 	public static boolean sampleSequential = true;
 	public static double alpha = 0.5;
 	public static double t0 = 2;
-	public static int sampleSizeEStep = 5000;
+	public static int sampleSizeEStep = 1000;
 	public static int sampleSizeMStep = sampleSizeEStep;
-	public static int sampleDevSize = 1000;
+	public static int sampleDevSize = 500;
 	public static String vocabSamplingType = "unigram";
 	public static int VOCAB_SAMPLE_SIZE = 0;
 

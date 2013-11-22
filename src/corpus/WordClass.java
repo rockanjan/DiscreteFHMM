@@ -57,7 +57,7 @@ public class WordClass {
 		System.out.println("Word index to Cluster index size = " + wordIndexToClusterIndex.size());
 		//view one cluster
 		System.out.println("Viewing one cluster");
-		for( int wordIndex : clusterIndexToWordIndices.get(110) ){
+		for( int wordIndex : clusterIndexToWordIndices.get(0) ){
 			System.out.print(Corpus.corpusVocab.get(0).indexToWord.get(wordIndex) + " ");
 		}
 		System.out.println();

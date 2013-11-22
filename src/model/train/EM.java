@@ -19,6 +19,7 @@ import cc.mallet.optimize.Optimizer;
 import config.Config;
 import config.LastIter;
 import corpus.Corpus;
+import corpus.WordClass;
 
 public class EM {
 	int numIter;
@@ -91,16 +92,54 @@ public class EM {
 		System.out.format("Mstep #sentences = %d, #tokens = %d\n",
 				Corpus.trainInstanceMStepSampleList.size(),
 				Corpus.trainInstanceMStepSampleList.numberOfTokens);
+		/*
 		//Corpus.cacheFrequentConditionals();
 		System.out.println("training words...");
 		trainLBFGS();
 		System.out.println("training classes...");
 		trainLBFGSClass();
+		*/
+		trainLBFGSJoint();
 		//Corpus.clearFrequentConditionals();
 		model.updateFromCountsWeighted(expectedCounts, adaptiveWeight);
 		//model.updateFromCounts(expectedCounts); //unweighted
 		Corpus.trainInstanceEStepSampleList.clearPosteriorProbabilities();
 		Corpus.trainInstanceEStepSampleList.clearDecodedStates();
+	}
+	
+	public void trainLBFGSJoint() {
+		double[] initParamsWord = MyArray.createVector(model.param.weights.weights);
+		double[] initParamsClass = MyArray.createVector(model.param.weightsClass.weights);
+		double[] initParamsJoint = MyArray.joinVectors(initParamsWord, initParamsClass);
+		CLLTrainerJoint jointOptimizatble = new CLLTrainerJoint(initParamsJoint, c);
+		
+		Optimizer jointOptimizer = new LimitedMemoryBFGS(jointOptimizatble);
+		boolean converged = false;
+		
+		try {
+			converged = jointOptimizer.optimize(Config.mStepIter);
+		} catch (IllegalArgumentException e) {
+			System.out.println("optimization threw exception: IllegalArgument");
+		} catch (OptimizationException oe) {
+			System.out.println("optimization threw OptimizationException");
+		}
+		System.out.println("Converged = " + converged);
+		System.out.println("joint Gradient call count = " + jointOptimizatble.gradientCallCount);
+		double cll = jointOptimizatble.getValue();
+		cll = cll / Corpus.trainInstanceMStepSampleList.numberOfTokens; //per token CLL
+		System.out.println("joint CLL = " + cll);
+		
+		//split params and assign it to the model
+		double[][] splittedParams = MyArray.splitVector(jointOptimizatble.getParameterVector(), initParamsWord.length);
+		double[][] wordParamMatrix = MyArray.createMatrix(splittedParams[0], c.corpusVocab.get(0).vocabSize);
+		double[][] classParamMatrix = MyArray.createMatrix(splittedParams[1], WordClass.numClusters);
+		model.param.weights.weights = MathUtils.weightedAverageofLog(wordParamMatrix,
+				model.param.weights.weights,
+				adaptiveWeight);
+		
+		model.param.weightsClass.weights = MathUtils.weightedAverageofLog(classParamMatrix,
+				model.param.weightsClass.weights,
+				adaptiveWeight);
 	}
 
 	public void trainLBFGS() {

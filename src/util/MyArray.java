@@ -142,5 +142,43 @@ public class MyArray {
 		System.out.println();
 	}
 	
+	public static double[] joinVectors(double[] a, double[] b) {
+		double[] c = new double[a.length + b.length];
+		for(int i=0; i<a.length; i++) {
+			c[i] = a[i];
+		}
+		for(int j=0; j<b.length; j++) {
+			c[a.length + j] = b[j];
+		}
+		return c;
+	}
 	
+	public static double[][] splitVector(double[] a, int firstLength) {
+		double[][] splitted = new double[2][];
+		splitted[0] = new double[firstLength];
+		splitted[1] = new double[a.length - firstLength];
+		for(int i=0; i<firstLength; i++) {
+			splitted[0][i] = a[i];
+		}
+		for(int j=firstLength; j<a.length; j++) {
+			splitted[1][j-firstLength] = a[j];
+		}
+		
+		return splitted;
+	}
+	
+	public static void main(String[] args) {
+		double[] test = {1.0, 2.0, 3.0, 4.0, 5.0};
+		int firstLength = 5;
+		double[][] splitted = splitVector(test, firstLength);
+		for(int i=0; i<firstLength; i++) {
+			System.out.println(splitted[0][i]);
+		}
+		System.out.println("---");
+		for(int j=0; j<test.length-firstLength; j++) {
+			System.out.println(splitted[1][j]);
+		}
+	}
 }
+
+

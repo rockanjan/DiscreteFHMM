@@ -11,6 +11,7 @@ import model.param.HMMParamBase;
 import model.param.LogLinearWeights;
 import model.param.LogLinearWeightsClass;
 import util.MathUtils;
+import util.MyArray;
 import util.Timing;
 import config.Config;
 
@@ -207,6 +208,17 @@ public class InstanceList extends ArrayList<Instance> {
 		}		
 	}
 	
+	public double getCLLJoint(double[] parameterMatrix) {
+		//split parameter matrix
+		//split params and assign it to the model
+		int splitIndex = parameterMatrix.length - WordClass.numClusters * Config.nrLayers * Config.numStates;
+		double[][] splittedParams = MyArray.splitVector(parameterMatrix, splitIndex);
+		double[][] wordParamMatrix = MyArray.createMatrix(splittedParams[0], Corpus.corpusVocab.get(0).vocabSize);
+		double[][] classParamMatrix = MyArray.createMatrix(splittedParams[1], WordClass.numClusters);
+		double jointCLL = getCLL(wordParamMatrix) + getCLLClass(classParamMatrix);
+		return jointCLL;
+	}
+	
 	public double getCLL(double[][] parameterMatrix) {
 		if(Config.USE_THREAD_COUNT < 2) {
 			return getCLLSoft(parameterMatrix);
@@ -221,6 +233,21 @@ public class InstanceList extends ArrayList<Instance> {
 		} else {
 			return getCLLSoftThreadedClass(parameterMatrix);
 		}
+	}
+	
+	public double[] getJointGradient(double[] parameterVector) {
+		//split parameter matrix
+		//split params and assign it to the model
+		//int splitIndex = parameterVector.length - WordClass.numClusters * Config.nrLayers * Config.numStates;
+		int splitIndex = Corpus.corpusVocab.get(0).vocabSize * Config.nrLayers * Config.numStates;
+		double[][] splittedParams = MyArray.splitVector(parameterVector, splitIndex);
+		double[][] wordParamMatrix = MyArray.createMatrix(splittedParams[0], Corpus.corpusVocab.get(0).vocabSize);
+		double[][] classParamMatrix = MyArray.createMatrix(splittedParams[1], WordClass.numClusters);
+		double[][] wordGradient = getGradient(wordParamMatrix);
+		double[][] classGradient = getGradientClass(classParamMatrix);
+		double[] wordGradientVector = MyArray.createVector(wordGradient);
+		double[] classGradientVector = MyArray.createVector(classGradient);
+		return MyArray.joinVectors(wordGradientVector, classGradientVector);
 	}
 	
 	public double[][] getGradient(double[][] parameterMatrix) {
@@ -622,7 +649,7 @@ public class InstanceList extends ArrayList<Instance> {
 							gradientLocal[currentCluster][LogLinearWeightsClass.getIndex(m, k)] += instance.posteriors[m][t][k];						 
 						}
 					}
-					double sumOverY = 0;
+					double sumOverC = 0;
 					for(int c=0; c<WordClass.numClusters; c++) {
 						double prod = 1.0;
 						for(int m=0; m<Config.nrLayers; m++) {
@@ -636,13 +663,11 @@ public class InstanceList extends ArrayList<Instance> {
 								throw new RuntimeException("underflow");
 							}
 						}
-						sumOverY += prod;
+						sumOverC += prod;
 					}
-					double phi = 1.0 / sumOverY;
+					double phi = 1.0 / sumOverC;
 					
 					for(int c=0; c<WordClass.numClusters; c++) {
-					//for(String word : clusteredWords) {
-						//int y = Corpus.corpusVocab.get(0).wordToIndex.get(word);
 						double dotProdOverAllLayers = 1.0; //to reduce complexity from O(m^2) to O(m)
 						for(int m=0; m<Config.nrLayers; m++) {
 							double dot = 0;
@@ -663,7 +688,7 @@ public class InstanceList extends ArrayList<Instance> {
 							}
 							for(int k=0; k<Config.numStates; k++) {
 								//compute the amount that must be multiplied to adjust from dotProdOverAllLayers
-								double factorDifference = instance.posteriors[m][t][k] * expParam[c][LogLinearWeights.getIndex(m, k)] / mLayerDot;
+								double factorDifference = instance.posteriors[m][t][k] * expParam[c][LogLinearWeightsClass.getIndex(m, k)] / mLayerDot;
 								gradientLocal[c][LogLinearWeightsClass.getIndex(m, k)] -= phi * dotProdOverAllLayers * factorDifference;
 							}
 						}

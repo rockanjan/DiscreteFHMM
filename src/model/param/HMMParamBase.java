@@ -3,6 +3,8 @@ package model.param;
 import java.util.ArrayList;
 import java.util.Random;
 
+import config.Config;
+
 import model.HMMBase;
 import model.HMMType;
 import util.MyArray;
@@ -15,7 +17,10 @@ public abstract class HMMParamBase {
 	
 	public LogLinearWeights weights;
 	public LogLinearWeights expWeights;
-		
+	
+	public LogLinearWeightsClass weightsClass;
+	public LogLinearWeightsClass expWeightsClass;
+	
 	public HMMBase model;
 
 	int nrStatesWithFake = -1; //the extending class should initialize this (for no fake, equals nrStates)
@@ -23,10 +28,28 @@ public abstract class HMMParamBase {
 	public int nrObs = -1;
 	
 	
+	int nrClasses = -1;
+	
 	public HMMParamBase(HMMBase model) {
 		this.model = model;
 		nrStates = model.nrStates;
 		this.nrLayers = model.nrLayers;
+		this.nrClasses = model.nrClasses;
+	}
+	
+	public void initializeZerosInitialAndTransition() {
+		if(model.hmmType == HMMType.LOG_SCALE) {
+			initial = new ArrayList<MultinomialBase>();
+			transition = new ArrayList<MultinomialBase>();
+			for(int i=0; i<nrLayers; i++) {
+				MultinomialLog tempTrans = new MultinomialLog(nrStates, nrStates);
+				MultinomialLog tempInit = new MultinomialLog(nrStates, 1);
+				initial.add(tempInit);
+				transition.add(tempTrans);
+			}			
+		} else {
+			throw new UnsupportedOperationException("Not implemented");
+		}
 	}
 	
 	public void initializeZeros() {
@@ -42,6 +65,9 @@ public abstract class HMMParamBase {
 			//initialize weights for the log-linear model
 			weights = new LogLinearWeights(Corpus.corpusVocab.get(0).vocabSize, nrLayers * nrStates);
 			weights.initializeZeros();
+			
+			weightsClass = new LogLinearWeightsClass(nrLayers, nrStates, nrClasses);
+			weightsClass.initializeZeros();
 		} else {
 			throw new UnsupportedOperationException("Not implemented");
 		}
@@ -63,7 +89,8 @@ public abstract class HMMParamBase {
 		}
 		weights = new LogLinearWeights(Corpus.corpusVocab.get(0).vocabSize, nrLayers * nrStates);
 		weights.initializeRandom(r);
-		//TODO: normalize observation weights
+		weightsClass = new LogLinearWeightsClass(nrLayers, nrStates, nrClasses);
+		weightsClass.initializeRandom(r);
 	}
 	
 	public void initializeWeightsFromPreviousRecursion(double[][] prev) {

@@ -6,6 +6,7 @@ import model.param.HMMParamNoFinalState;
 import model.param.HMMParamNoFinalStateLog;
 import corpus.Corpus;
 import corpus.Instance;
+import corpus.WordClass;
 
 public class HMMNoFinalStateLog extends HMMBase{
 	public HMMNoFinalStateLog() {
@@ -19,7 +20,8 @@ public class HMMNoFinalStateLog extends HMMBase{
 		this.nrStates = nrStates;
 		this.corpus = c;
 		this.hmmType = HMMType.LOG_SCALE;
-		this.nrLayers = nrLayers; 
+		this.nrLayers = nrLayers;
+		this.nrClasses = WordClass.numClusters;
 	}
 
 	public void initializeRandom(Random r) {

@@ -8,6 +8,9 @@ import java.io.PrintWriter;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import model.HMMBase;
@@ -20,23 +23,22 @@ import config.LastIter;
 import corpus.Corpus;
 import corpus.Instance;
 import corpus.InstanceList;
+import corpus.WordClass;
 
 public class Main {
 	static HMMBase model;
 	static Corpus corpus;
 	public static int lastIter = -1;
-	public static HashMap<String, String> wordToCluster;
-	public static HashMap<String, HashSet<String>> clusterToWords;
+	
 	public static void main(String[] args) throws IOException {
-		//populateBrownInfo();
 		corpus = new Corpus("\\s+", Config.vocabThreshold);
 		//loadFromIndependentHMM("out/model/brown_baumwelch_10states");
 		//loadFromDifferentLayerHMM(nrLayers);
 		
 		lastIter = LastIter.read();
 		if(lastIter < 0) {
-			//initializeNewModel();
-			loadFromDifferentLayerHMM(3);
+			initializeNewModel();
+			//loadFromDifferentLayerHMM(3);
 		} else {
 			load();
 			//checkTestPerplexity();
@@ -79,6 +81,9 @@ public class Main {
 		corpus.readVocab(Config.baseDirData + Config.vocabFile);
 		Corpus.corpusVocab.get(0).writeDictionary(Config.baseDirModel + "vocab.txt");
 		corpus.setupSampler();
+		
+		WordClass.populateClassInfo();
+		
 		model = new HMMNoFinalStateLog(Config.nrLayers, Config.numStates, corpus);
 		corpus.model = model;
 		//random init
@@ -202,30 +207,5 @@ public class Main {
 		System.out.println("Total decoding time : " + decodeTiming.stop());
 	}
 	
-	public static void populateBrownInfo() throws IOException {
-		String file = "brown-brown-cluster.txt";
-		wordToCluster = new HashMap<String, String>();
-		clusterToWords = new HashMap<String, HashSet<String>>();
-		BufferedReader br = new BufferedReader(new FileReader(file));
-		String line;
-		while( (line = br.readLine()) != null) {
-			String[] splitted = line.trim().split("\\s+");
-			String cluster = splitted[0];
-			String word = splitted[1];
-			wordToCluster.put(word, cluster);
-			if(! clusterToWords.containsKey(cluster)) {
-				HashSet<String> temp = new HashSet<String>();
-				temp.add(word);
-				clusterToWords.put(cluster, temp);
-			} else {
-				clusterToWords.get(cluster).add(word);
-			}
-		}
-		//view one cluster
-		for( String word : clusterToWords.get(wordToCluster.get("million"))) {
-			System.out.print(word + " ");
-		}
-		System.out.println("Total clusters = " + clusterToWords.size());
-		br.close();
-	}
+	
 }

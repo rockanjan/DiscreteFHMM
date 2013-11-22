@@ -9,6 +9,7 @@ import model.HMMBase;
 import model.inference.VariationalParam;
 import model.param.HMMParamBase;
 import model.param.LogLinearWeights;
+import model.param.LogLinearWeightsClass;
 import util.MathUtils;
 import util.Timing;
 import config.Config;
@@ -23,13 +24,17 @@ public class InstanceList extends ArrayList<Instance> {
 	
 	//locks used for threads
 	private static final Object gradientLockSoft = new Object();
+	private static final Object gradientLockSoftClass = new Object();
 	private static final Object cllLockSoft = new Object();
+	private static final Object cllLockSoftClass = new Object();
 	private static final Object variationalLock = new Object();
 	
 	public double LL = 0;
 	public double jointObjective = 0;
 	double cll = 0;
+	double cllClass = 0;
 	double gradient[][];
+	double gradientClass[][];
 	
 	private static final long serialVersionUID = -2409272084529539276L;
 	public int numberOfTokens;	
@@ -48,6 +53,7 @@ public class InstanceList extends ArrayList<Instance> {
 	public double updateExpectedCounts(HMMBase model, HMMParamBase expectedCounts) {
 		//cache expWeights for the model
 		model.param.expWeights = model.param.weights.getCloneExp();
+		model.param.expWeightsClass = model.param.weightsClass.getCloneExp();
 		featurePartitionCache = new ConcurrentHashMap<String, Double>();
 		doVariationalInference(model);
 		LL = 0;
@@ -64,6 +70,7 @@ public class InstanceList extends ArrayList<Instance> {
 		}
 		//clear expWeights;				
 		model.param.expWeights = null;
+		model.param.expWeightsClass = null;
 		featurePartitionCache = null;
 		System.out.println("LL = " + (LL/numberOfTokens));
 		return jointObjective;
@@ -208,11 +215,28 @@ public class InstanceList extends ArrayList<Instance> {
 		}
 	}
 	
+	public double getCLLClass(double[][] parameterMatrix) {
+		if(Config.USE_THREAD_COUNT < 2) {
+			return getCLLSoftClass(parameterMatrix);
+		} else {
+			return getCLLSoftThreadedClass(parameterMatrix);
+		}
+	}
+	
 	public double[][] getGradient(double[][] parameterMatrix) {
 		if(Config.USE_THREAD_COUNT < 2) {
 			return getGradientSoft(parameterMatrix);
 		} else {
 			return getGradientSoftThreaded(parameterMatrix);
+		}
+		//return getGradientSoftNaive(parameterMatrix);
+	}
+	
+	public double[][] getGradientClass(double[][] parameterMatrix) {
+		if(Config.USE_THREAD_COUNT < 2) {
+			return getGradientSoftClass(parameterMatrix);
+		} else {
+			return getGradientSoftThreadedClass(parameterMatrix);
 		}
 		//return getGradientSoftNaive(parameterMatrix);
 	}
@@ -224,7 +248,7 @@ public class InstanceList extends ArrayList<Instance> {
 		double[][] expWeights = MathUtils.expArray(parameterMatrix);
 		for (int n = 0; n < this.size(); n++) {
 			Instance i = get(n);
-			cll += i.getConditionalLogLikelihoodSoft(parameterMatrix, expWeights);
+			cll += i.getConditionalLogLikelihoodSoftWords(parameterMatrix, expWeights);
 		}
 		if(Config.displayDetail) {
 			System.out.println("CLL computation time : " + t.stop());
@@ -232,6 +256,21 @@ public class InstanceList extends ArrayList<Instance> {
 		return cll;
 	}
 	
+	//returns the lowerbound value
+	private double getCLLSoftClass(double[][] parameterMatrix) {
+		Timing t = new Timing();
+		cllClass = 0;
+		double[][] expWeights = MathUtils.expArray(parameterMatrix);
+		for (int n = 0; n < this.size(); n++) {
+			Instance i = get(n);
+			cllClass += i.getConditionalLogLikelihoodSoftClasses(parameterMatrix, expWeights);
+		}
+		if(Config.displayDetail) {
+			System.out.println("CLL Class computation time : " + t.stop());
+		}
+		return cllClass;
+	}
+
 	private double getCLLSoftThreaded(double[][] parameterMatrix) {
 		Timing timing = new Timing();
 		cll = 0.0;
@@ -267,6 +306,41 @@ public class InstanceList extends ArrayList<Instance> {
 		return cll;
 	}
 	
+	private double getCLLSoftThreadedClass(double[][] parameterMatrix) {
+		Timing timing = new Timing();
+		cllClass = 0.0;
+		//start parallel processing
+		int divideSize = this.size() / Config.USE_THREAD_COUNT;
+		double[][] expWeights = MathUtils.expArray(parameterMatrix);
+		List<CllSoftWorkerClass> threadList = new ArrayList<CllSoftWorkerClass>();
+		int startIndex = 0;
+		int endIndex = divideSize;		
+		for(int i=0; i<Config.USE_THREAD_COUNT; i++) {
+			CllSoftWorkerClass worker = new CllSoftWorkerClass(startIndex, endIndex, parameterMatrix, expWeights);
+			threadList.add(worker);
+			worker.start();
+			startIndex = endIndex;
+			endIndex = endIndex + divideSize;			
+		}
+		//there might be some remaining
+		CllSoftWorkerClass finalWorker = new CllSoftWorkerClass(startIndex, this.size(), parameterMatrix, expWeights);
+		finalWorker.start();
+		threadList.add(finalWorker);
+		//start all threads and wait for them to complete
+		for(CllSoftWorkerClass worker : threadList) {
+			try {
+				worker.join();
+			} catch (InterruptedException e) {				
+				e.printStackTrace();
+			}
+			updateCLLSoftComputationClass(worker);
+		}
+		if(Config.displayDetail) {
+			System.out.println("CLL Class computation time : " + timing.stop());
+		}
+		return cll;
+	}
+	
 	private class CllSoftWorker extends Thread{
 		public double result;
 		final int startIndex;
@@ -287,7 +361,32 @@ public class InstanceList extends ArrayList<Instance> {
 			result = 0.0;
 			for(int n=startIndex; n<endIndex; n++) {
 				Instance i = get(n);
-				result += i.getConditionalLogLikelihoodSoft(weights, expWeights);
+				result += i.getConditionalLogLikelihoodSoftWords(weights, expWeights);
+			}
+		}		
+	}
+	
+	private class CllSoftWorkerClass extends Thread{
+		public double result;
+		final int startIndex;
+		final int endIndex;
+		final double[][] expWeights;		
+		final double[][] weights;
+		
+		// [startIndex, endIndex) i.e. last index is not included
+		public CllSoftWorkerClass(int startIndex, int endIndex, double[][] weights, double[][] expWeights) {
+			this.startIndex = startIndex;
+			this.endIndex = endIndex;
+			this.expWeights = expWeights;
+			this.weights = weights;
+		}
+		
+		@Override
+		public void run() {
+			result = 0.0;
+			for(int n=startIndex; n<endIndex; n++) {
+				Instance i = get(n);
+				result += i.getConditionalLogLikelihoodSoftClasses(weights, expWeights);
 			}
 		}		
 	}
@@ -295,6 +394,12 @@ public class InstanceList extends ArrayList<Instance> {
 	private void updateCLLSoftComputation(CllSoftWorker worker) {
 	    synchronized (cllLockSoft) {
 	    	cll += worker.result;
+        }
+    }
+	
+	private void updateCLLSoftComputationClass(CllSoftWorkerClass worker) {
+	    synchronized (cllLockSoftClass) {
+	    	cllClass += worker.result;
         }
     }
 		
@@ -331,6 +436,41 @@ public class InstanceList extends ArrayList<Instance> {
 			System.out.println("Gradient computation time : " + timing.stop());
 		}
 		return gradient;
+	}
+	
+	private double[][] getGradientSoftThreadedClass(double[][] parameterMatrix) {
+		Timing timing = new Timing();
+		timing.start();
+		double[][] expParam = MathUtils.expArray(parameterMatrix);		
+		gradientClass = new double[parameterMatrix.length][parameterMatrix[0].length];
+		int divideSize = this.size() / Config.USE_THREAD_COUNT;
+		List<GradientSoftWorkerClass> threadList = new ArrayList<GradientSoftWorkerClass>();
+		int startIndex = 0;
+		int endIndex = divideSize;		
+		for(int i=0; i<Config.USE_THREAD_COUNT; i++) {
+			GradientSoftWorkerClass worker = new GradientSoftWorkerClass(startIndex, endIndex, expParam);
+			threadList.add(worker);
+			worker.start();
+			startIndex = endIndex;
+			endIndex = endIndex + divideSize;			
+		}
+		//there might be some remaining
+		GradientSoftWorkerClass finalWorker = new GradientSoftWorkerClass(startIndex, this.size(), expParam);
+		finalWorker.start();
+		threadList.add(finalWorker);
+		//start all threads and wait for them to complete
+		for(GradientSoftWorkerClass worker : threadList) {
+			try {
+				worker.join();
+			} catch (InterruptedException e) {				
+				e.printStackTrace();
+			}
+			updateGradientSoftComputationClass(worker);
+		}
+		if(Config.displayDetail) {
+			System.out.println("Gradient class computation time : " + timing.stop());
+		}
+		return gradientClass;
 	}
 	
 	private class GradientSoftWorker extends Thread{
@@ -458,9 +598,90 @@ public class InstanceList extends ArrayList<Instance> {
 		}
 	}
 	
+	private class GradientSoftWorkerClass extends Thread{
+		public double[][] gradientLocal;
+		final int startIndex;
+		final int endIndex;
+		final double[][] expParam;
+		public GradientSoftWorkerClass(int startIndex, int endIndex, double[][] expParam) {
+			this.startIndex = startIndex;
+			this.endIndex = endIndex;
+			this.expParam = expParam;			
+		}
+		
+		@Override
+		public void run() {
+			gradientLocal = new double[expParam.length][expParam[0].length];
+			for(int n=startIndex; n<endIndex; n++) {
+				Instance instance = get(n);
+				for(int t=0; t<instance.T; t++) {
+					int currentCluster = WordClass.wordIndexToClusterIndex.get(instance.words[t][0]);
+					//positive evidence
+					for(int m=0; m<Config.nrLayers; m++) {
+						for(int k=0; k<Config.numStates; k++) {
+							gradientLocal[currentCluster][LogLinearWeightsClass.getIndex(m, k)] += instance.posteriors[m][t][k];						 
+						}
+					}
+					double sumOverY = 0;
+					for(int c=0; c<WordClass.numClusters; c++) {
+						double prod = 1.0;
+						for(int m=0; m<Config.nrLayers; m++) {
+							double dot = 0;
+							for(int k=0; k<Config.numStates; k++) {
+								dot += instance.posteriors[m][t][k] * expParam[c][LogLinearWeightsClass.getIndex(m, k)];
+							}
+							prod *= dot;
+							MathUtils.check(prod);
+							if(prod == 0) {
+								throw new RuntimeException("underflow");
+							}
+						}
+						sumOverY += prod;
+					}
+					double phi = 1.0 / sumOverY;
+					
+					for(int c=0; c<WordClass.numClusters; c++) {
+					//for(String word : clusteredWords) {
+						//int y = Corpus.corpusVocab.get(0).wordToIndex.get(word);
+						double dotProdOverAllLayers = 1.0; //to reduce complexity from O(m^2) to O(m)
+						for(int m=0; m<Config.nrLayers; m++) {
+							double dot = 0;
+							for(int k=0; k<Config.numStates; k++) {
+								dot += instance.posteriors[m][t][k] * expParam[c][LogLinearWeightsClass.getIndex(m, k)];
+							}
+							dotProdOverAllLayers *= dot;
+							MathUtils.check(dotProdOverAllLayers);
+							if(dotProdOverAllLayers == 0) {
+								throw new RuntimeException("underflow");
+							}
+						}
+						//set them now
+						for(int m=0; m<Config.nrLayers; m++) {
+							double mLayerDot = 0.0;
+							for(int l=0; l<Config.numStates; l++) {
+								mLayerDot += instance.posteriors[m][t][l] * expParam[c][LogLinearWeightsClass.getIndex(m, l)];
+							}
+							for(int k=0; k<Config.numStates; k++) {
+								//compute the amount that must be multiplied to adjust from dotProdOverAllLayers
+								double factorDifference = instance.posteriors[m][t][k] * expParam[c][LogLinearWeights.getIndex(m, k)] / mLayerDot;
+								gradientLocal[c][LogLinearWeightsClass.getIndex(m, k)] -= phi * dotProdOverAllLayers * factorDifference;
+							}
+						}
+					} 
+				}
+			}
+		}
+	}
+	
 	private void updateGradientSoftComputation(GradientSoftWorker worker) {
         synchronized (gradientLockSoft) {
         	MathUtils.addMatrix(gradient, worker.gradientLocal);
+        }
+    }
+	
+	private void updateGradientSoftComputationClass(GradientSoftWorkerClass worker) {
+        synchronized (gradientLockSoftClass) {
+        	MathUtils.addMatrix(gradientClass, worker.gradientLocal);
         }
     }
 	
@@ -529,6 +750,72 @@ public class InstanceList extends ArrayList<Instance> {
 			System.out.println("Gradient computation time : " + timing.stop());
 		}
 		return gradient;
+	}
+	
+	private double[][] getGradientSoftClass(double[][] parameterMatrix) {
+		Timing timing = new Timing();
+		timing.start();
+		double[][] expParam = MathUtils.expArray(parameterMatrix);
+		gradientClass = new double[parameterMatrix.length][parameterMatrix[0].length];		
+		for(int n=0; n<this.size(); n++) {
+			Instance instance = get(n);
+			for(int t=0; t<instance.T; t++) {
+				int currentCluster = WordClass.wordIndexToClusterIndex.get(instance.words[t][0]);
+				for(int m=0; m<Config.nrLayers; m++) {
+					for(int k=0; k<Config.numStates; k++) {
+						gradientClass[currentCluster][LogLinearWeightsClass.getIndex(m, k)] += instance.posteriors[m][t][k];						 
+					}
+				}
+				double sumOverC = 0;
+				for(int c=0; c<WordClass.numClusters; c++) {
+					double dotProdOverAllLayers = 1.0;
+					for(int m=0; m<Config.nrLayers; m++) {
+						double dot = 0;
+						for(int k=0; k<Config.numStates; k++) {
+							dot += instance.posteriors[m][t][k] * expParam[c][LogLinearWeightsClass.getIndex(m, k)];
+						}
+						dotProdOverAllLayers *= dot;
+						MathUtils.check(dotProdOverAllLayers);
+						if(dotProdOverAllLayers == 0) {
+							throw new RuntimeException("underflow");
+						}
+					}
+					sumOverC += dotProdOverAllLayers;
+				}
+				double phi = 1.0 / sumOverC;
+				for(int c=0; c<WordClass.numClusters; c++) {
+					double dotProdOverAllLayers = 1.0; //to reduce complexity from O(m^2) to O(m)
+					for(int m=0; m<Config.nrLayers; m++) {
+						double dot = 0;
+						for(int k=0; k<Config.numStates; k++) {
+							dot += instance.posteriors[m][t][k] * expParam[c][LogLinearWeightsClass.getIndex(m, k)];
+						}
+						dotProdOverAllLayers *= dot;
+						MathUtils.check(dotProdOverAllLayers);
+						if(dotProdOverAllLayers == 0) {
+							throw new RuntimeException("underflow");
+						}
+					}
+					//set them now
+					for(int m=0; m<Config.nrLayers; m++) {
+						double mLayerDot = 0.0;
+						for(int l=0; l<Config.numStates; l++) {
+							mLayerDot += instance.posteriors[m][t][l] * expParam[c][LogLinearWeightsClass.getIndex(m, l)];
+						}
+						for(int k=0; k<Config.numStates; k++) {
+							//compute the amount that must be multiplied to adjust from dotProdOverAllLayers
+							double factorDifference = instance.posteriors[m][t][k] * expParam[c][LogLinearWeightsClass.getIndex(m, k)] / mLayerDot;
+							gradientClass[c][LogLinearWeightsClass.getIndex(m, k)] -= phi * dotProdOverAllLayers * factorDifference;
+						}
+					}
+				}
+				
+			}
+		}
+		if(Config.displayDetail) {
+			System.out.println("class Gradient computation time : " + timing.stop());
+		}
+		return gradientClass;
 	}
 	
 	

@@ -23,6 +23,7 @@ public abstract class HMMBase {
 	public int nrStates = -1;
 	public HMMParamBase param;
 	public HMMParamBase bestParam; // best found so far
+	public int nrClasses = -1; 
 	
 	public HMMType hmmType;
 	

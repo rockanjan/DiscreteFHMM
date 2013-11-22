@@ -75,7 +75,8 @@ public class EM {
 	}
 
 	public void eStep() {
-		expectedCounts.initializeZeros();
+		//expectedCounts.initializeZeros();
+		expectedCounts.initializeZerosInitialAndTransition();
 		System.out.format("Estep #sentences = %d, #tokens = %d\n",
 				Corpus.trainInstanceEStepSampleList.size(),
 				Corpus.trainInstanceEStepSampleList.numberOfTokens);
@@ -91,7 +92,10 @@ public class EM {
 				Corpus.trainInstanceMStepSampleList.size(),
 				Corpus.trainInstanceMStepSampleList.numberOfTokens);
 		//Corpus.cacheFrequentConditionals();
+		System.out.println("training words...");
 		trainLBFGS();
+		System.out.println("training classes...");
+		trainLBFGSClass();
 		//Corpus.clearFrequentConditionals();
 		model.updateFromCountsWeighted(expectedCounts, adaptiveWeight);
 		//model.updateFromCounts(expectedCounts); //unweighted
@@ -129,6 +133,38 @@ public class EM {
 		//arithmetic mean
 		model.param.weights.weights = MathUtils.weightedAverageofLog(optimizable.getParameterMatrix(),
 				model.param.weights.weights,
+				adaptiveWeight);
+	}
+	
+	public void trainLBFGSClass() {
+		double[] initParams = MyArray.createVector(model.param.weightsClass.weights);
+		CLLTrainerClass optimizable = new CLLTrainerClass(initParams, c);
+		Optimizer optimizer = new LimitedMemoryBFGS(optimizable);
+		boolean converged = false;
+		//optimizable.checkGradientComputation();
+		try {
+			converged = optimizer.optimize(Config.mStepIter);
+		} catch (IllegalArgumentException e) {
+			System.out.println("optimization threw exception: IllegalArgument");
+		} catch (OptimizationException oe) {
+			System.out.println("optimization threw OptimizationException");
+		}
+		System.out.println("Converged = " + converged);
+		System.out.println("Gradient call count = " + optimizable.gradientCallCount);
+		double cll = optimizable.getValue();
+		cll = cll / Corpus.trainInstanceMStepSampleList.numberOfTokens; //per token CLL
+		System.out.println("class CLL = " + cll);
+		//model.param.weights.weights = optimizable.getParameterMatrix(); //unweighted
+		
+		//geometric mean
+		/*
+		model.param.weights.weights = MathUtils.weightedAverageMatrix(optimizable.getParameterMatrix(),
+				model.param.weights.weights,
+				adaptiveWeight);
+		*/
+		//arithmetic mean
+		model.param.weightsClass.weights = MathUtils.weightedAverageofLog(optimizable.getParameterMatrix(),
+				model.param.weightsClass.weights,
 				adaptiveWeight);
 	}
 
@@ -169,7 +205,7 @@ public class EM {
 			if(Corpus.devInstanceList != null && iterCount % Config.convergenceIterInterval == 0) {
 				c.generateRandomDevSample(Config.sampleDevSize);
 				System.out.println(String.format("Dev #sentence=%d, #tokens=%d", Corpus.devInstanceSampleList.size(), Corpus.devInstanceSampleList.numberOfTokens));
-				expectedCounts.initializeZeros(); //mstep already complete
+				expectedCounts.initializeZerosInitialAndTransition(); //mstep already complete
 				devLL = Corpus.devInstanceSampleList.updateExpectedCounts(model, expectedCounts);
 				devLL = devLL / Corpus.devInstanceSampleList.numberOfTokens;
 				double devPerplexityJoint = Math.pow(2, -devLL/Math.log(2));

@@ -2,6 +2,7 @@ package corpus;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import model.HMMBase;
 import model.HMMPowModel;
@@ -10,6 +11,7 @@ import model.inference.ForwardBackward;
 import model.inference.ForwardBackwardLog;
 import model.inference.VariationalParam;
 import model.param.LogLinearWeights;
+import model.param.LogLinearWeightsClass;
 import util.MathUtils;
 import util.MyArray;
 import util.SmoothWord;
@@ -179,7 +181,9 @@ public class Instance {
 	public double getJointObjective() {
 		//TODO: important: inference should have already been done before calling this
 		double jointObjective = 0.0;
-		double observationObjective = getConditionalLogLikelihoodSoft(model.param.weights.weights, model.param.expWeights.weights);
+		double observationObjectiveWords = getConditionalLogLikelihoodSoftWords(model.param.weights.weights, model.param.expWeights.weights);
+		double observationObjectiveClasses = getConditionalLogLikelihoodSoftClasses(model.param.weightsClass.weights,
+				model.param.expWeightsClass.weights);
 		double stateObjective = 0.0;
 		
 		//initial
@@ -200,7 +204,7 @@ public class Instance {
 				}
 			}
 		}		
-		jointObjective = stateObjective + observationObjective;
+		jointObjective = stateObjective + observationObjectiveClasses + observationObjectiveWords;
 		return jointObjective;
 		
 	}
@@ -251,7 +255,7 @@ public class Instance {
 		return cll;
 	}
 	
-	public double getConditionalLogLikelihoodSoft(double[][] weights, double[][] expWeights) {
+	public double getConditionalLogLikelihoodSoftWords(double[][] weights, double[][] expWeights) {
 		double cll = 0.0;
 		for (int t = 0; t < T; t++) {
 			for(int m=0; m < model.nrLayers; m++) {
@@ -259,9 +263,11 @@ public class Instance {
 					cll += posteriors[m][t][k] * weights[words[t][0]][LogLinearWeights.getIndex(m, k)];
 				}
 			}
-			double vocabSize= weights.length;
+			
+			int wordCluster = WordClass.wordIndexToClusterIndex.get(this.words[t][0]);
+			Set<Integer> wordsInCluster = WordClass.clusterIndexToWordIndices.get(wordCluster);
 			double sumOverY = 0;
-			for(int y=0; y<vocabSize; y++) {
+			for(int y : wordsInCluster) {
 				double prod = 1.0;
 				for(int m=0; m<model.nrLayers; m++) {
 					double dot = 0;
@@ -277,6 +283,37 @@ public class Instance {
 				sumOverY += prod;
 			}
 			cll -= Math.log(sumOverY);						
+		}
+		return cll;
+	}
+	
+	public double getConditionalLogLikelihoodSoftClasses(double[][] weightsClass, double[][] expWeightsClass) {
+		double cll = 0.0;
+		for (int t = 0; t < T; t++) {
+			int currentCluster = WordClass.wordIndexToClusterIndex.get(this.words[t][0]);
+			for(int m=0; m < model.nrLayers; m++) {
+				for(int k=0; k<model.nrStates; k++) {
+					cll += posteriors[m][t][k] * weightsClass[currentCluster][LogLinearWeightsClass.getIndex(m, k)];
+				}
+			}
+			
+			double sumOverC = 0;
+			for(int c=0; c<model.nrClasses; c++) {
+				double prod = 1.0;
+				for(int m=0; m<model.nrLayers; m++) {
+					double dot = 0;
+					for(int k=0; k<model.nrStates; k++) {
+						dot += posteriors[m][t][k] * expWeightsClass[c][LogLinearWeightsClass.getIndex(m, k)];
+					}
+					prod *= dot;
+					MathUtils.check(prod);
+					if(prod == 0) {
+						throw new RuntimeException("underflow");
+					}
+				}
+				sumOverC += prod;
+			}
+			cll -= Math.log(sumOverC);						
 		}
 		return cll;
 	}

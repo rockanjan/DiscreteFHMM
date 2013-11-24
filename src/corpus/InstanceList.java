@@ -365,7 +365,7 @@ public class InstanceList extends ArrayList<Instance> {
 		if(Config.displayDetail) {
 			System.out.println("CLL Class computation time : " + timing.stop());
 		}
-		return cll;
+		return cllClass;
 	}
 	
 	private class CllSoftWorker extends Thread{

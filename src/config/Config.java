@@ -11,14 +11,14 @@ public class Config {
 	public static int numIter = 200;
 	public static int nrLayers = 3;
 	public static int numStates = 10;
-	public final static int USE_THREAD_COUNT = 8;
+	public final static int USE_THREAD_COUNT = 2;
 	public static int vocabThreshold = 3;
 
 	public static final String baseDirData = "data/";
 	public static final String baseDirModel = "out/model/";
 	public static final String baseDirDecode = "out/decoded/";
 
-	public static String trainFile = "brown_train.txt";
+	public static String trainFile = "test.txt.SPL";
 	public static String vocabFile = trainFile;
 	public static String testFile = "brown_test.txt";
 	public static String devFile = "brown_dev.txt";
@@ -51,9 +51,9 @@ public class Config {
 	public static boolean sampleSequential = true;
 	public static double alpha = 0.5;
 	public static double t0 = 2;
-	public static int sampleSizeEStep = 5000;
+	public static int sampleSizeEStep = 500;
 	public static int sampleSizeMStep = sampleSizeEStep;
-	public static int sampleDevSize = 5000;
+	public static int sampleDevSize = 500;
 	public static String vocabSamplingType = "unigram";
 	public static int VOCAB_SAMPLE_SIZE = 0;
 

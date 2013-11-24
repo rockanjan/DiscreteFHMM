@@ -6,7 +6,7 @@ import config.Config;
 
 public class LogLinearWeights {
 	public double[][] weights; //weights for the log-linear model
-	
+	public double[][] weightsOld; //for computing L1Diff
 	public int vocabSize;
 	public static int conditionalSize;
 	

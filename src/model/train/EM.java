@@ -97,6 +97,9 @@ public class EM {
 		//model.updateFromCounts(expectedCounts); //unweighted
 		Corpus.trainInstanceEStepSampleList.clearPosteriorProbabilities();
 		Corpus.trainInstanceEStepSampleList.clearDecodedStates();
+		
+		//update the L1Diff norms
+		model.updateL1Diff();
 	}
 
 	public void trainLBFGS() {
@@ -127,6 +130,8 @@ public class EM {
 				adaptiveWeight);
 		*/
 		//arithmetic mean
+		//model.param.weights.weightsOld = MyArray.getCloneOfMatrix(model.param.weights.weights);
+		model.param.weights.weightsOld = model.param.weights.weights;
 		model.param.weights.weights = MathUtils.weightedAverageofLog(optimizable.getParameterMatrix(),
 				model.param.weights.weights,
 				adaptiveWeight);
@@ -163,6 +168,10 @@ public class EM {
 			c.generateRandomTrainingMStepSample(Config.sampleSizeMStep);
 			mStepTime.start();
 			mStep();
+			System.out.println("InitialMaxDiff = " + model.param.l1DiffInitialMax
+					+ " TransitionMaxDiff = " + model.param.l1DiffTransitionMax
+					+ " WeightMaxDiff = " + model.param.l1DiffWeightsMax);
+			
 			System.out.println("M-step time:" + mStepTime.stop());
 			Stats.totalFixes = 0;
 			StringBuffer display = new StringBuffer();

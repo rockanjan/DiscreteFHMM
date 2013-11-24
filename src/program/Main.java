@@ -35,8 +35,8 @@ public class Main {
 		
 		lastIter = LastIter.read();
 		if(lastIter < 0) {
-			//initializeNewModel();
-			loadFromDifferentLayerHMM(3);
+			initializeNewModel();
+			//loadFromDifferentLayerHMM(3);
 		} else {
 			load();
 			//checkTestPerplexity();

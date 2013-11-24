@@ -9,6 +9,8 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Random;
 
+import util.MathUtils;
+
 import model.param.HMMParamBase;
 import model.param.HMMParamNoFinalStateLog;
 import config.Config;
@@ -60,6 +62,35 @@ public abstract class HMMBase {
 		}
 		//normalize
 		this.param.normalize();
+	}
+	
+	public void updateL1Diff() {
+		//compute l1Norms for initial and transition
+		param.l1DiffInitialMax=-Double.MAX_VALUE;
+		param.l1DiffTransitionMax = -Double.MAX_VALUE;
+		for(int m=0; m<nrLayers; m++) {
+			double maxDiffInitialMthLayer = 1;
+			if(param.initial.get(m).oldParams != null) {
+				maxDiffInitialMthLayer = MathUtils.expMatrixDifferenceL1NormMax(
+					param.initial.get(m).count, 
+					param.initial.get(m).oldParams);
+			}
+			if(maxDiffInitialMthLayer > param.l1DiffInitialMax) {
+				param.l1DiffInitialMax = maxDiffInitialMthLayer;
+			}
+			double maxDiffTransitionMthLayer = 1;
+			if(param.transition.get(m).oldParams != null) {
+				maxDiffTransitionMthLayer = MathUtils.expMatrixDifferenceL1NormMax(
+					param.transition.get(m).count, 
+					param.transition.get(m).oldParams);
+			}
+			if(maxDiffTransitionMthLayer > param.l1DiffTransitionMax) {
+				param.l1DiffTransitionMax = maxDiffTransitionMthLayer;
+			}		
+		}
+		param.l1DiffWeightsMax = MathUtils.expMatrixDifferenceL1NormMax(
+				param.weights.weights, 
+				param.weights.weightsOld);
 	}
 
 	public String saveModel() {

@@ -22,6 +22,9 @@ public abstract class HMMParamBase {
 	public int nrStates = -1;
 	public int nrObs = -1;
 	
+	public double l1DiffInitialMax = 1; //max difference =1
+	public double l1DiffTransitionMax = 1; //max difference = 1
+	public double l1DiffWeightsMax = 1000;
 	
 	public HMMParamBase(HMMBase model) {
 		this.model = model;

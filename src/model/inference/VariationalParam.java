@@ -38,7 +38,7 @@ public class VariationalParam {
 		
 		varParamObs = new VariationalParamObservation(M, T, K);
 		//varParamObs.initializeRandom();
-		varParamObs.initializeFromObsParam(model.param, instance);
+		varParamObs.initializeFromObsAndClassParam(model.param, instance);
 		alphaY = new VariationalParamAlpha(T); //actually phi in derivation
 		alphaC = new VariationalParamAlpha(T); //actually phi in derivation
 		

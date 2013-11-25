@@ -8,6 +8,7 @@ import model.param.HMMParamBase;
 
 import corpus.Corpus;
 import corpus.Instance;
+import corpus.WordClass;
 
 import program.Main;
 
@@ -27,13 +28,14 @@ public class VariationalParamObservation {
 		shi = new double[M][T][K];
 	}
 	
-	public void initializeFromObsParam(HMMParamBase param, Instance instance) {
+	public void initializeFromObsAndClassParam(HMMParamBase param, Instance instance) {
 		for(int m=0; m<M; m++) {
 			for(int t=0; t<T; t++) {
 				double sum = 0;
 				for(int k=0; k<K; k++) {
-					shi[m][t][k] = param.weights.get(m, k, instance.words[t][0]);
-					sum += param.expWeights.get(m, k, instance.words[t][0]); //cached exponentiated result
+					int clusterId = WordClass.wordIndexToClusterIndex.get(instance.words[t][0]);
+					shi[m][t][k] = param.weights.get(m, k, instance.words[t][0]) + param.weightsClass.get(m, k, clusterId);
+					sum += param.expWeights.get(m, k, instance.words[t][0]) + param.expWeightsClass.get(m,k,clusterId); //cached exponentiated result
 				}
 				//normalize
 				for(int k=0; k<K; k++) {

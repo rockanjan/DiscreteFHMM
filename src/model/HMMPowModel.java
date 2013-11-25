@@ -8,6 +8,7 @@ import model.param.MultinomialLog;
 import util.MathUtils;
 import util.MyArray;
 import config.Config;
+import corpus.WordClass;
 
 public class HMMPowModel {
 	public int powStateSize; // K^M
@@ -47,33 +48,42 @@ public class HMMPowModel {
 				}
 				transition.set(j, i, transProbLog);
 			}
-			
-			//observation (expensive)
-			double[] numeratorLog = new double[model.param.weights.vocabSize];
-			for(int v=0; v<model.param.weights.vocabSize; v++) {
-				double obsProbLog = 0.0;
-				for(int m=0; m<model.nrLayers; m++) {
-					obsProbLog += model.param.weights.get(m, stateCombination[m], v);
-				}
-				numeratorLog[v] = obsProbLog;
-			}
-			//normalize
-			double normalizer = MathUtils.logsumexp(numeratorLog);
-			for(int v=0; v<model.param.weights.vocabSize; v++) {
-				numeratorLog[v] -= normalizer;
-				observation.set(v, i, numeratorLog[v]);
-			}
 		}
-		/*
-		//should not be necessary, but workaround for now
-		transition.count = MathUtils.expArray(transition.count);
-		transition.normalize();
-		*/
 		
-		//checkdistribution
+		//observation (expensive)
+		for(int i=0; i<powStateSize; i++) {
+			int[] stateCombination = getStateCombination(i).states;
+			//for class based models, the normalization is not joint (normalization done separately)
+			double[] wordNumerators = new double[model.param.weights.vocabSize];
+			double[] classNumerators = new double[WordClass.numClusters];
+			for(int v=0; v<model.param.weights.vocabSize; v++) {
+				for(int m=0; m<model.nrLayers; m++) {
+					wordNumerators[v] += model.param.weights.get(m, stateCombination[m], v);
+				}				
+			}
+			for(int c=0; c<WordClass.numClusters; c++) {
+				for(int m=0; m<model.nrLayers; m++) {
+					classNumerators[c] += model.param.weightsClass.get(m, stateCombination[m], c);
+				}				
+			}
+			double[] wordNormalizers = new double[WordClass.numClusters];
+			for(int c=0; c<WordClass.numClusters; c++) {
+				for(int v : WordClass.clusterIndexToWordIndices.get(c)) {
+					wordNormalizers[c] += Math.exp(wordNumerators[v]);
+				}
+			}
+			double classNormalizer = MathUtils.logsumexp(classNumerators);
+			for(int v=0; v<model.param.weights.vocabSize; v++) {
+				int c = WordClass.wordIndexToClusterIndex.get(v);
+				double prob = wordNumerators[v] - Math.log(wordNormalizers[c]) + classNumerators[c] - classNormalizer;
+				observation.set(v, i, prob);
+			}
+		}		
+		//check distribution
 		initial.checkDistribution();
-		//transition.checkDistribution();
+		transition.checkDistribution();
 		observation.checkDistribution();
+		
 	}
 	
 	private void populateStateCombination() {

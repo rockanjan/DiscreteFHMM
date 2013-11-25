@@ -90,34 +90,33 @@ public class CLLTrainerJoint implements Optimizable.ByGradientValue{
 	
 	/************ Debugging code *********/
 	
-	private double[][] getFiniteDifferenceGradient() {
-		double[][] weights = MyArray.createMatrix(parameters, corpus.corpusVocab.get(0).vocabSize);
-		double[][] newGradients = new double[weights.length][weights[0].length];
+	private double[] getFiniteDifferenceGradient() {
+		double[] newGradients = new double[parameters.length];
 		double step = 1e-8;
-		for(int i=0; i<weights.length; i++) {
-			for(int j=0; j<weights[0].length; j++) {
-				weights[i][j] = weights[i][j] - step;
-				double valueX = corpus.trainInstanceEStepSampleList.getCLL(weights);
-				weights[i][j] = weights[i][j] + step + step;
-				double valueXStepped = corpus.trainInstanceEStepSampleList.getCLL(weights);
-				newGradients[i][j] =  valueXStepped/ (2*step) - valueX / (2*step);
-				//System.out.println("grad from finitedifference = " + newGradients[i][j]);
-				//reset weights
-				weights[i][j] = weights[i][j] - step;
-			}
+		double[] weights = parameters.clone();
+		for(int i=0; i<parameters.length; i++) {
+			weights[i] = weights[i] - step;
+			double valueX = corpus.trainInstanceEStepSampleList.getCLLJoint(weights);
+			weights[i] = weights[i] + step + step;
+			double valueXStepped = corpus.trainInstanceEStepSampleList.getCLLJoint(weights);
+			newGradients[i] =  valueXStepped/ (2*step) - valueX / (2*step);
+			//System.out.println("grad from finitedifference = " + newGradients[i][j]);
+			//reset weights
+			weights[i] = weights[i] - step;
 		}
 		return newGradients;
 	}
 	
-	private double[][] getGradientByEquation() {
-		double[][] weights = MyArray.createMatrix(parameters, corpus.corpusVocab.get(0).vocabSize);
-		double[][] newGradients = corpus.trainInstanceEStepSampleList.getGradient(weights);
+	private double[] getGradientByEquation() {
+		double[] weights = parameters.clone();
+		double[] newGradients = corpus.trainInstanceEStepSampleList.getJointGradient(weights);
 		return newGradients;
 	}
 	
 	public void checkGradientComputation() {
-		double[] finiteDifferenceGradient = MyArray.createVector(getFiniteDifferenceGradient());
-		double[] equationGradient = MyArray.createVector(getGradientByEquation());
+		System.out.println("Checking joint gradient computation");
+		double[] finiteDifferenceGradient = getFiniteDifferenceGradient();
+		double[] equationGradient = getGradientByEquation();
 		double[] difference = new double[finiteDifferenceGradient.length];
 		double maxDiff = -Double.MAX_VALUE;
 		double minDiff = Double.MAX_VALUE;

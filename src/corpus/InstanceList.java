@@ -3,6 +3,7 @@ package corpus;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import model.HMMBase;
@@ -523,7 +524,6 @@ public class InstanceList extends ArrayList<Instance> {
 							gradientLocal[instance.words[t][0]][LogLinearWeights.getIndex(m, k)] += instance.posteriors[m][t][k];						 
 						}
 					}
-					int vocabSize = Corpus.corpusVocab.get(0).vocabSize;
 					if(Config.VOCAB_SAMPLE_SIZE <= 0) { //exact
 						//compute phi, variational param phi for this token
 						
@@ -532,8 +532,10 @@ public class InstanceList extends ArrayList<Instance> {
 						//String currentCluster = Main.wordToCluster.get(currentWord);
 						//HashSet<String> clusteredWords = Main.clusterToWords.get(currentCluster);
 						
+						int wordCluster = WordClass.wordIndexToClusterIndex.get(instance.words[t][0]);
+						Set<Integer> wordsInCluster = WordClass.clusterIndexToWordIndices.get(wordCluster);
 						double sumOverY = 0;
-						for(int y=0; y<vocabSize; y++) {
+						for(int y : wordsInCluster) {
 						//for(String word : clusteredWords) {
 							//int y = Corpus.corpusVocab.get(0).wordToIndex.get(word);
 							double prod = 1.0;
@@ -552,7 +554,7 @@ public class InstanceList extends ArrayList<Instance> {
 						}
 						double phi = 1.0 / sumOverY;
 						
-						for(int y=0; y<vocabSize; y++) {
+						for(int y : wordsInCluster) {
 						//for(String word : clusteredWords) {
 							//int y = Corpus.corpusVocab.get(0).wordToIndex.get(word);
 							double dotProdOverAllLayers = 1.0; //to reduce complexity from O(m^2) to O(m)
@@ -581,6 +583,7 @@ public class InstanceList extends ArrayList<Instance> {
 							}
 						}
 					} else {
+						/*
 						//importance sampling
 						double[][] a = new double[expParam.length][expParam[0].length];
 						double b = 0.0;
@@ -619,6 +622,9 @@ public class InstanceList extends ArrayList<Instance> {
 						MathUtils.matrixElementWiseMultiplication(a, -1.0/b);
 						//add to the gradient
 						MathUtils.addMatrix(gradientLocal, a);
+						*/
+						System.err.println("Sampling disabled");
+						System.exit(-1);
 					}
 				}
 			}
@@ -713,7 +719,6 @@ public class InstanceList extends ArrayList<Instance> {
 	private double[][] getGradientSoft(double[][] parameterMatrix) {
 		Timing timing = new Timing();
 		timing.start();
-		int vocabSize = Corpus.corpusVocab.get(0).vocabSize;
 		double[][] expParam = MathUtils.expArray(parameterMatrix);
 		gradient = new double[parameterMatrix.length][parameterMatrix[0].length];		
 		for(int n=0; n<this.size(); n++) {
@@ -725,8 +730,10 @@ public class InstanceList extends ArrayList<Instance> {
 					}
 				}
 				//compute phi, variational param phi for this token
+				int wordCluster = WordClass.wordIndexToClusterIndex.get(instance.words[t][0]);
+				Set<Integer> wordsInCluster = WordClass.clusterIndexToWordIndices.get(wordCluster);
 				double sumOverY = 0;
-				for(int y=0; y<vocabSize; y++) {
+				for(int y : wordsInCluster) {
 					double dotProdOverAllLayers = 1.0;
 					for(int m=0; m<Config.nrLayers; m++) {
 						double dot = 0;
@@ -742,7 +749,7 @@ public class InstanceList extends ArrayList<Instance> {
 					sumOverY += dotProdOverAllLayers;
 				}
 				double phi = 1.0 / sumOverY;
-				for(int y=0; y<vocabSize; y++) {
+				for(int y : wordsInCluster) {
 					double dotProdOverAllLayers = 1.0; //to reduce complexity from O(m^2) to O(m)
 					for(int m=0; m<Config.nrLayers; m++) {
 						double dot = 0;

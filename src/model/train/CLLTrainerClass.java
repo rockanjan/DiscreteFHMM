@@ -105,9 +105,9 @@ public class CLLTrainerClass implements Optimizable.ByGradientValue{
 		for(int i=0; i<weights.length; i++) {
 			for(int j=0; j<weights[0].length; j++) {
 				weights[i][j] = weights[i][j] - step;
-				double valueX = corpus.trainInstanceEStepSampleList.getCLL(weights);
+				double valueX = corpus.trainInstanceEStepSampleList.getCLLClass(weights);
 				weights[i][j] = weights[i][j] + step + step;
-				double valueXStepped = corpus.trainInstanceEStepSampleList.getCLL(weights);
+				double valueXStepped = corpus.trainInstanceEStepSampleList.getCLLClass(weights);
 				newGradients[i][j] =  valueXStepped/ (2*step) - valueX / (2*step);
 				//System.out.println("grad from finitedifference = " + newGradients[i][j]);
 				//reset weights
@@ -119,7 +119,7 @@ public class CLLTrainerClass implements Optimizable.ByGradientValue{
 	
 	private double[][] getGradientByEquation() {
 		double[][] weights = MyArray.createMatrix(parameters, WordClass.numClusters);
-		double[][] newGradients = corpus.trainInstanceEStepSampleList.getGradient(weights);
+		double[][] newGradients = corpus.trainInstanceEStepSampleList.getGradientClass(weights);
 		return newGradients;
 	}
 	

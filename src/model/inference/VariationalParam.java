@@ -132,7 +132,7 @@ public class VariationalParam {
 					double prod = allProd / MathUtils.dot(model.param.expWeightsClass.getStateVector(m, c), 
 							instance.forwardBackwardList.get(m).posterior[t]); //all prod except m'th layer
 					for(int k=0; k<K; k++) {
-						sumOverY[k] += prod * model.param.expWeights.getStateVector(m, c)[k];
+						sumOverC[k] += prod * model.param.expWeightsClass.getStateVector(m, c)[k];
 					}
 				}
 				

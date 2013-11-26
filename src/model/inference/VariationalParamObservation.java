@@ -35,7 +35,7 @@ public class VariationalParamObservation {
 				for(int k=0; k<K; k++) {
 					int clusterId = WordClass.wordIndexToClusterIndex.get(instance.words[t][0]);
 					shi[m][t][k] = param.weights.get(m, k, instance.words[t][0]) + param.weightsClass.get(m, k, clusterId);
-					sum += param.expWeights.get(m, k, instance.words[t][0]) + param.expWeightsClass.get(m,k,clusterId); //cached exponentiated result
+					sum += Math.exp(param.weights.get(m, k, instance.words[t][0]) + param.weightsClass.get(m,k,clusterId)); //cached exponentiated result
 				}
 				//normalize
 				for(int k=0; k<K; k++) {

@@ -154,6 +154,7 @@ public class Main {
 		decodeTiming.start();
 		System.out.println("Decoding started on :" + new Date().toString());
 		model.param.expWeights = model.param.weights.getCloneExp();
+		model.param.expWeightsClass = model.param.weightsClass.getCloneExp();
 		InstanceList.featurePartitionCache = new ConcurrentHashMap<String, Double>();
 		Config.variationalIter = 20;
 		instanceList.doVariationalInference(model);

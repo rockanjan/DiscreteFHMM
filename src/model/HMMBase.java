@@ -14,6 +14,7 @@ import model.param.HMMParamNoFinalStateLog;
 import config.Config;
 import corpus.Corpus;
 import corpus.Vocabulary;
+import corpus.WordClass;
 
 public abstract class HMMBase {
 	public int nrLayers;
@@ -129,6 +130,17 @@ public abstract class HMMBase {
 				}
 				pw.println();
 			}
+			pw.println(param.weightsClass.weights.length);
+			pw.println(param.weightsClass.weights[0].length);
+			for (int c = 0; c < param.weightsClass.weights.length; c++) {
+				for (int u = 0; u < param.weightsClass.weights[0].length; u++) {
+					pw.print(param.weightsClass.weights[c][u]);
+					if (u != param.weightsClass.weights[0].length - 1) {
+						pw.print(" ");
+					}
+				}
+				pw.println();
+			}
 			pw.println("EOF");
 			pw.close();
 		} catch (FileNotFoundException e) {
@@ -218,7 +230,17 @@ public abstract class HMMBase {
 				}
 				//pw.println();
 			}
-			//pw.println("EOF");
+			int numClusterFromModel = Integer.parseInt(modelReader.readLine());
+			if(numClusterFromModel != WordClass.numClusters) {
+				System.err.println("numClustersFromClusterFile : " + WordClass.numClusters + " from Modelfile : " + numClusterFromModel);
+			}
+			modelReader.readLine();
+			for (int c = 0; c < param.weightsClass.weights.length; c++) {
+				String[] weightsClass = modelReader.readLine().split("\\s+");
+				for (int u = 0; u < param.weightsClass.weights[0].length; u++) {
+					param.weightsClass.weights[c][u] = Double.parseDouble(weightsClass[u]);
+				}
+			}
 			if(modelReader.readLine().equals("EOF")) {
 				System.out.println("Model file loaded successfully");
 			} else {

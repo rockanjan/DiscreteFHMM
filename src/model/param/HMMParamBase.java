@@ -204,6 +204,14 @@ public abstract class HMMParamBase {
 			System.err.println("observation weights mismatch");
 			result = false;
 		}
+		
+		if(! weightsClass.equalsExact(other.weightsClass)) {
+			System.err.println("class weights mismatch");
+			result = false;
+		}
+		if(result == false) {
+			System.exit(-1);
+		}
 		return result;
 	}
 	
@@ -232,6 +240,11 @@ public abstract class HMMParamBase {
 		
 		if(! weights.equalsApprox(other.weights)) {
 			System.err.println("observation weights mismatch");
+			result = false;
+		}
+		
+		if(! weightsClass.equalsApprox(other.weightsClass)) {
+			System.err.println("class weights mismatch");
 			result = false;
 		}
 		return result;

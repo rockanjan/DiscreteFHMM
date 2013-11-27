@@ -3,6 +3,7 @@ package corpus;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -62,6 +63,19 @@ public class WordClass {
 		}
 		System.out.println();
 		br.close();
+		
+		//save cluster index file
+		PrintWriter pw = new PrintWriter(Config.baseDirModel + "cluster_vocabs.txt");
+		for(int clusterIndex : clusterIndexToWordIndices.keySet()) {
+			pw.print(clusterIndex + ":");
+			Set<Integer> wordIndices = clusterIndexToWordIndices.get(clusterIndex);
+			for(int wordIndex : wordIndices) {
+				pw.print(wordIndex + " ");
+			}
+			pw.println();
+			pw.flush();
+		}
+		pw.close();
 	}	
 	
 	private static void populateClusters() throws IOException {
@@ -81,8 +95,33 @@ public class WordClass {
 				clusterNames.add(cluster);
 			}
 		}
+		br.close();
 		WordClass.numClusters = clusterNames.size();
 		System.out.println("Total clusters : " + clusterNames.size());
+	}
+	
+	public static void populateClustersFromSavedFile() throws IOException {
+		//only need to populate wordIndexToClusterIndex and clusterIndexToWordIndices
+		wordIndexToClusterIndex = new HashMap<Integer, Integer>();
+		clusterIndexToWordIndices = new HashMap<Integer, Set<Integer>>();
+		BufferedReader br = new BufferedReader(new FileReader(Config.baseDirModel + "cluster_vocabs.txt"));
+		String line;
+		while((line = br.readLine()) != null) {
+			line = line.trim();
+			if(line.isEmpty()) continue;
+			String[] splitted = line.split(":");
+			int clusterId = Integer.parseInt(splitted[0]);
+			String[] splittedWordIndices = splitted[1].split(" ");
+			Set<Integer> wordsInCluster = new HashSet<Integer>(); 
+			for(String wordIndexString : splittedWordIndices) {
+				int wordId = Integer.parseInt(wordIndexString);
+				wordsInCluster.add(wordId);
+				wordIndexToClusterIndex.put(wordId, clusterId);
+			}
+			clusterIndexToWordIndices.put(clusterId, wordsInCluster);
+		}
+		numClusters = clusterIndexToWordIndices.size();
+		System.out.println("Total clusters loaded: " + numClusters);
 		br.close();
 	}
 	
@@ -97,3 +136,4 @@ public class WordClass {
 		
 	}
 }
+ 

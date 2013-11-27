@@ -99,6 +99,7 @@ public class Main {
 	}
 
 	public static void load() throws IOException {
+		WordClass.populateClustersFromSavedFile();
 		model = new HMMNoFinalStateLog(Config.nrLayers, Config.numStates, corpus);
 		String filename = "variational_model_layers_" + Config.nrLayers + 
 				"_states_" + Config.numStates + 

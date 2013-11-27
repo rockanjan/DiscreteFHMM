@@ -38,7 +38,7 @@ public class Config {
 
 	//EM related
 	// convergence criteria
-	public static double precision = 1e-4;
+	public static double precision = 1e-6;
 	public static int maxConsecutiveDecreaseLimit = 50;
 	public static int maxConsecutiveConvergeLimit = 3;
 	public static int mStepIter = 20;
@@ -63,7 +63,7 @@ public class Config {
 	//LBFGS
 	public static double c2 = 0.00001; // L2-regularizer constant (higher means higher penalty)
 
-	public static boolean displayDetail = true;
+	public static boolean displayDetail = false;
 
 
 

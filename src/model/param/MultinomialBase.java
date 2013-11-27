@@ -12,8 +12,9 @@ public abstract class MultinomialBase {
 	//x,y == P(x given y)
 	int x,y;
 	public double[][] count;
-	public double[][] oldCount;
+	public double[][] oldCount; //for combining with adaptive weight for stochastic update
 	
+	public double[][] oldParams; //params before updating (for computing convergence by L1DiffNorm)
 	public void initializeUniformCounts() {
 		for(int i=0; i<x; i++) {
 			for(int j=0; j<y; j++) {
@@ -59,6 +60,7 @@ public abstract class MultinomialBase {
 	//oldCount stores the old actual sufficient statistics (counts), 
 	//count stores the recent probabilites (i.e parameters after normalizing)
 	public void cloneWeightedFrom(MultinomialBase source, double weight) {
+		oldParams = MyArray.getCloneOfMatrix(this.count);
 		if(oldCount == null) {
 			oldCount = MyArray.getCloneOfMatrix(source.count);
 		}

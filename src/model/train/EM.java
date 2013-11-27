@@ -105,6 +105,8 @@ public class EM {
 		//model.updateFromCounts(expectedCounts); //unweighted
 		Corpus.trainInstanceEStepSampleList.clearPosteriorProbabilities();
 		Corpus.trainInstanceEStepSampleList.clearDecodedStates();
+		model.updateL1Diff();
+		System.out.println("l1MaxDiffInit = " + model.param.l1DiffInitialMax + " l1MaxDiffTrans = " + model.param.l1DiffTransitionMax);
 	}
 	
 	public void trainLBFGSJoint() {

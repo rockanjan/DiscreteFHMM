@@ -21,6 +21,9 @@ public abstract class HMMParamBase {
 	public LogLinearWeightsClass weightsClass;
 	public LogLinearWeightsClass expWeightsClass;
 	
+	public double l1DiffInitialMax = 1; //max difference =1
+	public double l1DiffTransitionMax = 1; //max difference = 1
+	
 	public HMMBase model;
 
 	int nrStatesWithFake = -1; //the extending class should initialize this (for no fake, equals nrStates)

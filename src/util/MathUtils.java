@@ -182,6 +182,28 @@ public class MathUtils {
 		return Math.sqrt(differenceNorm);
 	}
 	
+	/*
+	 * returns max of the L1 norm difference in the elements
+	 */
+	public static double expMatrixDifferenceL1NormMax(double[][] A, double[][] B) {
+		int m = A.length;
+		int n = A[0].length;
+		if(B.length != m || B[0].length != n) {
+			throw new RuntimeException("Matrix dimensions mismatch");
+		}
+		
+		double maxDiff = -Double.MAX_VALUE;
+		for(int i=0; i<m; i++) {
+			for(int j=0; j<n; j++) {
+				double diff = Math.abs(Math.exp(A[i][j]) - Math.exp(B[i][j]));
+				if(diff > maxDiff) {
+					maxDiff = diff;
+				}
+			}
+		}
+		return maxDiff;
+	}
+	
 	public static void matrixElementWiseMultiplication(double[][] A, double value) {
 		for(int i=0; i<A.length; i++) {
 			for(int j=0; j<A[0].length; j++) {

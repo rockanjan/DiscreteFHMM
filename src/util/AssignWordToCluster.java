@@ -2,12 +2,9 @@ package util;
 
 import java.io.BufferedReader;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
-import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -18,11 +15,11 @@ import java.util.Map;
 public class AssignWordToCluster {
 	
 	public static void main(String[] args) throws NumberFormatException, IOException {
-		String inFile="brown_train.txt.decoded";
+		String inFile="rcv1.txt.SPL.decoded";
 		Map<String, ClusterCount> wordToClusterCounts; //stores the count of clusters for each word
 		wordToClusterCounts = new HashMap<String, ClusterCount>();
 		int clusterSize = findNumberOfClusters();
-		
+		System.out.println("Cluster size = " + clusterSize);
 		int WORD_COL = 2;
 		int HMM_COL = 1;
 		//BufferedReader br = new BufferedReader(new FileReader(inFile));
@@ -58,6 +55,6 @@ public class AssignWordToCluster {
 	
 	private static int findNumberOfClusters() {
 		//TODO
-		return 100;
+		return 200;
 	}
 }

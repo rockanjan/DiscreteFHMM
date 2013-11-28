@@ -8,23 +8,22 @@ import java.util.Random;
 public class Config {
 	public static long seed = 1;
 	public static Random random = new Random(seed);
-	public static int numIter = 200;
-	public static int nrLayers = 2;
+	public static int numIter = 500;
+	public static int nrLayers = 5;
 	public static int numStates = 10;
-	public final static int USE_THREAD_COUNT = 2;
-	public static int vocabThreshold = 3;
+	public final static int USE_THREAD_COUNT = 8;
+	public static int vocabThreshold = 1;
 	
-	//public static final String wordClusterFile = "brown-brown-cluster.txt";
-	public static final String wordClusterFile = "brown_train.txt.decoded.cluster";
+	public static final String wordClusterFile = "rcv1.txt.SPL.decoded.cluster";
 
 	public static final String baseDirData = "data/";
 	public static final String baseDirModel = "out/model/";
 	public static final String baseDirDecode = "out/decoded/";
 
-	public static String trainFile = "brown_train.txt";
+	public static String trainFile = "rcv1.txt.SPL";
 	public static String vocabFile = trainFile;
-	public static String testFile = "brown_test.txt";
-	public static String devFile = "brown_dev.txt";
+	public static String testFile = "combined.txt.SPL";
+	public static String devFile = "combined.txt.SPL.cleaned";
 
 	public static String outFileTrain = trainFile + ".decoded";
 	public static String outFileTest = testFile + ".decoded";
@@ -40,9 +39,8 @@ public class Config {
 	public static int modelSaveInterval = 10;
 	// convergence criteria
 	public static double precision = 1e-6;
-	public static int maxConsecutiveDecreaseLimit = 50;
 	public static int maxConsecutiveConvergeLimit = 3;
-	public static int mStepIter = 20;
+	public static int mStepIter = 100;
 	public static int convergenceIterInterval = 1; //after how many iters to check the convergence on dev data
 
 	//online learning params
@@ -55,9 +53,9 @@ public class Config {
 	public static boolean sampleSequential = true;
 	public static double alpha = 0.5;
 	public static double t0 = 2;
-	public static int sampleSizeEStep = 500;
+	public static int sampleSizeEStep = 10000;
 	public static int sampleSizeMStep = sampleSizeEStep;
-	public static int sampleDevSize = 500;
+	public static int sampleDevSize = Integer.MAX_VALUE;
 	public static String vocabSamplingType = "unigram";
 	public static int VOCAB_SAMPLE_SIZE = 0;
 

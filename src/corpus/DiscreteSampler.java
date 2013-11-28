@@ -97,7 +97,7 @@ public class DiscreteSampler {
 		//verify that for indices which do not have alias, prob must be 1
 		for(int i=0; i<N; i++) {
 			if(alias[i] == -1) {
-				System.out.println("Alias = -1, prob= " + prob[i]);
+				//System.out.println("Alias = -1, prob= " + prob[i]);
 				if(Math.abs(prob[i] - 1) > 1e-5) {
 					throw new RuntimeException("Index with no alias does not have probability one, prob = " + prob[i]);
 				}
@@ -109,6 +109,17 @@ public class DiscreteSampler {
 	public int sample() {
 		int n = Config.random.nextInt(N);
 		double p = Config.random.nextDouble();
+		if(p > prob[n]) {
+			return alias[n];
+		} else {
+			return n;
+		}
+	}
+	
+	//returns int between [0,N-1]
+	public int sample(Random r) {
+		int n = Config.random.nextInt(N);
+		double p = r.nextDouble();
 		if(p > prob[n]) {
 			return alias[n];
 		} else {

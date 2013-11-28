@@ -330,6 +330,17 @@ public class MathUtils {
 		return std;
 	}
 	
+	public static double getEntropy(double[] distribution) {
+		double entropy = 0;
+		for(int i=0; i<distribution.length; i++) {
+			double prob = distribution[i];
+			if(prob != 0) {
+				entropy -= prob * Math.log(prob)/Math.log(2); 
+			}
+		}
+		return entropy;
+	}
+	
 	public static void main(String[] args) {
 		double a = 0.12;
 		double b = -20;

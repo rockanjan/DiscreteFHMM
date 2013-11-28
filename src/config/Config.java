@@ -12,7 +12,7 @@ public class Config {
 	public static int nrLayers = 5;
 	public static int numStates = 10;
 	public final static int USE_THREAD_COUNT = 8;
-	public static int vocabThreshold = 3;
+	public static int vocabThreshold = 1;
 	
 	public static final String wordClusterFile = "rcv1.txt.SPL.decoded.cluster";
 

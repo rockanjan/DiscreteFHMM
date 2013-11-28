@@ -37,6 +37,7 @@ public class Config {
 	public static double variationalConvergence = 1e-5;
 
 	//EM related
+	public static int modelSaveInterval = 10;
 	// convergence criteria
 	public static double precision = 1e-6;
 	public static int maxConsecutiveDecreaseLimit = 50;

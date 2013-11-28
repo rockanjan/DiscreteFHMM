@@ -26,11 +26,8 @@ public class EM {
 	Corpus c;
 	HMMBase model;
 
-	double bestOldLL = -Double.MAX_VALUE;
-	double LL = 0;
-
-	double bestOldLLDev = -Double.MAX_VALUE;
-	double devLL = 0;
+	double trainCll = 0;
+	double devCll = 0;
 
 	HMMParamBase expectedCounts;
 
@@ -81,8 +78,7 @@ public class EM {
 		System.out.format("Estep #sentences = %d, #tokens = %d\n",
 				Corpus.trainInstanceEStepSampleList.size(),
 				Corpus.trainInstanceEStepSampleList.numberOfTokens);
-		LL = Corpus.trainInstanceEStepSampleList.updateExpectedCounts(model, expectedCounts);
-		LL = LL/Corpus.trainInstanceEStepSampleList.numberOfTokens; //per token
+		Corpus.trainInstanceEStepSampleList.updateExpectedCounts(model, expectedCounts);		
 	}
 
 	public void mStep() {
@@ -127,9 +123,9 @@ public class EM {
 		}
 		System.out.println("Converged = " + converged);
 		System.out.println("joint Gradient call count = " + jointOptimizatble.gradientCallCount);
-		double cll = jointOptimizatble.getValue();
-		cll = cll / Corpus.trainInstanceMStepSampleList.numberOfTokens; //per token CLL
-		System.out.println("joint CLL = " + cll);
+		trainCll = jointOptimizatble.getValue();
+		trainCll = trainCll / Corpus.trainInstanceMStepSampleList.numberOfTokens; //per token CLL
+		System.out.println("train joint CLL = " + trainCll);
 		
 		//split params and assign it to the model
 		double[][] splittedParams = MyArray.splitVector(jointOptimizatble.getParameterVector(), initParamsWord.length);
@@ -143,7 +139,8 @@ public class EM {
 				model.param.weightsClass.weights,
 				adaptiveWeight);
 	}
-
+	
+	/*
 	public void trainLBFGS() {
 		// maximize CLL of the data
 		double[] initParams = MyArray.createVector(model.param.weights.weights);
@@ -165,13 +162,6 @@ public class EM {
 		System.out.println("CLL = " + cll);
 		//model.param.weights.weights = optimizable.getParameterMatrix(); //unweighted
 		
-		//geometric mean
-		/*
-		model.param.weights.weights = MathUtils.weightedAverageMatrix(optimizable.getParameterMatrix(),
-				model.param.weights.weights,
-				adaptiveWeight);
-		*/
-		//arithmetic mean
 		model.param.weights.weights = MathUtils.weightedAverageofLog(optimizable.getParameterMatrix(),
 				model.param.weights.weights,
 				adaptiveWeight);
@@ -195,19 +185,12 @@ public class EM {
 		double cll = optimizable.getValue();
 		cll = cll / Corpus.trainInstanceMStepSampleList.numberOfTokens; //per token CLL
 		System.out.println("class CLL = " + cll);
-		//model.param.weights.weights = optimizable.getParameterMatrix(); //unweighted
-		
-		//geometric mean
-		/*
-		model.param.weights.weights = MathUtils.weightedAverageMatrix(optimizable.getParameterMatrix(),
-				model.param.weights.weights,
-				adaptiveWeight);
-		*/
 		//arithmetic mean
 		model.param.weightsClass.weights = MathUtils.weightedAverageofLog(optimizable.getParameterMatrix(),
 				model.param.weightsClass.weights,
 				adaptiveWeight);
 	}
+	*/
 
 	public void start() throws FileNotFoundException {
 		if (model.hmmType == HMMType.WITH_NO_FINAL_STATE) {
@@ -226,112 +209,83 @@ public class EM {
 		for (iterCount = Main.lastIter + 1; iterCount < numIter; iterCount++) {
 			//sample new train instances
 			c.generateRandomTrainingEStepSample(Config.sampleSizeEStep, iterCount);
-			LL = 0;
 			// e-step
 			eStepTime.start();
 			oneIterEmTime.start();
 			eStep();
 			System.out.println("E-step time: " + eStepTime.stop());
-			double trainPerplexityJoint = Math.pow(2, -LL/Math.log(2));
-			System.out.println("Train perplexity : " + trainPerplexityJoint);
-
-			double diff = LL - bestOldLL;
 			// m-step
 			c.generateRandomTrainingMStepSample(Config.sampleSizeMStep);
 			mStepTime.start();
+			double oldTrainCll = trainCll;
 			mStep();
 			System.out.println("M-step time:" + mStepTime.stop());
 			Stats.totalFixes = 0;
 			StringBuffer display = new StringBuffer();
+			display.append("Iter="+iterCount);
+			
+			boolean isConvergedCll = false;
+			//Check on validation
 			if(Corpus.devInstanceList != null && iterCount % Config.convergenceIterInterval == 0) {
+				double[] paramsWord = MyArray.createVector(model.param.weights.weights);
+				double[] paramsClass = MyArray.createVector(model.param.weightsClass.weights);
+				double[] paramsJoint = MyArray.joinVectors(paramsWord, paramsClass);
 				c.generateRandomDevSample(Config.sampleDevSize);
-				System.out.println(String.format("Dev #sentence=%d, #tokens=%d", Corpus.devInstanceSampleList.size(), Corpus.devInstanceSampleList.numberOfTokens));
+				double oldDevCll = devCll;
+				//get devCll, but first, need to do inference
 				expectedCounts.initializeZerosInitialAndTransition(); //mstep already complete
-				devLL = Corpus.devInstanceSampleList.updateExpectedCounts(model, expectedCounts);
-				devLL = devLL / Corpus.devInstanceSampleList.numberOfTokens;
-				double devPerplexityJoint = Math.pow(2, -devLL/Math.log(2));
-				double devPerplexityCLL = Math.pow(2, -Corpus.devInstanceSampleList.getCLL(model.param.weights.weights)/Math.log(2)/Corpus.devInstanceSampleList.numberOfTokens);
-				double devPerplexityLL = Math.pow(2, -Corpus.devInstanceSampleList.LL /Math.log(2)/Corpus.devInstanceSampleList.numberOfTokens);
-				System.out.println("Dev Perplexity LL = " + devPerplexityLL + " Joint = " + devPerplexityJoint + " CLL = " + devPerplexityCLL);
-				double devDiff = devLL - bestOldLLDev;
-				if(iterCount > 0) {
-					display.append(String.format("DevLL %.5f devDiff %.5f ", devLL, devDiff));
+				Corpus.devInstanceSampleList.updateExpectedCounts(model, expectedCounts); //update expectations
+				devCll = Corpus.devInstanceSampleList.getCLLJoint(paramsJoint);
+				devCll = devCll / Corpus.devInstanceSampleList.numberOfTokens;
+				double devCllDiff = devCll - oldDevCll;
+				if(isConvergedCll(devCllDiff)) {
+					isConvergedCll = true;
 				}
+				display.append(String.format(" devCll=%.5f dDiff=%.5f ", devCll, devCllDiff));
 				if(Math.pow(model.nrStates, model.nrLayers) <= 100) {
-                                        System.out.println("Checking Test Perplexity");
-                                        Main.checkTestPerplexity();
-                                }
-				if(isConverged()) {
-					break;
-				}
+                    System.out.println("Checking Test Perplexity");
+                    Main.checkTestPerplexity();
+                }
 			}
-			if (iterCount > 0) {
-				display.append(String.format("obj %.5f Diff %.5f \t Iter %d \t Fixes: %d \t iter time %s\n",LL, diff, iterCount,Stats.totalFixes, oneIterEmTime.stop()));
-			}
-			//only check if not check in dev done (because dev was null)
+			double trainCllDiff = trainCll - oldTrainCll;
 			if(Corpus.devInstanceList == null) {
-				if (isConverged()) {
-					break;
+				if(isConvergedCll(trainCllDiff)) {
+					isConvergedCll = true;
 				}
 			}
-			if(bestOldLL < LL) {
-				bestOldLL = LL;
+			model.updateL1Diff();
+			display.append(String.format("trainCll %.5f tDiff %.5f initDiff %.6f transDiff %.6f iter time %s\n",
+					trainCll, trainCllDiff, model.param.l1DiffInitialMax, model.param.l1DiffTransitionMax, oneIterEmTime.stop()));
+			System.out.println(display.toString());
+			
+			if(iterCount % Config.modelSaveInterval == 0 && iterCount > 0) {
+				model.saveModel(iterCount); //save every iteration
 			}
-			model.saveModel(iterCount); //save every iteration
 			//also save the file with the itercount
 			LastIter.write(iterCount);
+			//check convergence
+			if(model.isParamConverged() && isConvergedCll) {
+				convergeCount++;
+				if(convergeCount > Config.maxConsecutiveConvergeLimit) {
+					System.out.println("params and CLL converged. Saving the final model");
+					model.saveModel();
+					break;
+				}
+			} else {
+				convergeCount = 0; //reset
+			}
 			
-			System.out.println(display.toString());
-		}
-		if(Corpus.testInstanceList != null) {
-			double testLL = Corpus.testInstanceList.updateExpectedCounts(model, expectedCounts);
-			testLL = testLL / Corpus.testInstanceList.numberOfTokens;
-			double testPerplexity = Math.pow(2, -testLL/Math.log(2));
-			System.out.println("Test Perplexity : " + testPerplexity);
 		}
 		System.out.println("Total EM Time : " + totalEMTime.stop());
 	}
-
-	public boolean isConverged() {
-		//if no dev data, use training data itself for convergence test
-		if(Corpus.devInstanceList == null) {
-			devLL = LL;
-			bestOldLLDev = bestOldLL;
-		}
-
-		double decreaseRatio = (devLL - bestOldLLDev) / Math.abs(bestOldLLDev);
-		// System.out.println("Decrease Ratio: %.5f " + decreaseRatio);
-		if (Config.precision > decreaseRatio && decreaseRatio > 0) {
-			convergeCount++;
-			if(convergeCount > Config.maxConsecutiveConvergeLimit) {
-				System.out.println("Converged. Saving the final model");
-				model.saveModel();
-				return true;
-			}
-		}
-		convergeCount = 0;
-		if (devLL < bestOldLLDev) {
-			if (lowerCount == 0) {
-				// cache the best model so far
-				System.out.println("Caching the best model so far");
-				if (model.bestParam != null) {
-					model.bestParam.cloneFrom(model.param);
-				}
-			}
-			lowerCount++;
-			if (lowerCount == Config.maxConsecutiveDecreaseLimit) {
-				System.out.format("Saying Converged: LL could not increase for %d consecutive iterations\n",
-						Config.maxConsecutiveDecreaseLimit);
-				if (model.bestParam != null) {
-					model.param.cloneFrom(model.bestParam);
-				}
-				return true;
-			}
-			return false;
-		} else {
-			lowerCount = 0;
-			bestOldLLDev= devLL;
+	
+	public boolean isConvergedCll(double cllDiff) {
+		if(cllDiff < 0) {
 			return false;
 		}
+		if(Math.abs(cllDiff) > Config.precision) {
+			return false;
+		}
+		return true;
 	}
 }

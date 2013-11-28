@@ -4,12 +4,18 @@ import java.util.Random;
 
 import corpus.DiscreteSampler;
 
-public class ClusterCount {
+/*
+ * Data structure for Word and cluster
+ */
+public class WordClusterDS {
 	String word;
 	public int[] counts;
+	double[] distribution;
 	DiscreteSampler sampler;
+	public double entropy; //entropy of the distribution of clusters in the word
+	public int assignedCluster;
 	
-	public ClusterCount(int size) {
+	public WordClusterDS(int size) {
 		counts = new int[size];
 	}
 	
@@ -18,7 +24,7 @@ public class ClusterCount {
 		for(int i=0; i<counts.length; i++) {
 			sum += counts[i];
 		}
-		double[] distribution = new double[counts.length];
+		distribution = new double[counts.length];
 		for(int i=0; i<counts.length; i++) {
 			distribution[i] = 1.0 * counts[i] / sum;
 		}

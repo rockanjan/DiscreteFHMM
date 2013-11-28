@@ -22,10 +22,10 @@ import cc.mallet.util.CommandOption.Set;
  * approach: assign most frequent cluster for the word
  */
 public class AssignWordToCluster {
-	static String inFile="brown_train.txt.decoded";
+	static String inFile="rcv1.txt.SPL.decoded";
 	static int WORD_COL = 2;
 	static int HMM_COL = 1;
-	static int MAX_WORDS_PER_CLUSTER = 200;
+	static int MAX_WORDS_PER_CLUSTER = 1000;
 	
 	static int numClusters;
 	static Map<String, WordClusterDS> wordToClusterCounts; //stores the count of clusters for each word

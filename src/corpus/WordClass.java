@@ -43,7 +43,7 @@ public class WordClass {
 			if(wordIndex == 0) {
 				oovCount++;
 				if(oovCount > 1) {
-					System.err.println("WARN: number of OOV words found = " + oovCount);
+					System.err.println("WARN: number of OOV words found = " + oovCount + " word = " + word);
 				}
 			}
 			wordIndexToClusterIndex.put(wordIndex, clusterIndex);
@@ -54,6 +54,9 @@ public class WordClass {
 			} else {
 				clusterIndexToWordIndices.get(clusterIndex).add(wordIndex);
 			}
+		}
+		if(oovCount > 0) {
+			System.exit(-1);
 		}
 		System.out.println("Word index to Cluster index size = " + wordIndexToClusterIndex.size());
 		//view one cluster

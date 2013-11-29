@@ -55,7 +55,8 @@ public class WordClass {
 				clusterIndexToWordIndices.get(clusterIndex).add(wordIndex);
 			}
 		}
-		if(oovCount > 0) {
+		if(oovCount > 1) {
+			System.err.println("Exiting because too many oovs found");
 			System.exit(-1);
 		}
 		System.out.println("Word index to Cluster index size = " + wordIndexToClusterIndex.size());

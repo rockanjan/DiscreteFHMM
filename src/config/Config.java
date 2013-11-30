@@ -14,7 +14,7 @@ public class Config {
 	public final static int USE_THREAD_COUNT = 2;
 	public static int vocabThreshold = 3;
 	
-	public static final String wordClusterFile = "brown_train.txt.decoded.cluster.split";
+	public static final String wordClusterFile = "brown_train.txt.decoded.cluster.random";
 
 	public static final String baseDirData = "data/";
 	public static final String baseDirModel = "out/model/";

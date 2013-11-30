@@ -9,8 +9,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-import cc.mallet.grmm.learning.ACRF.UnigramTemplate;
-
 import util.SmoothWord;
 
 public class Vocabulary {

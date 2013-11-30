@@ -25,7 +25,7 @@ public class WordClass {
 			throw new RuntimeException("Corpus vocab should be initialized before populating word class info");
 		}
 		populateClusters(); //get dictionary of cluster and create indices
-		
+			
 		wordIndexToClusterIndex = new HashMap<Integer, Integer>();
 		clusterIndexToWordIndices = new HashMap<Integer, Set<Integer>>();
 		String file = Config.wordClusterFile;
@@ -55,7 +55,8 @@ public class WordClass {
 				clusterIndexToWordIndices.get(clusterIndex).add(wordIndex);
 			}
 		}
-		if(oovCount > 0) {
+		if(oovCount > 1) {
+			System.out.println("Exiting because OOV count > 1");
 			System.exit(-1);
 		}
 		System.out.println("Word index to Cluster index size = " + wordIndexToClusterIndex.size());

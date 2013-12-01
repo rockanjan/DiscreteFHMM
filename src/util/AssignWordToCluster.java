@@ -22,7 +22,7 @@ import cc.mallet.util.CommandOption.Set;
  * approach: assign most frequent cluster for the word
  */
 public class AssignWordToCluster {
-	static String inFile="brown_train.txt.decoded";
+	static String inFile="/home/anjan/workspace/HMM/pos.decoded";
 	static int WORD_COL = 2;
 	static int HMM_COL = 1;
 	static int MAX_WORDS_PER_CLUSTER = 1000;
@@ -36,13 +36,12 @@ public class AssignWordToCluster {
 	public static void main(String[] args) throws NumberFormatException, IOException {
 		findNumClusters();
 		populateWordToClusterCount();
-		setRandomAssignment();
-		printWordCluster(inFile + ".cluster.random");
-		//setMaxAssignment();
-		//printWordCluster(inFile + ".cluster.max");
-		//split clusters with many words (based on the entropy)
-		//splitClusters();
-		//printWordCluster(inFile + ".cluster.split");
+		//setRandomAssignment();
+		//printWordCluster(inFile + ".cluster.random");
+		setMaxAssignment();
+		printWordCluster(inFile + ".cluster.max");
+		splitClusters();
+		printWordCluster(inFile + ".cluster.split");
 		
 	}	
 	

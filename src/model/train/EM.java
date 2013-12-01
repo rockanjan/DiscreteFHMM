@@ -207,6 +207,8 @@ public class EM {
 		Timing mStepTime = new Timing();
 		Timing oneIterEmTime = new Timing();
 		for (iterCount = Main.lastIter + 1; iterCount < numIter; iterCount++) {
+			double memoryUsed = 1.0 * Runtime.getRuntime().totalMemory() / 1024 / 1024;
+			System.out.println( memoryUsed + " MB");
 			//sample new train instances
 			c.generateRandomTrainingEStepSample(Config.sampleSizeEStep, iterCount);
 			// e-step

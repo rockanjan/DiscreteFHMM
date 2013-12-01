@@ -80,7 +80,7 @@ public class Corpus {
 		System.out.println("Dev Instances: " + devInstanceList.size());
 		System.out.println("Dev token count: " + totalWords);
 		double percent = 100.0 * totalUnknown / totalWords;
-                System.out.format("Dev Unknown Count = %d, precent = %.2f\n", totalUnknown, percent);
+                System.out.format("Dev Unknown Count = %d, percent = %.2f\n", totalUnknown, percent);
 		br.close();
 	}
 
@@ -108,7 +108,7 @@ public class Corpus {
 		System.out.println("Test Instances: " + testInstanceList.size());
 		System.out.println("Test token count: " + totalWords);
 		double percent = 100.0 * totalUnknown / totalWords;
-                System.out.format("Test Unknown Count = %d, precent = %.2f\n", totalUnknown, percent);
+                System.out.format("Test Unknown Count = %d, percent = %.2f\n", totalUnknown, percent);
 		br.close();
 
 	}
@@ -137,7 +137,7 @@ public class Corpus {
 		System.out.println("Train Instances: " + trainInstanceList.size());
 		System.out.println("Train token count: " + totalWords);
 		double percent = 100.0 * totalUnknown / totalWords;
-		System.out.format("Train Unknown Count = %d, precent = %.2f\n", totalUnknown, percent);
+		System.out.format("Train Unknown Count = %d, percent = %.2f\n", totalUnknown, percent);
 		br.close();
 	}
 

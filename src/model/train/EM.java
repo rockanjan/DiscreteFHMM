@@ -208,7 +208,7 @@ public class EM {
 		Timing oneIterEmTime = new Timing();
 		for (iterCount = Main.lastIter + 1; iterCount < numIter; iterCount++) {
 			double memoryUsed = 1.0 * (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / 1024 / 1024;
-			System.out.println( "Memory Used = " + memoryUsed + " MB");
+			System.out.format("Memory Used = %.2f MB\n",memoryUsed);
 			//sample new train instances
 			c.generateRandomTrainingEStepSample(Config.sampleSizeEStep, iterCount);
 			// e-step

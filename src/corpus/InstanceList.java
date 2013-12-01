@@ -69,6 +69,9 @@ public class InstanceList extends ArrayList<Instance> {
 				instance.forwardBackwardList.get(l).addToCounts(expectedCounts);
 			}
 			instance.varParam = null;
+			//clear forward/backword
+			instance.forwardBackwardList.clear();
+			instance.forwardBackwardList = null;
 		}
 		//clear expWeights;				
 		model.param.expWeights = null;
@@ -244,10 +247,15 @@ public class InstanceList extends ArrayList<Instance> {
 		double[][] splittedParams = MyArray.splitVector(parameterVector, splitIndex);
 		double[][] wordParamMatrix = MyArray.createMatrix(splittedParams[0], Corpus.corpusVocab.get(0).vocabSize);
 		double[][] classParamMatrix = MyArray.createMatrix(splittedParams[1], WordClass.numClusters);
+		splittedParams = null;
 		double[][] wordGradient = getGradient(wordParamMatrix);
+		wordParamMatrix = null;
 		double[][] classGradient = getGradientClass(classParamMatrix);
+		classParamMatrix = null;
 		double[] wordGradientVector = MyArray.createVector(wordGradient);
 		double[] classGradientVector = MyArray.createVector(classGradient);
+		wordGradient = null;
+		classGradient = null;
 		return MyArray.joinVectors(wordGradientVector, classGradientVector);
 	}
 	

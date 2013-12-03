@@ -154,6 +154,14 @@ public abstract class HMMBase {
 			e.printStackTrace();
 			return null;
 		}
+		if(Config.removeOldIterModels) {
+			File oldFile = new File(folder.getAbsolutePath() + "/variational_model_layers_"
+					+ nrLayers + "_states_" + nrStates + "_iter_" + (iterCount - Config.modelSaveInterval) 
+					+ ".txt");
+			if(oldFile.exists()) {
+				oldFile.delete();
+			}
+		}
 		return folder.getAbsolutePath();
 	}
 

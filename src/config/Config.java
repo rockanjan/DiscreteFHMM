@@ -37,6 +37,7 @@ public class Config {
 
 	//EM related
 	public static int modelSaveInterval = 10;
+	public static boolean removeOldIterModels = true;
 	// convergence criteria
 	public static double precision = 1e-6;
 	public static int maxConsecutiveConvergeLimit = 3;

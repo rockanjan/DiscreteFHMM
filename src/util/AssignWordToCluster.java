@@ -3,8 +3,10 @@ package util;
 import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
@@ -22,7 +24,7 @@ import cc.mallet.util.CommandOption.Set;
  * approach: assign most frequent cluster for the word
  */
 public class AssignWordToCluster {
-	static String inFile="/home/anjan/workspace/HMM/pos.decoded";
+	static String inFile="/home/anjan/workspace/HMM/out/decoded/nepali_50layers_seed1/nepali_train.txt.decoded";
 	static int WORD_COL = 2;
 	static int HMM_COL = 1;
 	static int MAX_WORDS_PER_CLUSTER = 1000;
@@ -105,8 +107,8 @@ public class AssignWordToCluster {
 		System.out.println("Num clusters after splitting = " + numClusters);
 	}
 	
-	public static void printWordCluster(String outFile) throws FileNotFoundException {
-		PrintWriter pw = new PrintWriter(outFile);
+	public static void printWordCluster(String outFile) throws FileNotFoundException, UnsupportedEncodingException {
+		PrintWriter pw = new PrintWriter(new OutputStreamWriter(new FileOutputStream(outFile), "UTF-8"));
 		for(String word : wordToClusterCounts.keySet()) {
 		   	WordClusterDS wc = wordToClusterCounts.get(word);
 		   	pw.println(wc.assignedCluster + " " + word);

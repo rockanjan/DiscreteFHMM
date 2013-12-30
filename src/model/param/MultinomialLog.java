@@ -5,6 +5,7 @@ import java.util.Random;
 import util.MathUtils;
 import util.MyArray;
 import util.Stats;
+import config.Config;
 
 /*
  * Stores all probabilities in log
@@ -36,7 +37,7 @@ public class MultinomialLog extends MultinomialBase{
 	@Override
 	public void smooth() {
 		//add one smoothing
-		double small = 1;
+		double small = 0.1 / (Config.numStates * Config.numStates);
 		for(int i=0; i<y; i++) {
 			for(int j=0; j<x; j++) {
 				count[j][i] += small;				

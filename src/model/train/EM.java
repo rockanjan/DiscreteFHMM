@@ -21,6 +21,7 @@ import config.LastIter;
 import corpus.Corpus;
 import corpus.WordClass;
 
+
 public class EM {
 	int numIter;
 	Corpus c;
@@ -275,6 +276,10 @@ public class EM {
 				}
 			} else {
 				convergeCount = 0; //reset
+			}
+			if(iterCount > 0 && iterCount % 1300 == 0) {
+				Config.variationalIter += 5;
+				Config.mStepIter += 10;
 			}
 			
 		}

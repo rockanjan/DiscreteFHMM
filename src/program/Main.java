@@ -1,16 +1,9 @@
 package program;
 
-import java.io.BufferedReader;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import model.HMMBase;
@@ -72,9 +65,10 @@ public class Main {
 	public static void test() {
 		if(Corpus.testInstanceList != null) {
 			testVariational(model, Corpus.testInstanceList, Config.outFileTest);
-		} else {
-			testVariational(model, Corpus.trainInstanceList, Config.outFileTrain);
-		}
+		} 
+		//testVariational(model, Corpus.trainInstanceList, Config.outFileTrain);
+		testVariational(model, Corpus.devInstanceList, Config.outFileDev);
+		
 	}
 	
 	public static void initializeNewModel() throws IOException {
@@ -192,10 +186,10 @@ public class Main {
 							sb.append("|" + i.posteriors[m][t][state]);
 						}
 					}
-					pw.println(sb.toString());
-					pw.flush();
+					pwPosterior.println(sb.toString());
+					pwPosterior.flush();
 				}
-				pw.println();
+				pwPosterior.println();
 				i.clearInference();
 			}
 			pwPosterior.close();

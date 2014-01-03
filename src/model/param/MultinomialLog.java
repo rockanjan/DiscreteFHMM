@@ -37,7 +37,7 @@ public class MultinomialLog extends MultinomialBase{
 	@Override
 	public void smooth() {
 		//add one smoothing
-		double small = 0.1 / (Config.numStates * Config.numStates);
+		double small = 0.1 / (x*y);
 		for(int i=0; i<y; i++) {
 			for(int j=0; j<x; j++) {
 				count[j][i] += small;				

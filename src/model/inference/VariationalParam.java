@@ -17,8 +17,6 @@ public class VariationalParam {
 	public HMMBase model;
 	public Instance instance;
 	
-	int M;
-	int K;
 	int V;
 	int T;
 	int C;
@@ -29,14 +27,12 @@ public class VariationalParam {
 	
 	public VariationalParam(HMMBase model, Instance instance) {
 		this.model = model;
-		M = model.nrLayers;
-		K = model.nrStates;
 		V = Corpus.corpusVocab.get(0).vocabSize;
 		this.C = model.nrClasses;
 		this.T = instance.T;
 		this.instance = instance;
 		
-		varParamObs = new VariationalParamObservation(M, T, K);
+		varParamObs = new VariationalParamObservation(model.states, T);
 		//varParamObs.initializeRandom();
 		varParamObs.initializeFromObsAndClassParam(model.param, instance);
 		alphaY = new VariationalParamAlpha(T); //actually phi in derivation
@@ -48,7 +44,7 @@ public class VariationalParam {
 	
 	public void optimize() {
 		for(int t=0; t<instance.T; t++) {
-			if(M > 1) {
+			if(model.states.length > 1) {
 				createCacheLogFix(t); //for Y
 				createCacheLogFixClass(t); //for class
 				optimizeAlphaY(t);
@@ -66,7 +62,7 @@ public class VariationalParam {
 		Set<Integer> wordsInCluster = WordClass.clusterIndexToWordIndices.get(wordCluster);
 		for(int y : wordsInCluster) {
 			double prodLog = 0.0;
-			for(int n=0; n<M; n++) {
+			for(int n=0; n<model.states.length; n++) {
 				double dot = MathUtils.dot(model.param.expWeights.getStateVector(n, y), 
 						instance.forwardBackwardList.get(n).posterior[t]);
 				if(dot == 0) {
@@ -84,7 +80,7 @@ public class VariationalParam {
 		prodCacheClass = new HashMap<Integer, Double>();
 		for(int c=0; c<C; c++) {
 			double prodLog = 0.0;
-			for(int n=0; n<M; n++) {
+			for(int n=0; n<model.states.length; n++) {
 				double dot = MathUtils.dot(model.param.expWeightsClass.getStateVector(n, c), 
 						instance.forwardBackwardList.get(n).posterior[t]);
 				if(dot == 0) {
@@ -105,33 +101,33 @@ public class VariationalParam {
 	
 	
 	public void optimizeParamObsNew(int t) {
-		if(M > 1) {
+		if(model.states.length > 1) {
 			// shi_mt = theta_mt + theta _mCt 
 			// - phi_tY sum_Y_in_Ct( (prod_n!=m ( <s_tn>dot exp(theta_nY) * exp(theta_mY))))
 			// - phi_tC sum_C(prod_n!=m ( <s_tn> dot exp(theta_nC) * exp(theta_mC)))
 			
-			for(int m=0; m<M; m++) {
+			for(int m=0; m<model.states.length; m++) {
 				
 				//for words in the cluster of current word
-				double[] sumOverY = new double[K];
+				double[] sumOverY = new double[model.states[m]];
 				int wordCluster = WordClass.wordIndexToClusterIndex.get(instance.words[t][0]);
 				Set<Integer> wordsInCluster = WordClass.clusterIndexToWordIndices.get(wordCluster);
 				for(int y : wordsInCluster) {
 					double allProd = prodCache.get(y);
 					double prod = allProd / MathUtils.dot(model.param.expWeights.getStateVector(m, y), 
 							instance.forwardBackwardList.get(m).posterior[t]); //all prod except m'th layer
-					for(int k=0; k<K; k++) {
+					for(int k=0; k<model.states[m]; k++) {
 						sumOverY[k] += prod * model.param.expWeights.getStateVector(m, y)[k];
 					}
 				}
 				
 				//for class
-				double[] sumOverC = new double[K];
+				double[] sumOverC = new double[model.states[m]];
 				for(int c=0; c<C; c++) {
 					double allProd = prodCacheClass.get(c);
 					double prod = allProd / MathUtils.dot(model.param.expWeightsClass.getStateVector(m, c), 
 							instance.forwardBackwardList.get(m).posterior[t]); //all prod except m'th layer
-					for(int k=0; k<K; k++) {
+					for(int k=0; k<model.states[m]; k++) {
 						sumOverC[k] += prod * model.param.expWeightsClass.getStateVector(m, c)[k];
 					}
 				}
@@ -139,8 +135,8 @@ public class VariationalParam {
 				
 				double normalizer = 0;
 				double maxOverK = -Double.MAX_VALUE;
-				double[] updateValue = new double[K];
-				for(int k=0; k<K; k++) {
+				double[] updateValue = new double[model.states[m]];
+				for(int k=0; k<model.states[m]; k++) {
 					double prodY = alphaY.alpha[t] * sumOverY[k];
 					double prodC = alphaC.alpha[t] * sumOverC[k];
 					
@@ -154,17 +150,17 @@ public class VariationalParam {
 				}
 				normalizer = MathUtils.logsumexp(updateValue);
 				//normalize and update				
-				for(int k=0; k<K; k++) {
+				for(int k=0; k<model.states[m]; k++) {
 					//varParamObs.shi[m][t][k] = updateValue[k] - maxOverK;
 					varParamObs.shi[m][t][k] = updateValue[k] - normalizer;
 					MathUtils.check(varParamObs.shi[m][t][k]);
 				}
 			}
 		} else {
-			for(int m=0; m<M; m++) {
+			for(int m=0; m<model.states.length; m++) {
 				double normalizer = 0;
-				double[] updateValue = new double[K];
-				for(int k=0; k<K; k++) {
+				double[] updateValue = new double[model.states[m]];
+				for(int k=0; k<model.states[m]; k++) {
 					updateValue[k] = model.param.weights.get(m, k, instance.words[t][0]);
 				}
 			}

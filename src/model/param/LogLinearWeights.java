@@ -1,69 +1,72 @@
 package model.param;
 
+import java.util.Arrays;
 import java.util.Random;
 
-import config.Config;
-
 public class LogLinearWeights {
-	public double[][] weights; //weights for the log-linear model
-	
+	public double[] weights; //weights for the log-linear model
 	public int vocabSize;
-	public static int conditionalSize;
-	
-	/*
-	 * @param vocabSize = number of distinct observation tokens
-	 * @param conditionSize = dimension of current hidden layer, |X|  
-	 * and sum of dimensions of previous decodes states |Z_vector|
-	 */
-	public LogLinearWeights(int vocabSize, int xzSize) {
+	public static int[] states;
+	public static int length;
+	public static int sumKOverAllLayers;
+	public LogLinearWeights(int vocabSize, int[] states) {
 		this.vocabSize = vocabSize;
-		//this.conditionalSize = xzSize + 1;		 //1 for offset
-		this.conditionalSize = xzSize;
+		this.states = states;
+		length = vocabSize;
+		sumKOverAllLayers = 0;
+		for(int m=0; m<states.length; m++) {
+			length *= states[m];
+			sumKOverAllLayers += states[m];
+		}
 	}
 	
 	public double[] getStateVector(int m, int v) {
-		double[] vector = new double[Config.numStates];
-		for(int i=0; i<Config.numStates; i++) {
-			vector[i] = weights[v][m*Config.numStates + i];
-		}
-		return vector;
+		int startIndex = getIndex(m, 0, v);
+		return Arrays.copyOfRange(weights, startIndex, startIndex + states[m]);
 	}
 	
-	public static int getIndex(int m, int k) {
-		return m * Config.numStates + k;
+	/*
+	 * for V
+	 * 	  for m
+	 * 		for k
+	 * then, index = v * (sum_m' K_m') + sum_{m' < m} K_m' + k
+	 */
+	public static int getIndex(int m, int k, int v) {
+		int sumKUptom = 0;
+		for(int n=0; n<m; n++) {
+			sumKUptom += states[n];
+		}
+		return v * sumKOverAllLayers + sumKUptom + k;
+		
 	}
 	
 	public double get(int m, int k, int v) {
-		//return weights[v][m*k + k];
-		return weights[v][m * Config.numStates + k];	
+		return weights[getIndex(m, k, v)];	
 	}
 	
 	public void set(int m, int k, int v,  double value) {
-		weights[v][m * Config.numStates + k] = value;	
+		weights[getIndex(m, k, v)] = value;	
 	}
 	
 	public void initializeZeros() {
-		weights = new double[vocabSize][conditionalSize]; 
+		weights = new double[length]; 
 	}
 	
 	public void initializeUniform(double value) {
-		weights = new double[vocabSize][conditionalSize];
-		for(int y=0; y<vocabSize; y++) {
-			for(int u=0; u<conditionalSize; u++) {
-				weights[y][u] = value;
-			}
+		weights = new double[length];
+		for(int y=0; y<length; y++) {
+				weights[y] = value;			
 		}
 	}
 	
 	public void initializeRandom(Random r) {
-		weights = new double[vocabSize][conditionalSize];
-		for(int y=0; y<vocabSize; y++) {
-			for(int u=0; u<conditionalSize; u++) {
-				weights[y][u] = r.nextDouble();
-			}
+		weights = new double[length];
+		for(int y=0; y<length; y++) {
+			weights[y] = r.nextDouble();			
 		}
 	}	
 	
+	/*
 	public void initializeFromDifferentLayerModel(LogLinearWeights source) {
 		int sourceNrLayers = source.weights[0].length / Config.numStates;
 		int thisNrLayers = this.weights[0].length / Config.numStates;
@@ -86,6 +89,7 @@ public class LogLinearWeights {
 			}
 		}
 	}
+	*/
 	
 	/*
 	public LogLinearWeights getClone() {
@@ -104,56 +108,47 @@ public class LogLinearWeights {
 	 * Clone with weights exp
 	 */
 	public LogLinearWeights getCloneExp() {
-		LogLinearWeights clone = new LogLinearWeights(vocabSize, conditionalSize);
+		LogLinearWeights clone = new LogLinearWeights(vocabSize, states);
 		clone.initializeZeros();
-		for(int i=0; i<vocabSize; i++) {
-			for(int j=0; j<conditionalSize; j++) {
-				clone.weights[i][j] = Math.exp(this.weights[i][j]);
-			}
+		for(int i=0; i<length; i++) {
+			clone.weights[i] = Math.exp(this.weights[i]);			
 		}
 		return clone;
 	}
 	
 	public void cloneFrom(LogLinearWeights source) {
-		for(int i=0; i<vocabSize; i++) {
-			for(int j=0; j<conditionalSize; j++) {
-				this.weights[i][j] = source.weights[i][j];
-			}
+		for(int i=0; i<length; i++) {
+				this.weights[i] = source.weights[i];
 		}
 	}
 	
 	public boolean equalsExact(LogLinearWeights other) {
 		boolean result = true;
-		if(other.weights.length != weights.length || other.weights[0].length != weights[0].length) {
+		if(other.weights.length != weights.length) {
 			result = false;
 			return result;
 		}
 		for(int i=0; i<weights.length; i++) {
-			for(int j=0; j<weights[0].length; j++) {
-				if(weights[i][j] != other.weights[i][j]) {
-					result = false;
-					break;
-					
-				}
+			if(weights[i] != other.weights[i]) {
+				result = false;
+				break;
 			}
+		
 		}
 		return result;
 	}
 	
 	public boolean equalsApprox(LogLinearWeights other) {
 		boolean result = true;
-		if(other.weights.length != weights.length || other.weights[0].length != weights[0].length) {
+		if(other.weights.length != weights.length) {
 			result = false;
 			return result;
 		}
 		for(int i=0; i<weights.length; i++) {
-			for(int j=0; j<weights[0].length; j++) {
-				if(Math.abs(weights[i][j] - other.weights[i][j]) > 1e-5) {
-					result = false;
-					break;
-					
-				}
-			}
+			if(Math.abs(weights[i] - other.weights[i]) > 1e-5) {
+				result = false;
+				break;
+			}		
 		}
 		return result;
 	}

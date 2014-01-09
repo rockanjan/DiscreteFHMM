@@ -14,7 +14,7 @@ public class ForwardBackwardLog extends ForwardBackward{
 		super();
 		this.model = model;
 		this.instance = instance;
-		this.nrStates = model.nrStates;
+		this.nrStates = model.states[layer];
 		this.layer = layer;
 		T = instance.T; 
 		initial = model.param.initial.get(layer);

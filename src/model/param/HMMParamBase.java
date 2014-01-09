@@ -3,15 +3,13 @@ package model.param;
 import java.util.ArrayList;
 import java.util.Random;
 
-import config.Config;
-
 import model.HMMBase;
 import model.HMMType;
 import util.MyArray;
 import corpus.Corpus;
 
 public abstract class HMMParamBase {
-	public int nrLayers;
+	int[] states;
 	public ArrayList<MultinomialBase> initial;
 	public ArrayList<MultinomialBase> transition;
 	
@@ -35,16 +33,15 @@ public abstract class HMMParamBase {
 	
 	public HMMParamBase(HMMBase model) {
 		this.model = model;
-		nrStates = model.nrStates;
-		this.nrLayers = model.nrLayers;
 		this.nrClasses = model.nrClasses;
+		this.states = model.states;
 	}
 	
 	public void initializeZerosInitialAndTransition() {
 		if(model.hmmType == HMMType.LOG_SCALE) {
 			initial = new ArrayList<MultinomialBase>();
 			transition = new ArrayList<MultinomialBase>();
-			for(int i=0; i<nrLayers; i++) {
+			for(int i=0; i<states.length; i++) {
 				MultinomialLog tempTrans = new MultinomialLog(nrStates, nrStates);
 				MultinomialLog tempInit = new MultinomialLog(nrStates, 1);
 				initial.add(tempInit);
@@ -59,17 +56,17 @@ public abstract class HMMParamBase {
 		if(model.hmmType == HMMType.LOG_SCALE) {
 			initial = new ArrayList<MultinomialBase>();
 			transition = new ArrayList<MultinomialBase>();
-			for(int i=0; i<nrLayers; i++) {
+			for(int i=0; i<states.length; i++) {
 				MultinomialLog tempTrans = new MultinomialLog(nrStates, nrStates);
 				MultinomialLog tempInit = new MultinomialLog(nrStates, 1);
 				initial.add(tempInit);
 				transition.add(tempTrans);
 			}
 			//initialize weights for the log-linear model
-			weights = new LogLinearWeights(Corpus.corpusVocab.get(0).vocabSize, nrLayers * nrStates);
+			weights = new LogLinearWeights(Corpus.corpusVocab.get(0).vocabSize, states);
 			weights.initializeZeros();
 			
-			weightsClass = new LogLinearWeightsClass(nrLayers, nrStates, nrClasses);
+			weightsClass = new LogLinearWeightsClass(states, nrClasses);
 			weightsClass.initializeZeros();
 		} else {
 			throw new UnsupportedOperationException("Not implemented");

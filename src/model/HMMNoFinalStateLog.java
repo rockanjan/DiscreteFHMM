@@ -14,13 +14,11 @@ public class HMMNoFinalStateLog extends HMMBase{
 		this.hmmType = HMMType.LOG_SCALE;
 	}
 
-	public HMMNoFinalStateLog(int nrLayers, int nrStates, Corpus c) {
+	public HMMNoFinalStateLog(int[] states, Corpus c) {
 		super();
-		this.nrStatesWithFake = nrStates;
-		this.nrStates = nrStates;
+		this.states = states;
 		this.corpus = c;
 		this.hmmType = HMMType.LOG_SCALE;
-		this.nrLayers = nrLayers;
 		this.nrClasses = WordClass.numClusters;
 	}
 

@@ -1,6 +1,7 @@
 package model.train;
 
 import java.io.FileNotFoundException;
+import java.util.Arrays;
 
 import model.HMMBase;
 import model.HMMType;
@@ -8,6 +9,7 @@ import model.param.HMMParamBase;
 import model.param.HMMParamFinalState;
 import model.param.HMMParamNoFinalState;
 import model.param.HMMParamNoFinalStateLog;
+import model.param.LogLinearWeights;
 import program.Main;
 import util.MathUtils;
 import util.MyArray;
@@ -19,7 +21,6 @@ import cc.mallet.optimize.Optimizer;
 import config.Config;
 import config.LastIter;
 import corpus.Corpus;
-import corpus.WordClass;
 
 
 public class EM {
@@ -107,9 +108,7 @@ public class EM {
 	}
 	
 	public void trainLBFGSJoint() {
-		double[] initParamsWord = MyArray.createVector(model.param.weights.weights);
-		double[] initParamsClass = MyArray.createVector(model.param.weightsClass.weights);
-		double[] initParamsJoint = MyArray.joinVectors(initParamsWord, initParamsClass);
+		double[] initParamsJoint = MyArray.joinVectors(model.param.weights.weights, model.param.weightsClass.weights);
 		CLLTrainerJoint jointOptimizatble = new CLLTrainerJoint(initParamsJoint, c);
 		
 		Optimizer jointOptimizer = new LimitedMemoryBFGS(jointOptimizatble);
@@ -129,70 +128,19 @@ public class EM {
 		System.out.println("train joint CLL = " + trainCll);
 		
 		//split params and assign it to the model
-		double[][] splittedParams = MyArray.splitVector(jointOptimizatble.getParameterVector(), initParamsWord.length);
-		double[][] wordParamMatrix = MyArray.createMatrix(splittedParams[0], c.corpusVocab.get(0).vocabSize);
-		double[][] classParamMatrix = MyArray.createMatrix(splittedParams[1], WordClass.numClusters);
-		model.param.weights.weights = MathUtils.weightedAverageofLog(wordParamMatrix,
+		int splitIndex = LogLinearWeights.length;
+		double[] wordParam = Arrays.copyOfRange(jointOptimizatble.getParameterVector(), 0, splitIndex);
+		double[] classParam = Arrays.copyOfRange(jointOptimizatble.getParameterVector(), splitIndex, jointOptimizatble.getParameterVector().length);
+		
+		model.param.weights.weights = MathUtils.weightedAverageofLog(wordParam,
 				model.param.weights.weights,
 				adaptiveWeight);
 		
-		model.param.weightsClass.weights = MathUtils.weightedAverageofLog(classParamMatrix,
+		model.param.weightsClass.weights = MathUtils.weightedAverageofLog(classParam,
 				model.param.weightsClass.weights,
 				adaptiveWeight);
 	}
 	
-	/*
-	public void trainLBFGS() {
-		// maximize CLL of the data
-		double[] initParams = MyArray.createVector(model.param.weights.weights);
-		CLLTrainer optimizable = new CLLTrainer(initParams, c);
-		Optimizer optimizer = new LimitedMemoryBFGS(optimizable);
-		boolean converged = false;
-		//optimizable.checkGradientComputation();
-		try {
-			converged = optimizer.optimize(Config.mStepIter);
-		} catch (IllegalArgumentException e) {
-			System.out.println("optimization threw exception: IllegalArgument");
-		} catch (OptimizationException oe) {
-			System.out.println("optimization threw OptimizationException");
-		}
-		System.out.println("Converged = " + converged);
-		System.out.println("Gradient call count = " + optimizable.gradientCallCount);
-		double cll = optimizable.getValue();
-		cll = cll / Corpus.trainInstanceMStepSampleList.numberOfTokens; //per token CLL
-		System.out.println("CLL = " + cll);
-		//model.param.weights.weights = optimizable.getParameterMatrix(); //unweighted
-		
-		model.param.weights.weights = MathUtils.weightedAverageofLog(optimizable.getParameterMatrix(),
-				model.param.weights.weights,
-				adaptiveWeight);
-	}
-	
-	public void trainLBFGSClass() {
-		double[] initParams = MyArray.createVector(model.param.weightsClass.weights);
-		CLLTrainerClass optimizable = new CLLTrainerClass(initParams, c);
-		Optimizer optimizer = new LimitedMemoryBFGS(optimizable);
-		boolean converged = false;
-		//optimizable.checkGradientComputation();
-		try {
-			converged = optimizer.optimize(Config.mStepIter);
-		} catch (IllegalArgumentException e) {
-			System.out.println("optimization threw exception: IllegalArgument");
-		} catch (OptimizationException oe) {
-			System.out.println("optimization threw OptimizationException");
-		}
-		System.out.println("Converged = " + converged);
-		System.out.println("Gradient call count = " + optimizable.gradientCallCount);
-		double cll = optimizable.getValue();
-		cll = cll / Corpus.trainInstanceMStepSampleList.numberOfTokens; //per token CLL
-		System.out.println("class CLL = " + cll);
-		//arithmetic mean
-		model.param.weightsClass.weights = MathUtils.weightedAverageofLog(optimizable.getParameterMatrix(),
-				model.param.weightsClass.weights,
-				adaptiveWeight);
-	}
-	*/
-
 	public void start() throws FileNotFoundException {
 		if (model.hmmType == HMMType.WITH_NO_FINAL_STATE) {
 			expectedCounts = new HMMParamNoFinalState(model);
@@ -245,10 +193,12 @@ public class EM {
 					isConvergedCll = true;
 				}
 				display.append(String.format(" devCll=%.5f dDiff=%.5f ", devCll, devCllDiff));
+				/*
 				if(Math.pow(model.nrStates, model.nrLayers) <= 100) {
                     System.out.println("Checking Test Perplexity");
                     Main.checkTestPerplexity();
                 }
+                */
 			}
 			double trainCllDiff = trainCll - oldTrainCll;
 			if(Corpus.devInstanceList == null) {

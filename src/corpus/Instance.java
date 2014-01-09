@@ -6,7 +6,6 @@ import java.util.Set;
 
 import model.HMMBase;
 import model.HMMPowModel;
-import model.HMMType;
 import model.inference.ForwardBackward;
 import model.inference.ForwardBackwardLog;
 import model.inference.VariationalParam;
@@ -26,7 +25,6 @@ public class Instance {
 	public List<ForwardBackward> forwardBackwardList;
 
 	// TODO: might change if we consider finalState hmm
-	public static int nrStates = Config.numStates;
 	public int unknownCount;
 	public HMMBase model;
 
@@ -69,13 +67,13 @@ public class Instance {
 		decodedStates = null;
 		this.model = model;
 		if(posteriors == null) {
-			posteriors = new double[model.nrLayers][][];
+			posteriors = new double[model.states.length][][];
 		}
 		logLikelihood = 0;
 		
 		if(forwardBackwardList == null) {
 			forwardBackwardList = new ArrayList<ForwardBackward>();
-			for (int l = 0; l < model.nrLayers; l++) {
+			for (int l = 0; l < model.states.length; l++) {
 				ForwardBackwardLog tempFB = new ForwardBackwardLog(model, this, l);
 				tempFB.doInference();
 				forwardBackwardList.add(tempFB);
@@ -83,7 +81,7 @@ public class Instance {
 			}
 		}
 		else {
-			for (int l = 0; l < model.nrLayers; l++) {
+			for (int l = 0; l < model.states.length; l++) {
 				ForwardBackwardLog tempFB = (ForwardBackwardLog) forwardBackwardList.get(l);
 				tempFB.doInference();
 				logLikelihood += tempFB.logLikelihood;
@@ -109,12 +107,12 @@ public class Instance {
 	 * decodes viterbi states in each layer
 	 */
 	public void decodeViterbi() {
-		decodedStates = new int[c.model.nrLayers][];
-		for (int l = 0; l < c.model.nrLayers; l++) {
+		decodedStates = new int[c.model.states.length][];
+		for (int l = 0; l < c.model.states.length; l++) {
 			int[] decoded = new int[T];
-			double[][] probLattice = new double[T][c.model.nrStates];
-			int[][] stateLattice = new int[T][c.model.nrStates];
-			for (int i = 0; i < c.model.nrStates; i++) {
+			double[][] probLattice = new double[T][c.model.states[l]];
+			int[][] stateLattice = new int[T][c.model.states[l]];
+			for (int i = 0; i < c.model.states[l]; i++) {
 				double init = c.model.param.initial.get(l).get(i, 0);
 				double obs = varParam.varParamObs.shi[l][0][i];
 				probLattice[0][i] = init + obs;
@@ -122,11 +120,11 @@ public class Instance {
 			double maxValue = -Double.MAX_VALUE;
 			int maxIndex = -1;
 			for (int t = 1; t < T; t++) {
-				for (int j = 0; j < c.model.nrStates; j++) {
+				for (int j = 0; j < c.model.states[l]; j++) {
 					double obs = varParam.varParamObs.shi[l][t][j];
 					maxValue = -Double.MAX_VALUE;
 					maxIndex = -1;
-					for (int i = 0; i < c.model.nrStates; i++) {
+					for (int i = 0; i < c.model.states[l]; i++) {
 						double value = probLattice[t - 1][i]
 								+ c.model.param.transition.get(l).get(j, i) + obs;
 						if (value > maxValue) {
@@ -140,7 +138,7 @@ public class Instance {
 			}
 			maxValue = -Double.MAX_VALUE;
 			maxIndex = -1;
-			for (int i = 0; i < c.model.nrStates; i++) {
+			for (int i = 0; i < c.model.states[l]; i++) {
 				if (probLattice[T - 1][i] > maxValue) {
 					maxValue = probLattice[T - 1][i];
 					decoded[T - 1] = i;
@@ -158,6 +156,7 @@ public class Instance {
 	/*
 	 * returns log(ObservationProb) or ObservationProb depending on the model
 	 */
+	/*
 	public double getObservationProbabilityUsingLLModel(int position) {
 		if (observationCache == null) {
 			observationCache = new double[T];
@@ -165,8 +164,7 @@ public class Instance {
 				double[] conditionalVector = getConditionalVector(t);
 				int observationIndex = this.words[t][0];
 				double[] expWeightObservation = c.model.param.expWeights.weights[observationIndex];
-				double numerator = MathUtils.expDot(expWeightObservation,
-						conditionalVector);
+				double numerator = MathUtils.expDot(expWeightObservation,conditionalVector);
 				double result = numerator
 						/ getExactNormalizer(t, c.model.param.expWeights.weights);
 				if (c.model.hmmType == HMMType.LOG_SCALE) {
@@ -177,6 +175,7 @@ public class Instance {
 		}
 		return observationCache[position];
 	}
+	*/
 	
 	public double getJointObjective() {
 		//TODO: important: inference should have already been done before calling this
@@ -187,17 +186,17 @@ public class Instance {
 		double stateObjective = 0.0;
 		
 		//initial
-		for(int m=0; m<Config.nrLayers; m++) {
-			for(int k=0; k<nrStates; k++) {
+		for(int m=0; m<Config.states.length; m++) {
+			for(int k=0; k<Config.states[m]; k++) {
 				stateObjective += forwardBackwardList.get(m).getStatePosterior(0, k) * 
 						model.param.initial.get(m).get(k, 0);  
 			}
 		}
 		//transition
-		for(int m=0; m<Config.nrLayers; m++) {
+		for(int m=0; m<Config.states.length; m++) {
 			for(int t=0; t<T-1; t++) {
-				for(int i=0; i<nrStates; i++) {
-					for(int j=0; j<nrStates; j++) {
+				for(int i=0; i<Config.states[m]; i++) {
+					for(int j=0; j<Config.states[m]; j++) {
 						double transPosterior = forwardBackwardList.get(m).getTransitionPosterior(i, j, t);
 						stateObjective += transPosterior * model.param.transition.get(m).get(j, i); 
 					}
@@ -209,39 +208,8 @@ public class Instance {
 		
 	}
 
-	public String getConditionalString(int t) {
-		StringBuffer sb = new StringBuffer();
-		for (int l = 0; l < Config.nrLayers; l++) {
-			sb.append(decodedStates[l][t]);
-			if (l != Config.nrLayers - 1) {
-				sb.append("+");
-			}
-		}
-		return sb.toString();
-	}
-
+	
 	/*
-	 * gets conditional vector using viterbi decoded (state is fixed for a time
-	 * t)
-	 */
-	public double[] getConditionalVector(int t) {
-		double[] conditionalVector = new double[c.model.param.weights.conditionalSize];
-		// fill the conditionVector
-		// conditionalVector[0] = 1.0; //offset
-		int index = 0;
-		for (int l = 0; l < c.model.nrLayers; l++) {
-			for (int i = 0; i < nrStates; i++) {
-				if (i == decodedStates[l][t]) {
-					conditionalVector[index] = 1.0;
-				} else {
-					conditionalVector[index] = 0.0;
-				}
-				index++;
-			}
-		}
-		return conditionalVector;
-	}
-
 	public double getConditionalLogLikelihoodUsingViterbi(double[][] expWeights) {
 		double cll = 0.0;
 		for (int t = 0; t < T; t++) {
@@ -254,13 +222,14 @@ public class Instance {
 		}
 		return cll;
 	}
+	*/
 	
-	public double getConditionalLogLikelihoodSoftWords(double[][] weights, double[][] expWeights) {
+	public double getConditionalLogLikelihoodSoftWords(double[] weights, double[] expWeights) {
 		double cll = 0.0;
 		for (int t = 0; t < T; t++) {
-			for(int m=0; m < model.nrLayers; m++) {
-				for(int k=0; k<model.nrStates; k++) {
-					cll += posteriors[m][t][k] * weights[words[t][0]][LogLinearWeights.getIndex(m, k)];
+			for(int m=0; m < model.states.length; m++) {
+				for(int k=0; k<model.states[m]; k++) {
+					cll += posteriors[m][t][k] * weights[LogLinearWeights.getIndex(m, k, words[t][0])];
 				}
 			}
 			
@@ -269,10 +238,10 @@ public class Instance {
 			double sumOverY = 0;
 			for(int y : wordsInCluster) {
 				double prod = 1.0;
-				for(int m=0; m<model.nrLayers; m++) {
+				for(int m=0; m<model.states.length; m++) {
 					double dot = 0;
-					for(int k=0; k<model.nrStates; k++) {
-						dot += posteriors[m][t][k] * expWeights[y][LogLinearWeights.getIndex(m, k)];
+					for(int k=0; k<model.states[m]; k++) {
+						dot += posteriors[m][t][k] * expWeights[LogLinearWeights.getIndex(m, k, y)];
 					}
 					prod *= dot;
 					MathUtils.check(prod);
@@ -287,23 +256,23 @@ public class Instance {
 		return cll;
 	}
 	
-	public double getConditionalLogLikelihoodSoftClasses(double[][] weightsClass, double[][] expWeightsClass) {
+	public double getConditionalLogLikelihoodSoftClasses(double[] weightsClass, double[] expWeightsClass) {
 		double cll = 0.0;
 		for (int t = 0; t < T; t++) {
 			int currentCluster = WordClass.wordIndexToClusterIndex.get(this.words[t][0]);
-			for(int m=0; m < model.nrLayers; m++) {
-				for(int k=0; k<model.nrStates; k++) {
-					cll += posteriors[m][t][k] * weightsClass[currentCluster][LogLinearWeightsClass.getIndex(m, k)];
+			for(int m=0; m < model.states.length; m++) {
+				for(int k=0; k<model.states[m]; k++) {
+					cll += posteriors[m][t][k] * weightsClass[LogLinearWeightsClass.getIndex(m, k, currentCluster)];
 				}
 			}
 			
 			double sumOverC = 0;
 			for(int c=0; c<model.nrClasses; c++) {
 				double prod = 1.0;
-				for(int m=0; m<model.nrLayers; m++) {
+				for(int m=0; m<model.states.length; m++) {
 					double dot = 0;
-					for(int k=0; k<model.nrStates; k++) {
-						dot += posteriors[m][t][k] * expWeightsClass[c][LogLinearWeightsClass.getIndex(m, k)];
+					for(int k=0; k<model.states[m]; k++) {
+						dot += posteriors[m][t][k] * expWeightsClass[LogLinearWeightsClass.getIndex(m, k, c)];
 					}
 					prod *= dot;
 					MathUtils.check(prod);

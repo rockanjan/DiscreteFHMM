@@ -1,7 +1,6 @@
 package util;
 
 import config.Config;
-import program.Main;
 
 public class MathUtils {
 	
@@ -70,6 +69,14 @@ public class MathUtils {
 			}
 		}
 		return expArray;
+	}
+	
+	public static double[] expVector(double[] vector) {
+		double[] expVector = new double[vector.length];
+		for(int i=0; i<vector.length; i++) {
+			expVector[i] = MathUtils.exp(vector[i]);
+		}
+		return expVector;
 	}
 	
 	public static double expDot(double[] expWeights, double[] conditional) {
@@ -163,6 +170,28 @@ public class MathUtils {
 			}
 		}
 		return averageMatrix;
+	}
+	
+	/*
+	 * first matrix weighted by weight and second by (1-weight), if in log scale, arithmetic mean
+	 */
+	public static double[] weightedAverageofLog(double[] first, double[] second, double weight) {
+		if(weight < 0 || weight > 1) {
+			throw new RuntimeException(String.format("Invalid weight %f, should be [0,1]", weight));
+		}
+		int m = first.length;
+		if(second.length != m) {
+			throw new RuntimeException("dimensions mismatch");
+		}
+		double[] average = new double[m];
+		for(int i=0; i<m; i++) {			
+			double value = weight * Math.exp(first[i]) + (1.0-weight) * Math.exp(second[i]);
+			if(value == 0) {
+				value = 1e-200;
+			}
+			average[i] = Math.log(value);			
+		}
+		return average;
 	}
 	
 	public static double matrixDifferenceNorm(double[][] A, double[][] B) {

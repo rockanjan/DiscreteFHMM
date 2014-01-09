@@ -9,21 +9,17 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Random;
 
-import util.MathUtils;
-
 import model.param.HMMParamBase;
 import model.param.HMMParamNoFinalStateLog;
+import util.MathUtils;
 import config.Config;
 import corpus.Corpus;
 import corpus.Vocabulary;
 import corpus.WordClass;
 
 public abstract class HMMBase {
-	public int nrLayers;
 	public Corpus corpus;
-	public int nrStatesWithFake = -1; // the extending class should initialize
-										// this (for no fake, equals nrStates)
-	public int nrStates = -1;
+	public int[] states = null;
 	public HMMParamBase param;
 	public HMMParamBase bestParam; // best found so far
 	public int nrClasses = -1;
@@ -48,7 +44,7 @@ public abstract class HMMBase {
 
 	public void updateFromCounts(HMMParamBase counts) {
 		// update sufficient statistics
-		for (int m = 0; m < nrLayers; m++) {
+		for (int m = 0; m < states.length; m++) {
 			param.initial.get(m).cloneFrom(counts.initial.get(m));
 			param.transition.get(m).cloneFrom(counts.transition.get(m));
 		}
@@ -58,7 +54,7 @@ public abstract class HMMBase {
 
 	public void updateFromCountsWeighted(HMMParamBase counts, double weight) {
 		// update weighted sufficient statistics
-		for (int m = 0; m < nrLayers; m++) {
+		for (int m = 0; m < states.length; m++) {
 			param.initial.get(m).cloneWeightedFrom(counts.initial.get(m),
 					weight);
 			param.transition.get(m).cloneWeightedFrom(counts.transition.get(m),
@@ -81,22 +77,28 @@ public abstract class HMMBase {
 			folder.mkdir();
 		}
 		String modelFile = "";
+		StringBuffer sb = new StringBuffer();
+		for(int s : Config.states) {
+			sb.append(s + "_");
+		}
+		
 		if (iterCount < 0) {
-			modelFile = folder.getAbsolutePath() + "/variational_model_layers_"
-					+ nrLayers + "_states_" + nrStates + "_final.txt";
+			modelFile = folder.getAbsolutePath() + "/variational_model_states_" + sb.toString() + "final.txt";
 		} else {
-			modelFile = folder.getAbsolutePath() + "/variational_model_layers_"
-					+ nrLayers + "_states_" + nrStates + "_iter_" + iterCount
-					+ ".txt";
+			modelFile = modelFile = folder.getAbsolutePath() + "/variational_model_states_" + sb.toString() + "iter_" + iterCount + ".txt";
 		}
 		PrintWriter pw;
 		try {
 			pw = new PrintWriter(modelFile);
-			pw.println(nrStates);
-			pw.println(nrLayers);
+			for(int m=0; m<states.length; m++) {
+				pw.print(states[m]);
+				if(m != states.length-1) {
+					pw.print(" ");
+				}
+			}
 			pw.println();
 			// initial
-			for (int z = 0; z < nrLayers; z++) {
+			for (int z = 0; z < states.length; z++) {
 				pw.println(param.initial.get(z).getConditionedSize());
 				for (int i = 0; i < param.initial.get(z).getConditionedSize(); i++) {
 					pw.print(param.initial.get(z).get(i, 0));
@@ -108,7 +110,7 @@ public abstract class HMMBase {
 			}
 			pw.println();
 			// transition
-			for (int z = 0; z < nrLayers; z++) {
+			for (int z = 0; z < states.length; z++) {
 				pw.println(param.transition.get(z).getConditionalSize());
 				pw.println(param.transition.get(z).getConditionedSize());
 				for (int j = 0; j < param.transition.get(z)
@@ -155,9 +157,8 @@ public abstract class HMMBase {
 			return null;
 		}
 		if(Config.removeOldIterModels) {
-			File oldFile = new File(folder.getAbsolutePath() + "/variational_model_layers_"
-					+ nrLayers + "_states_" + nrStates + "_iter_" + (iterCount - Config.modelSaveInterval) 
-					+ ".txt");
+			String oldFilename = folder.getAbsolutePath() + "/variational_model_states_" + sb.toString() + "iter_" + (iterCount - Config.modelSaveInterval) + ".txt";
+			File oldFile = new File(oldFilename);
 			if(oldFile.exists()) {
 				oldFile.delete();
 			}
@@ -167,10 +168,13 @@ public abstract class HMMBase {
 
 	public void loadModel(String filename) {
 		// load vocab file
+		StringBuffer sb = new StringBuffer();
+		for(int s : Config.states) {
+			sb.append(s + "_");
+		}
 		File folder = new File(Config.baseDirModel);
 		if (filename == null || filename.equals("")) {
-			filename = "variational_model_layers_" + nrLayers + "_states_"
-					+ nrStates + "_final.txt";
+			filename = folder.getAbsolutePath() + "/variational_model_states_" + sb.toString() + "final.txt";			
 		}
 		String modelFile = folder.getAbsolutePath() + "/" + filename;
 		if (Corpus.corpusVocab == null) {
@@ -184,25 +188,17 @@ public abstract class HMMBase {
 		BufferedReader modelReader;
 		try {
 			modelReader = new BufferedReader(new FileReader(modelFile));
-			int nrStatesRead = Integer.parseInt(modelReader.readLine());
-			int nrLayersRead = Integer.parseInt(modelReader.readLine());
-			if (nrStatesRead != nrStates) {
-				System.out.format(
-						"WARNING: read number of states = %d, model = %d \n",
-						nrStatesRead, nrStates);
-				System.exit(-1);
+			String[] statesString = modelReader.readLine().split("\\s+");
+			int[] statesRead = new int[statesString.length];
+			
+			for(int m=0; m<statesString.length; m++) {
+				statesRead[m] = Integer.parseInt(statesString[m]);
+				if(statesRead[m] != states[m]) {
+					System.err.format("Error reading states , m=%d, read=%d, model=%d", m, statesRead[m], states[m]);
+					System.exit(-1);
+				}
 			}
-			if (nrLayersRead != nrLayers) {
-				System.out.format(
-						"WARNING: read number of layers = %d, model = %d \n",
-						nrLayersRead, nrLayers);
-				System.exit(-1);
-			}
-			this.nrStates = nrStatesRead;
-			this.nrLayers = nrLayersRead;
-
-			this.nrStatesWithFake = this.nrStates;
-
+			
 			modelReader.readLine(); // empty line
 
 			param = new HMMParamNoFinalStateLog(this);
@@ -210,7 +206,7 @@ public abstract class HMMBase {
 			param.nrObs = Corpus.corpusVocab.get(0).vocabSize;
 			// initial
 
-			for (int z = 0; z < nrLayers; z++) {
+			for (int z = 0; z < states.length; z++) {
 				// pw.println(param.initial.get(z).getConditionedSize());
 				modelReader.readLine();
 				String[] initialProbs = modelReader.readLine().split("\\s+");
@@ -221,7 +217,7 @@ public abstract class HMMBase {
 				// modelReader.readLine();
 			}
 			modelReader.readLine();
-			for (int z = 0; z < nrLayers; z++) {
+			for (int z = 0; z < states.length; z++) {
 				// pw.println(param.transition.get(z).getConditionalSize());
 				// pw.println(param.transition.get(z).getConditionedSize());
 				modelReader.readLine();
@@ -291,7 +287,7 @@ public abstract class HMMBase {
 		}
 
 	}
-
+	/*
 	public void loadModelsFromIndependentHMM(String folderName) {
 		// load vocab file
 		File folder = new File(folderName);
@@ -409,12 +405,12 @@ public abstract class HMMBase {
 		System.out.println("Done");
 		System.out.println("Model loaded from independent HMM with 7 layers");
 	}
-
+	*/
 	public void updateL1Diff() {
 		// compute l1Norms for initial and transition
 		param.l1DiffInitialMax = -Double.MAX_VALUE;
 		param.l1DiffTransitionMax = -Double.MAX_VALUE;
-		for (int m = 0; m < nrLayers; m++) {
+		for (int m = 0; m < states.length; m++) {
 			double maxDiffInitialMthLayer = 1;
 			if (param.initial.get(m).oldParams != null) {
 				maxDiffInitialMthLayer = MathUtils
@@ -455,18 +451,19 @@ public abstract class HMMBase {
 		corpus.createArtificialVocab(100);
 		corpus.corpusVocab.get(0).writeDictionary(
 				Config.baseDirModel + "vocab.txt");
-		HMMBase model = new HMMNoFinalStateLog(Config.nrLayers,
-				Config.numStates, corpus);
+		HMMBase model = new HMMNoFinalStateLog(Config.states,corpus);
 		corpus.model = model;
 		model.initializeRandom(Config.random);
 		model.initializeZerosToBest();
 		model.param.expWeights = model.param.weights.getCloneExp();
 		model.param.check();
 		model.saveModel(20000);
-		HMMBase loadedModel = new HMMNoFinalStateLog(Config.nrLayers,
-				Config.numStates, corpus);
-		loadedModel.loadModel("variational_model_layers_" + Config.nrLayers
-				+ "_states_" + Config.numStates + "_iter_" + 20000 + ".txt");
+		HMMBase loadedModel = new HMMNoFinalStateLog(Config.states, corpus);
+		StringBuffer sb = new StringBuffer();
+		for(int s : Config.states) {
+			sb.append(s + "_");
+		}
+		loadedModel.loadModel("variational_model_states_" + sb.toString() + "iter_" + 20000 + ".txt");
 		if (model.param.equalsExact(loadedModel.param)) {
 			System.out.println("Two models equal exactly");
 		} else {

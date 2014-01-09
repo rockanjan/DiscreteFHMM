@@ -1,44 +1,35 @@
 package model.inference;
 
-import java.util.Random;
-
-import config.Config;
-
 import model.param.HMMParamBase;
-
-import corpus.Corpus;
+import config.Config;
 import corpus.Instance;
 import corpus.WordClass;
 
-import program.Main;
-
 public class VariationalParamObservation {
-	int M,T,K;
+	int T;
+	int[] states;
 	public double shi[][][];
 	
-	/*
-	 * @param M number of layers
-	 * @param T timesteps
-	 * @param K number of states
-	 */
-	public VariationalParamObservation(int M, int T, int K) {
-		this.M = M;
+	public VariationalParamObservation(int[] states, int T) {
+		this.states = states;
 		this.T = T;
-		this.K = K;
-		shi = new double[M][T][K];
+		shi = new double[states.length][T][];
+		for(int m=0; m<states.length; m++) {
+			shi[m][T] = new double[states[m]];
+		}
 	}
 	
 	public void initializeFromObsAndClassParam(HMMParamBase param, Instance instance) {
-		for(int m=0; m<M; m++) {
+		for(int m=0; m<states.length; m++) {
 			for(int t=0; t<T; t++) {
 				double sum = 0;
-				for(int k=0; k<K; k++) {
+				for(int k=0; k<states[m]; k++) {
 					int clusterId = WordClass.wordIndexToClusterIndex.get(instance.words[t][0]);
-					shi[m][t][k] = param.weights.get(m, k, instance.words[t][0]) + param.weightsClass.get(m, k, clusterId);
-					sum += Math.exp(param.weights.get(m, k, instance.words[t][0]) + param.weightsClass.get(m,k,clusterId)); //cached exponentiated result
+					shi[m][t][k] = param.weights.get(m, k, instance.words[t][0]) + param.weightsClass.get(m, k, clusterId);					
+					sum += Math.exp(shi[m][t][k]); //cached exponentiated result
 				}
 				//normalize
-				for(int k=0; k<K; k++) {
+				for(int k=0; k<states[m]; k++) {
 					shi[m][t][k] = shi[m][t][k] - Math.log(sum);
 				}
 			}
@@ -47,15 +38,15 @@ public class VariationalParamObservation {
 	
 	public void initializeRandom() {
 		double small = 1e-100;
-		for(int m=0; m<M; m++) {
+		for(int m=0; m<states.length; m++) {
 			for(int t=0; t<T; t++) {
 				double sum = 0;
-				for(int k=0; k<K; k++) {
+				for(int k=0; k<states[m]; k++) {
 					shi[m][t][k] = Config.random.nextDouble() + small;
 					sum += shi[m][t][k];
 				}
 				//normalize
-				for(int k=0; k<K; k++) {
+				for(int k=0; k<states[m]; k++) {
 					shi[m][t][k] = Math.log(shi[m][t][k]/sum);
 				}
 			}
@@ -63,11 +54,10 @@ public class VariationalParamObservation {
 	}
 	
 	public void initializeUniform() {
-		for(int m=0; m<M; m++) {
+		for(int m=0; m<states.length; m++) {
 			for(int t=0; t<T; t++) {
-				for(int k=0; k<K; k++) {
-					//shi[m][t][k] = 1/Corpus.corpusVocab.get(0).vocabSize;					
-					shi[m][t][k] = 1/K;
+				for(int k=0; k<states[m]; k++) {
+					shi[m][t][k] = 1/states[m];
 				}
 			}
 		}

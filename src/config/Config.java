@@ -9,8 +9,13 @@ public class Config {
 	public static long seed = 1;
 	public static Random random = new Random(seed);
 	public static int numIter = 6000;
-	public static int nrLayers = 10;
-	public static int numStates = 2;
+	public static int[] states = {2, 3, 4};
+	public static int prodMK = 1;
+	static {
+		for(int m=0; m<states.length; m++) {
+			prodMK *= states[m];
+		}
+	}
 	public final static int USE_THREAD_COUNT = 8;
 	public static int vocabThreshold = 1;
 	

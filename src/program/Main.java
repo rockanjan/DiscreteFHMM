@@ -78,7 +78,7 @@ public class Main {
 		
 		WordClass.populateClassInfo();
 		
-		model = new HMMNoFinalStateLog(Config.nrLayers, Config.numStates, corpus);
+		model = new HMMNoFinalStateLog(Config.states, corpus);
 		corpus.model = model;
 		//random init
 		model.initializeRandom(Config.random);
@@ -86,27 +86,32 @@ public class Main {
 	}
 	
 	public static void loadFromIndependentHMM(String folder) throws IOException {
-		model = new HMMNoFinalStateLog(Config.nrLayers, Config.numStates, corpus);
+		System.err.println("loading from iHMM not implemented");
+		/*
+		model = new HMMNoFinalStateLog(Config.states, corpus);
 		model.loadModelsFromIndependentHMM(folder);
 		corpus.model = model;
-		model.initializeZerosToBest();		
+		model.initializeZerosToBest();
+		*/		
 	}
 
 	public static void load() throws IOException {
 		WordClass.populateClustersFromSavedFile();
-		model = new HMMNoFinalStateLog(Config.nrLayers, Config.numStates, corpus);
-		String filename = "variational_model_layers_" + Config.nrLayers + 
-				"_states_" + Config.numStates + 
-				"_iter_" + lastIter + ".txt";
+		model = new HMMNoFinalStateLog(Config.states, corpus);
+		StringBuffer sb = new StringBuffer();
+		for(int s : Config.states) {
+			sb.append(s + "_");
+		}
+		String filename = "variational_model_layers_" + "states_" + sb.toString() + "iter_" + lastIter + ".txt";
 		model.loadModel(filename);		
 		corpus.model = model;
 		model.initializeZerosToBest();
 	}
 	
+	/*
 	public static void loadFromDifferentLayerHMM(int nrLayers) throws IOException {
-		model = new HMMNoFinalStateLog(Config.nrLayers, Config.numStates, corpus);
+		model = new HMMNoFinalStateLog(Config.states, corpus);
 		
-		/*** load other model ***/
 		HMMBase otherModel = new HMMNoFinalStateLog(nrLayers, Config.numStates, corpus);
 		String filename = "variational_model_layers_" + nrLayers + 
 				"_states_" + Config.numStates + 
@@ -116,11 +121,11 @@ public class Main {
 		model.initializeRandom(Config.random);
 		model.param.cloneFromDifferentLayerModel(otherModel.param);
 		otherModel = null;
-		/*** other model complete ***/
 		
 		corpus.model = model;
 		model.initializeZerosToBest();
 	}
+	*/
 	
 	public static void checkTestPerplexity() {
 		HMMPowModel powModel = new HMMPowModel(model);

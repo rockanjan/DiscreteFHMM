@@ -55,10 +55,12 @@ public class WordClass {
 				clusterIndexToWordIndices.get(clusterIndex).add(wordIndex);
 			}
 		}
+		/*
 		if(oovCount > 1) {
 			System.out.println("WordClass: Exiting because OOV count > 1");
 			System.exit(-1);
 		}
+		*/
 		System.out.println("Word index to Cluster index size = " + wordIndexToClusterIndex.size());
 		//view one cluster
 		System.out.println("Viewing one cluster");

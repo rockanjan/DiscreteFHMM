@@ -13,6 +13,7 @@ public class LogLinearWeightsClass {
 		this.states = states;
 		this.C = c;
 		length = c;
+		sumKOverAllLayers = 0;
 		for(int m=0; m<states.length; m++) {
 			length *= states[m];
 			sumKOverAllLayers += states[m];
@@ -39,6 +40,7 @@ public class LogLinearWeightsClass {
 	}
 	
 	public double get(int m, int k, int c) {
+		//System.out.format("m=%d,k=%d,c=%d\n",m,k,c);
 		return weights[getIndex(m, k, c)];	
 	}
 	

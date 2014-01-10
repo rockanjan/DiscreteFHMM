@@ -43,7 +43,7 @@ public class CLLTrainerJoint implements Optimizable.ByGradientValue{
 		double[] newGradients = corpus.trainInstanceMStepSampleList.getJointGradient(parameters);
 		//regularizer
 		for(int i=0; i<newGradients.length; i++) {
-			gradient[i] = newGradients[i] - 2 * Config.c2 *  newGradients[i];
+			gradient[i] = newGradients[i] - 2 * Config.c2 *  parameters[i];
 		}        
 	}
 	
@@ -100,8 +100,6 @@ public class CLLTrainerJoint implements Optimizable.ByGradientValue{
 			weights[i] = weights[i] + step + step;
 			double valueXStepped = corpus.trainInstanceEStepSampleList.getCLLJoint(weights);
 			newGradients[i] =  valueXStepped/ (2*step) - valueX / (2*step);
-			//System.out.println("grad from finitedifference = " + newGradients[i][j]);
-			//reset weights
 			weights[i] = weights[i] - step;
 		}
 		return newGradients;

@@ -90,13 +90,6 @@ public class EM {
 		System.out.format("Mstep #sentences = %d, #tokens = %d\n",
 				Corpus.trainInstanceMStepSampleList.size(),
 				Corpus.trainInstanceMStepSampleList.numberOfTokens);
-		/*
-		//Corpus.cacheFrequentConditionals();
-		System.out.println("training words...");
-		trainLBFGS();
-		System.out.println("training classes...");
-		trainLBFGSClass();
-		*/
 		trainLBFGSJoint();
 		//Corpus.clearFrequentConditionals();
 		model.updateFromCountsWeighted(expectedCounts, adaptiveWeight);
@@ -110,10 +103,10 @@ public class EM {
 	public void trainLBFGSJoint() {
 		double[] initParamsJoint = MyArray.joinVectors(model.param.weights.weights, model.param.weightsClass.weights);
 		CLLTrainerJoint jointOptimizatble = new CLLTrainerJoint(initParamsJoint, c);
-		
 		Optimizer jointOptimizer = new LimitedMemoryBFGS(jointOptimizatble);
-		boolean converged = false;
+		jointOptimizatble.checkGradientComputation();
 		
+		boolean converged = false;
 		try {
 			converged = jointOptimizer.optimize(Config.mStepIter);
 		} catch (IllegalArgumentException e) {

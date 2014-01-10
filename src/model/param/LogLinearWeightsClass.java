@@ -12,12 +12,12 @@ public class LogLinearWeightsClass {
 	public LogLinearWeightsClass(int c, int[] states) {
 		this.states = states;
 		this.C = c;
-		length = c;
 		sumKOverAllLayers = 0;
 		for(int m=0; m<states.length; m++) {
-			length *= states[m];
 			sumKOverAllLayers += states[m];
 		}
+		length = c * sumKOverAllLayers; 
+		System.out.println("classlength = " + length);
 		weights = new double[length];
 	}
 	

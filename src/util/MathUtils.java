@@ -1,6 +1,5 @@
 package util;
 
-import config.Config;
 
 public class MathUtils {
 	
@@ -111,7 +110,7 @@ public class MathUtils {
 	/*
 	 * adds the second matrix's entries to the first
 	 */
-	public static void addMatrix(double[][] target, double[][] source) {
+	public static void addMatrixToFirst(double[][] target, double[][] source) {
 		int m = target.length;
 		int n = target[0].length;
 		
@@ -311,6 +310,19 @@ public class MathUtils {
 		return result;
 	}
 	
+	public static void addVectorToFirst(double[] v1, double[] v2) {
+		int m=v1.length;
+		int n=v2.length;
+		if(n != m) {
+			throw new RuntimeException(String.format("Error in adding vectors, dimension mismatch %d vs %d", m, n));
+		}
+		
+		for(int i=0; i<m; i++) {
+			v1[i] += v2[i];
+		}
+		
+	}
+	
 	/*
 	 * gives a vector formed by the diagonal elements as entries
 	 */
@@ -379,6 +391,26 @@ public class MathUtils {
 			}
 		}
 		return entropy;
+	}
+	
+	public static double getMaxInVector(double[] vector) {
+		double max = vector[0];
+		for(int i=1; i<vector.length; i++) {
+			if(vector[i] > max) {
+				max = vector[i];
+			}
+		}
+		return max;
+	}
+	
+	public static double getMinInVector(double[] vector) {
+		double min = vector[0];
+		for(int i=1; i<vector.length; i++) {
+			if(vector[i] < min) {
+				min = vector[i];
+			}
+		}
+		return min;
 	}
 	
 	public static void main(String[] args) {

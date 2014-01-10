@@ -101,10 +101,19 @@ public class EM {
 	}
 	
 	public void trainLBFGSJoint() {
+		/*
+		double[] initParams = model.param.weights.weights;
+		CLLTrainer optimizatble = new CLLTrainer(initParams, c);
+		Optimizer optimizer = new LimitedMemoryBFGS(optimizatble);
+		optimizatble.checkGradientComputation();
+		System.exit(-1);
+		*/
+		
+		
 		double[] initParamsJoint = MyArray.joinVectors(model.param.weights.weights, model.param.weightsClass.weights);
 		CLLTrainerJoint jointOptimizatble = new CLLTrainerJoint(initParamsJoint, c);
 		Optimizer jointOptimizer = new LimitedMemoryBFGS(jointOptimizatble);
-		jointOptimizatble.checkGradientComputation();
+		//jointOptimizatble.checkGradientComputation();
 		
 		boolean converged = false;
 		try {
@@ -132,6 +141,8 @@ public class EM {
 		model.param.weightsClass.weights = MathUtils.weightedAverageofLog(classParam,
 				model.param.weightsClass.weights,
 				adaptiveWeight);
+		
+		
 	}
 	
 	public void start() throws FileNotFoundException {

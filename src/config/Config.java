@@ -9,7 +9,7 @@ public class Config {
 	public static long seed = 1;
 	public static Random random = new Random(seed);
 	public static int numIter = 6000;
-	public static int[] states = {2, 3};
+	public static int[] states = {2, 4, 10};
 	public static int prodMK = 1;
 	static {
 		for(int m=0; m<states.length; m++) {
@@ -19,7 +19,7 @@ public class Config {
 	public final static int USE_THREAD_COUNT = 2;
 	public static int vocabThreshold = 100;
 	
-	public static final String wordClusterFile = "brown_train.txt.decoded.cluster.split";
+	public static final String wordClusterFile = "brown-brown-cluster.txt";
 
 	public static final String baseDirData = "data/";
 	public static final String baseDirModel = "out/model/";
@@ -86,7 +86,7 @@ public class Config {
 
 		sb.append("\nIterations : " + numIter);
 		sb.append("\nNumLayers : " + states.length);
-		sb.append("states : ");
+		sb.append("\nstates : ");
 		for(int s : states) {
 			sb.append(s + " ");
 		}

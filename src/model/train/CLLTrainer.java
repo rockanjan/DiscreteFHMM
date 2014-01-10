@@ -1,8 +1,9 @@
 package model.train;
 
-import config.Config;
+import util.MathUtils;
 import util.MyArray;
 import cc.mallet.optimize.Optimizable;
+import config.Config;
 import corpus.Corpus;
 
 public class CLLTrainer implements Optimizable.ByGradientValue{
@@ -92,8 +93,10 @@ public class CLLTrainer implements Optimizable.ByGradientValue{
 		for(int i=0; i<parameters.length; i++) {
 			parameters[i] = parameters[i] - step;
 			double valueX = corpus.trainInstanceEStepSampleList.getCLL(parameters);
-			parameters[i] = parameters[i] + step;
+			//System.out.println("cll1 = " + valueX);
+			parameters[i] = parameters[i] + step + step;
 			double valueXStepped = corpus.trainInstanceEStepSampleList.getCLL(parameters);
+			//System.out.println("cll2 = " + valueXStepped);
 			newGradients[i] =  valueXStepped/ (2*step) - valueX / (2*step);
 			parameters[i] = parameters[i] - step;
 			
@@ -108,7 +111,11 @@ public class CLLTrainer implements Optimizable.ByGradientValue{
 	
 	public void checkGradientComputation() {
 		double[] finiteDifferenceGradient = getFiniteDifferenceGradient();
+		System.out.println("Max grad value by diff = " + MathUtils.getMaxInVector(finiteDifferenceGradient));
+		System.out.println("Min grad value by diff = " + MathUtils.getMinInVector(finiteDifferenceGradient));
 		double[] equationGradient = getGradientByEquation();
+		System.out.println("Max grad value by eqn = " + MathUtils.getMaxInVector(equationGradient));
+		System.out.println("Min grad value by eqn = " + MathUtils.getMinInVector(equationGradient));
 		double[] difference = new double[finiteDifferenceGradient.length];
 		double maxDiff = -Double.MAX_VALUE;
 		double minDiff = Double.MAX_VALUE;

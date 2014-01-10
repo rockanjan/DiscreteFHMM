@@ -246,7 +246,7 @@ public class InstanceList extends ArrayList<Instance> {
 		int splitIndex = LogLinearWeights.length;
 		double[] wordGradientVector = Arrays.copyOfRange(parameter, 0, splitIndex);
 		double[] classGradientVector = Arrays.copyOfRange(parameter, splitIndex, parameter.length);
-		return MyArray.joinVectors(wordGradientVector, classGradientVector);
+		return MyArray.joinVectors(getGradient(wordGradientVector), getGradientClass(classGradientVector));
 	}
 	
 	public double[] getGradient(double[] parameterMatrix) {
@@ -584,6 +584,7 @@ public class InstanceList extends ArrayList<Instance> {
 									//compute the amount that must be multiplied to adjust from dotProdOverAllLayers
 									double factorDifference = instance.posteriors[m][t][k] * expParam[LogLinearWeights.getIndex(m, k, y)] / mLayerDot;
 									gradientLocal[LogLinearWeights.getIndex(m, k, y)] -= phi * dotProdOverAllLayers * factorDifference;
+									//System.out.println(gradientLocal[LogLinearWeights.getIndex(m, k, y)]);
 								}
 							}
 						}
@@ -711,13 +712,13 @@ public class InstanceList extends ArrayList<Instance> {
 	
 	private void updateGradientSoftComputation(GradientSoftWorker worker) {
         synchronized (gradientLockSoft) {
-        	MathUtils.addVectors(gradient, worker.gradientLocal);
+        	MathUtils.addVectorToFirst(gradient, worker.gradientLocal);
         }
     }
 	
 	private void updateGradientSoftComputationClass(GradientSoftWorkerClass worker) {
         synchronized (gradientLockSoftClass) {
-        	MathUtils.addVectors(gradientClass, worker.gradientLocal);
+        	MathUtils.addVectorToFirst(gradientClass, worker.gradientLocal);
         }
     }
 	

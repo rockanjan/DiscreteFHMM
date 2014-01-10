@@ -91,7 +91,7 @@ public class MathUtils {
 		}
 		return result;
 	}
-	
+	/*
 	public static double expDot(double[] expWeights, int state, int[] z) {
 		double result = 1.0;
 		result *= expWeights[0]; //bias
@@ -106,6 +106,7 @@ public class MathUtils {
 		}
 		return result;
 	}
+	*/
 	
 	/*
 	 * adds the second matrix's entries to the first

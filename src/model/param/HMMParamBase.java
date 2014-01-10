@@ -24,11 +24,6 @@ public abstract class HMMParamBase {
 	
 	public HMMBase model;
 
-	int nrStatesWithFake = -1; //the extending class should initialize this (for no fake, equals nrStates)
-	public int nrStates = -1;
-	public int nrObs = -1;
-	
-	
 	int nrClasses = -1;
 	
 	public HMMParamBase(HMMBase model) {
@@ -42,8 +37,8 @@ public abstract class HMMParamBase {
 			initial = new ArrayList<MultinomialBase>();
 			transition = new ArrayList<MultinomialBase>();
 			for(int i=0; i<states.length; i++) {
-				MultinomialLog tempTrans = new MultinomialLog(nrStates, nrStates);
-				MultinomialLog tempInit = new MultinomialLog(nrStates, 1);
+				MultinomialLog tempTrans = new MultinomialLog(states[i], states[i]);
+				MultinomialLog tempInit = new MultinomialLog(states[i], 1);
 				initial.add(tempInit);
 				transition.add(tempTrans);
 			}			
@@ -57,8 +52,8 @@ public abstract class HMMParamBase {
 			initial = new ArrayList<MultinomialBase>();
 			transition = new ArrayList<MultinomialBase>();
 			for(int i=0; i<states.length; i++) {
-				MultinomialLog tempTrans = new MultinomialLog(nrStates, nrStates);
-				MultinomialLog tempInit = new MultinomialLog(nrStates, 1);
+				MultinomialLog tempTrans = new MultinomialLog(states[i], states[i]);
+				MultinomialLog tempInit = new MultinomialLog(states[i], 1);
 				initial.add(tempInit);
 				transition.add(tempTrans);
 			}
@@ -66,7 +61,7 @@ public abstract class HMMParamBase {
 			weights = new LogLinearWeights(Corpus.corpusVocab.get(0).vocabSize, states);
 			weights.initializeZeros();
 			
-			weightsClass = new LogLinearWeightsClass(states, nrClasses);
+			weightsClass = new LogLinearWeightsClass(nrClasses, states);
 			weightsClass.initializeZeros();
 		} else {
 			throw new UnsupportedOperationException("Not implemented");
@@ -74,7 +69,7 @@ public abstract class HMMParamBase {
 	}
 	
 	public void initializeUniform() {
-		for(int i=0; i<nrLayers; i++) {
+		for(int i=0; i<states.length; i++) {
 			initial.get(i).initializeUniformCounts();
 			transition.get(i).initializeUniformCounts();
 		}
@@ -83,13 +78,13 @@ public abstract class HMMParamBase {
 	
 	public void initialize(Random r) {
 		initializeZeros();
-		for(int i=0; i<nrLayers; i++) {
+		for(int i=0; i<states.length; i++) {
 			initial.get(i).initializeRandom(r);
 			transition.get(i).initializeRandom(r);			
 		}
-		weights = new LogLinearWeights(Corpus.corpusVocab.get(0).vocabSize, nrLayers * nrStates);
+		weights = new LogLinearWeights(Corpus.corpusVocab.get(0).vocabSize, states);
 		weights.initializeRandom(r);
-		weightsClass = new LogLinearWeightsClass(nrLayers, nrStates, nrClasses);
+		weightsClass = new LogLinearWeightsClass(nrClasses, states);
 		weightsClass.initializeRandom(r);
 	}
 	
@@ -118,27 +113,28 @@ public abstract class HMMParamBase {
 	}
 	
 	public void check() { 
-		for(int i=0; i<nrLayers; i++) {
+		for(int i=0; i<states.length; i++) {
 			initial.get(i).checkDistribution();
 			transition.get(i).checkDistribution();
 		}
 	}
 	
 	public void normalize() {
-		for(int i=0; i<nrLayers; i++) {
+		for(int i=0; i<states.length; i++) {
 			initial.get(i).normalize();
 			transition.get(i).normalize();
 		}		
 	}
 	
 	public void cloneFrom(HMMParamBase source) {
-		for(int i=0; i<nrLayers; i++) {
+		for(int i=0; i<states.length; i++) {
 			initial.get(i).cloneFrom(source.initial.get(i));
 			transition.get(i).cloneFrom(source.transition.get(i));
 		}
-		this.weights.weights = MyArray.getCloneOfMatrix(source.weights.weights);
+		this.weights.weights = MyArray.getCloneOfVector(source.weights.weights);
 	}
 	
+	/*
 	public void cloneFromDifferentLayerModel(HMMParamBase source) {
 		if(this.nrStates != source.nrStates) {
 			throw new RuntimeException("Number of states must match, found source=" + source.nrStates + " this = " + nrStates);
@@ -166,7 +162,7 @@ public abstract class HMMParamBase {
 			cloneFrom(source);
 		}
 	}
-	
+	*/
 	public void clear() {
 		initial = null;
 		transition = null;		
@@ -183,17 +179,20 @@ public abstract class HMMParamBase {
 			System.err.println("Other model null");
 			return false;
 		}
-		if(nrLayers != other.nrLayers) {
+		if(states.length != other.states.length) {
 			System.err.println("layers mismatch");
 			return false;
 		}
 		
-		if(nrStates != other.nrStates || nrStatesWithFake != other.nrStatesWithFake) {
-			System.err.println("dimensions mismatch");
-			return false;
+		for(int m=0; m<states.length; m++) {
+			if(states[m] != other.states[m]) {
+				System.err.format("States in layer %d mismatch\n", m);
+				return false;
+			}
 		}
 		
-		for(int m=0; m<nrLayers; m++) {
+		
+		for(int m=0; m<states.length; m++) {
 			if(! this.initial.get(m).equalsExact(other.initial.get(m)) || ! this.transition.get(m).equalsExact(other.transition.get(m))) {
 				System.err.println("initial or transition mismatch");
 				result = false;
@@ -221,17 +220,19 @@ public abstract class HMMParamBase {
 			System.err.println("Other model null");
 			return false;
 		}
-		if(nrLayers != other.nrLayers) {
+		if(states.length != other.states.length) {
 			System.err.println("layers mismatch");
 			return false;
 		}
 		
-		if(nrStates != other.nrStates || nrStatesWithFake != other.nrStatesWithFake) {
-			System.err.println("dimensions mismatch");
-			return false;
+		for(int m=0; m<states.length; m++) {
+			if(states[m] != other.states[m]) {
+				System.err.format("States in layer %d mismatch\n", m);
+				return false;
+			}
 		}
 		
-		for(int m=0; m<nrLayers; m++) {
+		for(int m=0; m<states.length; m++) {
 			if(! this.initial.get(m).equalsExact(other.initial.get(m)) && this.transition.get(m).equalsExact(other.transition.get(m))) {
 				System.err.println("initial or transition mismatch");
 				result = false;

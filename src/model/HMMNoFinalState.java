@@ -23,8 +23,6 @@ public class HMMNoFinalState extends HMMBase{
 
 	public HMMNoFinalState(int nrStates, Corpus corpus) {
 		super();
-		this.nrStatesWithFake = nrStates;
-		this.nrStates = nrStates;
 		this.corpus = corpus;
 		this.hmmType = HMMType.WITH_NO_FINAL_STATE;
 	}

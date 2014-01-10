@@ -288,7 +288,7 @@ public class Instance {
 	}
 	
 	
-
+	/*
 	public double getExactNormalizer(int position, double[][] expWeights) {
 		double Z = 0;
 		double[] conditionalVector = getConditionalVector(position);
@@ -306,6 +306,7 @@ public class Instance {
 		}
 		return Z;
 	}
+	*/
 	
 	/*
 	 * Gives variational LL for the instance
@@ -315,6 +316,7 @@ public class Instance {
 	 */
 	public double getVariationalLL(HMMPowModel powModel) {
 		double variationalLL = 0.0;
+		/*
 		//create alpha table using K^M states
 		double[][] alpha = new double[T][powModel.powStateSize];
 		//do forward computation
@@ -341,6 +343,7 @@ public class Instance {
 			MyArray.printTable(alpha, "alpha");
 			throw new RuntimeException("variationalLL greater than 0");
 		}
+		*/
 		return variationalLL;
 	}
 

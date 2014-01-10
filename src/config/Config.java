@@ -16,27 +16,24 @@ public class Config {
 			prodMK *= states[m];
 		}
 	}
-	public final static int USE_THREAD_COUNT = 8;
-	public static int vocabThreshold = 1;
+	public final static int USE_THREAD_COUNT = 2;
+	public static int vocabThreshold = 3;
 	
-	public static final String wordClusterFile = "rcv1.txt.SPL.decoded.cluster.split";
+	public static final String wordClusterFile = "brown_train.txt.decoded.cluster.split";
 
 	public static final String baseDirData = "data/";
 	public static final String baseDirModel = "out/model/";
 	public static final String baseDirDecode = "out/decoded/";
 
-	public static String trainFile = "rcv1.txt.SPL";
+	public static String trainFile = "brown_train.txt";
 	public static String vocabFile = trainFile;
-	public static String testFile = "combined.txt.SPL";
+	public static String testFile = "brown_test.txt";
 	//public static String devFile = "wsj_biomed.dev.txt";
-	public static String devFile = "combined.txt.SPL.clean";
+	public static String devFile = "brown_dev.txt";
 
 	public static String outFileTrain = trainFile + ".decoded";
 	public static String outFileTest = testFile + ".decoded";
 	public static String outFileDev = devFile + ".decoded";
-
-	public static int FEATURE_PARTITION_CACHE_SIZE = 100000;
-	public static int maxFrequentConditionals = 100000;
 
 	public static int variationalIter = 10;
 	public static double variationalConvergence = 1e-3;
@@ -88,8 +85,11 @@ public class Config {
 		sb.append("\nDecode Folder : " + baseDirDecode);
 
 		sb.append("\nIterations : " + numIter);
-		sb.append("\nNumStates : " + numStates);
-		sb.append("\nNumLayers : " + nrLayers);
+		sb.append("\nNumLayers : " + states.length);
+		sb.append("states : ");
+		for(int s : states) {
+			sb.append(s + " ");
+		}
 		sb.append("\nThreads : " + USE_THREAD_COUNT);
 		sb.append("\nt0 : " + t0);
 		sb.append("\nalpha : " + alpha);

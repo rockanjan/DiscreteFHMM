@@ -56,7 +56,7 @@ public class WordClass {
 			}
 		}
 		if(oovCount > 1) {
-			System.out.println("Exiting because OOV count > 1");
+			System.out.println("WordClass: Exiting because OOV count > 1");
 			System.exit(-1);
 		}
 		System.out.println("Word index to Cluster index size = " + wordIndexToClusterIndex.size());

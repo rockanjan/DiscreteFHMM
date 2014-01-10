@@ -175,66 +175,6 @@ public class Corpus {
 		frequentConditionals = null;
 	}
 	
-	//cache from the training data only
-	/*
-	 * finds the most frequent conditional vectors 
-	 */
-	public static void cacheFrequentConditionals() {
-		HashMap<FrequentConditionalStringVector, Integer> conditionalCountMap = new HashMap<FrequentConditionalStringVector, Integer>();
-		/*
-		frequentConditionals = new TreeSet<FrequentConditionalStringVector>(new Comparator<FrequentConditionalStringVector>() {
-			@Override
-			public int compare(FrequentConditionalStringVector o1,
-					FrequentConditionalStringVector o2) {
-				return o1.index.compareTo(o2.index);
-			}
-			
-		});
-		*/
-		frequentConditionals = new ArrayList<FrequentConditionalStringVector>();
-		//count frequencies
-		for(int n=0; n<Corpus.trainInstanceMStepSampleList.size(); n++) {
-			Instance instance = Corpus.trainInstanceMStepSampleList.get(n);
-			for(int t=0; t<instance.T; t++) {
-				String conditionalString = instance.getConditionalString(t);
-				double[] conditionalVector = instance.getConditionalVector(t);
-				//MyArray.printVector(conditionalVector, "conditiona");
-				FrequentConditionalStringVector fc = new FrequentConditionalStringVector(conditionalString, conditionalVector);
-				if(conditionalCountMap.containsKey(fc)) {
-					int prevFreq = conditionalCountMap.get(fc);
-					conditionalCountMap.put(fc, prevFreq+1);
-				} else {
-					conditionalCountMap.put(fc, 1);
-				}
-			}
-		}
-		
-		FrequentConditionalCountComparator comparator = new FrequentConditionalCountComparator();
-		PriorityQueue<FrequentConditionalStringVector> pq = new PriorityQueue<FrequentConditionalStringVector>(Config.maxFrequentConditionals, comparator);
-		//get top freq items
-		for (Map.Entry<FrequentConditionalStringVector, Integer> entry : conditionalCountMap.entrySet()) {
-			FrequentConditionalStringVector fc = entry.getKey();
-			fc.count = entry.getValue();
-			if(pq.size() < Config.maxFrequentConditionals) {
-				//just add it
-				pq.add(fc);
-			} else {
-				//peek the lowest one, remove if small
-				if(pq.peek().count < fc.count) {
-					pq.remove();
-					pq.add(fc);
-				} 				
-			}
-		}
-		//iterate over pq list and add into the treeset
-		for(FrequentConditionalStringVector f : pq) {
-			//System.out.print(f.index + "=" + f.count + ", ");
-			frequentConditionals.add(f);
-		}
-		System.out.println();
-		System.out.println("Frequent conditional size : " + frequentConditionals.size());
-	}
-	
 	public static double getProbability(int y) {
 		if(Config.vocabSamplingType.equals("unigram")) {
 			return Corpus.vocabSampler.distribution.get(y);
@@ -293,11 +233,13 @@ public class Corpus {
 		// make all the states from the previous hierarchy available even if they are not observed in the data
 		// will add one more to each of the vocabs' frequency
 		// have to modify this if the number of states change in each hierarchy
+		/*
 		for(int z=1; z<oneTimeStepObsSize; z++) {
 			for(int i=0; i<Config.numStates; i++) {
 				corpusVocab.get(z).addItem("" + i);
 			}
 		}
+		*/
 		
 		while( (line = br.readLine()) != null) {
 			line = line.trim();

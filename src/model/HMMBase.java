@@ -128,28 +128,16 @@ public abstract class HMMBase {
 			}
 			pw.println();
 			// log linear weights
-			pw.println(param.weights.vocabSize);
-			pw.println(param.weights.conditionalSize);
-			for (int y = 0; y < param.weights.vocabSize; y++) {
-				for (int u = 0; u < param.weights.conditionalSize; u++) {
-					pw.print(param.weights.weights[y][u]);
-					if (u != param.weights.conditionalSize - 1) {
-						pw.print(" ");
-					}
-				}
-				pw.println();
+			pw.println(param.weights.length);
+			for (int y = 0; y < param.weights.length; y++) {
+				pw.print(param.weights.weights[y] + " ");
 			}
-			pw.println(param.weightsClass.weights.length);
-			pw.println(param.weightsClass.weights[0].length);
-			for (int c = 0; c < param.weightsClass.weights.length; c++) {
-				for (int u = 0; u < param.weightsClass.weights[0].length; u++) {
-					pw.print(param.weightsClass.weights[c][u]);
-					if (u != param.weightsClass.weights[0].length - 1) {
-						pw.print(" ");
-					}
-				}
-				pw.println();
+			pw.println();
+			pw.println(param.weightsClass.length);
+			for (int c = 0; c < param.weightsClass.length; c++) {
+				pw.print(param.weightsClass.weights[c] + " ");				
 			}
+			pw.println();
 			pw.println("EOF");
 			pw.close();
 		} catch (FileNotFoundException e) {
@@ -203,7 +191,6 @@ public abstract class HMMBase {
 
 			param = new HMMParamNoFinalStateLog(this);
 			param.initializeZeros();
-			param.nrObs = Corpus.corpusVocab.get(0).vocabSize;
 			// initial
 
 			for (int z = 0; z < states.length; z++) {
@@ -237,37 +224,21 @@ public abstract class HMMBase {
 			}
 			modelReader.readLine();
 			// log linear weights
-			// pw.println(param.weights.vocabSize);
-			int vocabSizeFromModel = Integer.parseInt(modelReader.readLine());
-			if (vocabSizeFromModel != Corpus.corpusVocab.get(0).vocabSize) {
-				System.err
-						.format("Vocab size mismatch, from dictionary %d, from model %d\n",
-								Corpus.corpusVocab.get(0).vocabSize,
-								vocabSizeFromModel);
+			int weightLength = Integer.parseInt(modelReader.readLine());
+			String[] weights = modelReader.readLine().split("\\s+");
+			if(weights.length != param.weights.length) {
+				System.err.format("ERROR, Word obs param : read length=%d and model length=%d", weights.length, param.weights.length);
 			}
-			// pw.println(param.weights.conditionalSize);
-			modelReader.readLine();
-			for (int y = 0; y < param.weights.vocabSize; y++) {
-				String[] weights = modelReader.readLine().split("\\s+");
-				for (int u = 0; u < param.weights.conditionalSize; u++) {
-					param.weights.weights[y][u] = Double
-							.parseDouble(weights[u]);
-				}
-				// pw.println();
+			for (int y = 0; y < param.weights.length; y++) {
+				param.weights.weights[y] = Double.parseDouble(weights[y]);
 			}
-			int numClusterFromModel = Integer.parseInt(modelReader.readLine());
-			if (numClusterFromModel != WordClass.numClusters) {
-				System.err.println("numClustersFromClusterFile : "
-						+ WordClass.numClusters + " from Modelfile : "
-						+ numClusterFromModel);
+			int classWeightLength = Integer.parseInt(modelReader.readLine());
+			String[] classWeights = modelReader.readLine().split("\\s+");
+			if(classWeightLength != param.weightsClass.length) {
+				System.err.format("ERROR, Word obs param : read length=%d and model length=%d", classWeights.length, param.weightsClass.length);
 			}
-			modelReader.readLine();
-			for (int c = 0; c < param.weightsClass.weights.length; c++) {
-				String[] weightsClass = modelReader.readLine().split("\\s+");
-				for (int u = 0; u < param.weightsClass.weights[0].length; u++) {
-					param.weightsClass.weights[c][u] = Double
-							.parseDouble(weightsClass[u]);
-				}
+			for(int i=0; i<param.weightsClass.length; i++) {
+				param.weightsClass.weights[i] = Double.parseDouble(classWeights[i]);
 			}
 			if (modelReader.readLine().equals("EOF")) {
 				System.out.println("Model file loaded successfully");

@@ -128,6 +128,7 @@ public class Main {
 	*/
 	
 	public static void checkTestPerplexity() {
+		/*
 		HMMPowModel powModel = new HMMPowModel(model);
 		System.out.println("Power model created");
 		if(Corpus.testInstanceList != null) {
@@ -145,7 +146,7 @@ public class Main {
 		} else {
 			throw new RuntimeException("Test instances not loaded for checking perplexity");
 		}
-		 
+		*/
 	}
 
 	public static void testVariational(HMMBase model, InstanceList instanceList, String outFile) {
@@ -168,7 +169,7 @@ public class Main {
 					String word = i.getWord(t);
 					StringBuffer sb = new StringBuffer();
 					sb.append(word + " ");
-					for(int m=0; m<model.nrLayers; m++) {
+					for(int m=0; m<model.states.length; m++) {
 						int state = i.decodedStates[m][t];
 						sb.append("|" + state);
 					}
@@ -186,8 +187,8 @@ public class Main {
 					String word = i.getWord(t);
 					StringBuffer sb = new StringBuffer();
 					sb.append(word + " ");
-					for(int m=0; m<model.nrLayers; m++) {
-						for(int state=0; state<model.nrStates; state++) {
+					for(int m=0; m<model.states.length; m++) {
+						for(int state=0; state<model.states[m]; state++) {
 							sb.append("|" + i.posteriors[m][t][state]);
 						}
 					}

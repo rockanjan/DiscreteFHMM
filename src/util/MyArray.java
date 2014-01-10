@@ -135,6 +135,14 @@ public class MyArray {
 		return clone;
 	}
 	
+	public static double[] getCloneOfVector(double[] source) {
+		double[] clone = new double[source.length];
+		for(int i=0; i<source.length; i++) {
+			clone[i] = source[i];
+		}
+		return clone;
+	}
+	
 	public static <T> void printTable(List<T> list) {
 		for(int i=0; i<list.size(); i++) {
 			System.out.print(list.get(i) + "\t");

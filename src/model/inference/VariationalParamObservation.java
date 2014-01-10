@@ -15,7 +15,9 @@ public class VariationalParamObservation {
 		this.T = T;
 		shi = new double[states.length][T][];
 		for(int m=0; m<states.length; m++) {
-			shi[m][T] = new double[states[m]];
+			for(int t=0; t<T; t++) {
+				shi[m][t] = new double[states[m]];
+			}
 		}
 	}
 	
@@ -25,7 +27,7 @@ public class VariationalParamObservation {
 				double sum = 0;
 				for(int k=0; k<states[m]; k++) {
 					int clusterId = WordClass.wordIndexToClusterIndex.get(instance.words[t][0]);
-					shi[m][t][k] = param.weights.get(m, k, instance.words[t][0]) + param.weightsClass.get(m, k, clusterId);					
+					shi[m][t][k] = param.weights.get(m, k, instance.words[t][0]);// + param.weightsClass.get(m, k, clusterId);					
 					sum += Math.exp(shi[m][t][k]); //cached exponentiated result
 				}
 				//normalize

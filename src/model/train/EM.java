@@ -178,9 +178,7 @@ public class EM {
 			boolean isConvergedCll = false;
 			//Check on validation
 			if(Corpus.devInstanceList != null && iterCount % Config.convergenceIterInterval == 0) {
-				double[] paramsWord = MyArray.createVector(model.param.weights.weights);
-				double[] paramsClass = MyArray.createVector(model.param.weightsClass.weights);
-				double[] paramsJoint = MyArray.joinVectors(paramsWord, paramsClass);
+				double[] paramsJoint = MyArray.joinVectors(model.param.weights.weights, model.param.weightsClass.weights);
 				c.generateRandomDevSample(Config.sampleDevSize);
 				double oldDevCll = devCll;
 				//get devCll, but first, need to do inference

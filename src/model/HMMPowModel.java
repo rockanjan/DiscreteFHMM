@@ -11,6 +11,7 @@ import config.Config;
 import corpus.WordClass;
 
 public class HMMPowModel {
+	/*
 	public int powStateSize; // K^M
 	public MultinomialBase initial;
 	public MultinomialBase transition;
@@ -112,4 +113,5 @@ public class HMMPowModel {
 			System.out.println(i + " --> " + stateCombinationList.get(i));
 		}
 	}
+	*/
 }

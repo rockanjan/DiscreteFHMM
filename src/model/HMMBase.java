@@ -108,7 +108,6 @@ public abstract class HMMBase {
 				}
 				pw.println();
 			}
-			pw.println();
 			// transition
 			for (int z = 0; z < states.length; z++) {
 				pw.println(param.transition.get(z).getConditionalSize());
@@ -124,9 +123,7 @@ public abstract class HMMBase {
 					}
 					pw.println();
 				}
-				pw.println();
 			}
-			pw.println();
 			// log linear weights
 			pw.println(param.weights.length);
 			for (int y = 0; y < param.weights.length; y++) {
@@ -162,7 +159,7 @@ public abstract class HMMBase {
 		}
 		File folder = new File(Config.baseDirModel);
 		if (filename == null || filename.equals("")) {
-			filename = folder.getAbsolutePath() + "/variational_model_states_" + sb.toString() + "final.txt";			
+			filename = "variational_model_states_" + sb.toString() + "final.txt";			
 		}
 		String modelFile = folder.getAbsolutePath() + "/" + filename;
 		if (Corpus.corpusVocab == null) {
@@ -178,7 +175,6 @@ public abstract class HMMBase {
 			modelReader = new BufferedReader(new FileReader(modelFile));
 			String[] statesString = modelReader.readLine().split("\\s+");
 			int[] statesRead = new int[statesString.length];
-			
 			for(int m=0; m<statesString.length; m++) {
 				statesRead[m] = Integer.parseInt(statesString[m]);
 				if(statesRead[m] != states[m]) {
@@ -186,30 +182,19 @@ public abstract class HMMBase {
 					System.exit(-1);
 				}
 			}
-			
-			modelReader.readLine(); // empty line
-
 			param = new HMMParamNoFinalStateLog(this);
 			param.initializeZeros();
 			// initial
-
 			for (int z = 0; z < states.length; z++) {
-				// pw.println(param.initial.get(z).getConditionedSize());
-				modelReader.readLine();
+				modelReader.readLine(); //state
 				String[] initialProbs = modelReader.readLine().split("\\s+");
 				for (int i = 0; i < param.initial.get(z).getConditionedSize(); i++) {
-					param.initial.get(z).count[i][0] = Double
-							.parseDouble(initialProbs[i]);
+					param.initial.get(z).count[i][0] = Double.parseDouble(initialProbs[i]);
 				}
-				// modelReader.readLine();
 			}
-			modelReader.readLine();
 			for (int z = 0; z < states.length; z++) {
-				// pw.println(param.transition.get(z).getConditionalSize());
-				// pw.println(param.transition.get(z).getConditionedSize());
-				modelReader.readLine();
-				modelReader.readLine();
-
+				modelReader.readLine();//states
+				modelReader.readLine();//states
 				for (int j = 0; j < param.transition.get(z)
 						.getConditionalSize(); j++) {
 					String[] probs = modelReader.readLine().split("\\s+");
@@ -218,11 +203,8 @@ public abstract class HMMBase {
 						param.transition.get(z).count[i][j] = Double
 								.parseDouble(probs[i]);
 					}
-					// modelReader.readLine();
 				}
-				modelReader.readLine();
 			}
-			modelReader.readLine();
 			// log linear weights
 			int weightLength = Integer.parseInt(modelReader.readLine());
 			String[] weights = modelReader.readLine().split("\\s+");
@@ -416,12 +398,14 @@ public abstract class HMMBase {
 		return result;
 	}
 
-	public static void main(String[] args) {
+	public static void main(String[] args) throws IOException {
+		Config.printParams(); //to setup
 		Corpus corpus;
 		corpus = new Corpus("\\s+", Config.vocabThreshold);
 		corpus.createArtificialVocab(100);
 		corpus.corpusVocab.get(0).writeDictionary(
 				Config.baseDirModel + "vocab.txt");
+		WordClass.populateClassInfo();
 		HMMBase model = new HMMNoFinalStateLog(Config.states,corpus);
 		corpus.model = model;
 		model.initializeRandom(Config.random);
@@ -430,11 +414,15 @@ public abstract class HMMBase {
 		model.param.check();
 		model.saveModel(20000);
 		HMMBase loadedModel = new HMMNoFinalStateLog(Config.states, corpus);
+		String filename;
 		StringBuffer sb = new StringBuffer();
 		for(int s : Config.states) {
 			sb.append(s + "_");
 		}
-		loadedModel.loadModel("variational_model_states_" + sb.toString() + "iter_" + 20000 + ".txt");
+		filename = "variational_model_states_" + sb.toString() + "iter_" + 20000 + ".txt";			
+		
+		
+		loadedModel.loadModel(filename);
 		if (model.param.equalsExact(loadedModel.param)) {
 			System.out.println("Two models equal exactly");
 		} else {

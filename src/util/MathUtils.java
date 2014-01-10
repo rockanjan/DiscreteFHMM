@@ -338,6 +338,16 @@ public class MathUtils {
 		}
 	}
 	
+	public static void checkDistribution(double[] dist) {
+		double sum = 0.0;
+		for(int i=0; i<dist.length; i++) {
+			sum += dist[i]; 
+		}
+		if(Math.abs(sum - 1) > 1e-3) {
+			throw new RuntimeException("Distribution sum : " + sum); 
+		}
+	}
+	
 	public static double getMean(double[] vector) {
 		double mean = 0.0;
 		for(int i=0; i<vector.length; i++) {

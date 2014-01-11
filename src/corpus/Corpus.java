@@ -18,8 +18,20 @@ import util.SmoothWord;
 import config.Config;
 
 public class Corpus {
+	/*
+	 * format of input should be:
+	 * word|tag1|...|tagM^obs1|obs2|...|obsN 
+	 * (M and N can be zero. for M>0 found, Config.states will be used as extra layers)
+	 * So, 
+	 * word 							: unlabeled, no features, no tags
+	 * word|tag1|...|tagM 				: labeled tags, no extra word features
+	 * word^obs1|...|obsN				: unlabeled, no tag, extra word features
+	 * word|tag1|...|tagM^obs1|...|obsN : labeled with tags and with extra features
+	 */
+	
 	public static String delimiter = "\\s+";
-	public static String obsDelimiter = "\\|"; //separator of multiple observation elements at one timestep
+	public static String obsAndTagDelimiter = "\\|"; //separator of multiple observations and tags
+	public static String obsAndTagSeparator = "\\^"; //separator of multiple observations and tags
 	public static InstanceList trainInstanceList;
 	// testInstanceList can be empty
 	public static InstanceList testInstanceList;
@@ -247,7 +259,7 @@ public class Corpus {
 				String allTimeSteps[] = line.split(delimiter);
 				for(int i=0; i<allTimeSteps.length; i++) {
 					String oneTimeStep = allTimeSteps[i];
-					String[] obsElements = oneTimeStep.split(obsDelimiter);
+					String[] obsElements = oneTimeStep.split(obsAndTagDelimiter);
 					//original word
 					String word = obsElements[0];
 					if(corpusVocab.get(0).lower) {
@@ -446,7 +458,7 @@ public class Corpus {
 				if(line.trim().isEmpty()) continue;
 				String[] allObsSplitted = line.split(Corpus.delimiter);
 				//System.out.println(allObsSplitted[0]);
-				String[] oneTimeStepSplitted = allObsSplitted[0].split(Corpus.obsDelimiter);
+				String[] oneTimeStepSplitted = allObsSplitted[0].split(Corpus.obsAndTagDelimiter);
 				result = oneTimeStepSplitted.length; 
 				break;
 			}

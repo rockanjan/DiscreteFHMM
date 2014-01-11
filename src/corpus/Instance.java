@@ -17,8 +17,8 @@ import util.SmoothWord;
 import config.Config;
 
 public class Instance {
-	
 	public VariationalParam varParam;
+	public int[] tags;
 	public int[][] words;
 	public int T; // sentence length
 	Corpus c;
@@ -27,8 +27,6 @@ public class Instance {
 	// TODO: might change if we consider finalState hmm
 	public int unknownCount;
 	public HMMBase model;
-
-	public static int FEATURE_PARTITION_CACHE_SIZE = 10000;
 
 	// m,t,k
 	public double[][][] posteriors;
@@ -360,7 +358,7 @@ public class Instance {
 		words = new int[T][Corpus.oneTimeStepObsSize];
 		for (int i = 0; i < T; i++) {
 			String oneTimeStep = allTimeSteps[i];
-			String[] obsElements = oneTimeStep.split(Corpus.obsDelimiter);
+			String[] obsElements = oneTimeStep.split(Corpus.obsAndTagDelimiter);
 			if (obsElements.length != Corpus.oneTimeStepObsSize) {
 				throw new RuntimeException(
 						"One timestep observation size from vocab : "

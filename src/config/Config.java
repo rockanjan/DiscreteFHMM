@@ -9,7 +9,7 @@ public class Config {
 	public static long seed = 1;
 	public static Random random = new Random(seed);
 	public static int numIter = 6000;
-	public static int[] states = {2, 5};
+	public static int[] states = {2, 5}; //if there is labeled tags, these are extra layers
 	public static int prodMK = 1;
 	static {
 		for(int m=0; m<states.length; m++) {

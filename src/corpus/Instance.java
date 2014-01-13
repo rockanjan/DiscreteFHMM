@@ -403,6 +403,13 @@ public class Instance {
 				if(t==0) {
 					//assign memory for the tags for all timesteps
 					tags = new int[T][numberOfTags];
+					//by default, assign -1 for all tags 
+					//(in case some words have tags and some words do not in a sentence)
+					for(int i=0; i<T ;i++) {
+						for(int j=0; j<numberOfTags; j++) {
+							tags[i][j] = -1;
+						}
+					}
 				}
 				//add to tagDictionary if needed and get the index
 				for(int d=0; d<numberOfTags; d++) {

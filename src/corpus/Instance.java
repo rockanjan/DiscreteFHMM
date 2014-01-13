@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+import javax.management.RuntimeErrorException;
+
 import model.HMMBase;
 import model.HMMPowModel;
 import model.inference.ForwardBackward;
@@ -18,7 +20,7 @@ import config.Config;
 
 public class Instance {
 	public VariationalParam varParam;
-	public int[] tags;
+	public int[][] tags;
 	public int[][] words;
 	public int T; // sentence length
 	Corpus c;
@@ -356,17 +358,14 @@ public class Instance {
 		String allTimeSteps[] = line.split(Corpus.delimiter);
 		T = allTimeSteps.length;
 		words = new int[T][Corpus.oneTimeStepObsSize];
-		for (int i = 0; i < T; i++) {
-			String oneTimeStep = allTimeSteps[i];
-			String[] obsElements = oneTimeStep.split(Corpus.obsAndTagDelimiter);
-			if (obsElements.length != Corpus.oneTimeStepObsSize) {
-				throw new RuntimeException(
-						"One timestep observation size from vocab : "
-								+ Corpus.oneTimeStepObsSize
-								+ " from instance: " + obsElements.length);
-			}
+		for (int t = 0; t < T; t++) {
+			//FORMAT per timestep: word|tag1|...|tagM^obs1|...|obsN : labeled with tags and with extra features
+			String oneTimeStep = allTimeSteps[t];
+			String[] splittedWordTagAndObsFeatures = oneTimeStep.split(Corpus.obsAndTagSeparator);
+			String wordTags = splittedWordTagAndObsFeatures[0];
+			String[] wordTagSplitted = wordTags.split(Corpus.obsAndTagDelimiter);
 			// original word
-			String word = obsElements[0];
+			String word = wordTagSplitted[0];
 			if (Corpus.corpusVocab.get(0).lower) {
 				word = word.toLowerCase();
 			}
@@ -377,14 +376,67 @@ public class Instance {
 			if (wordId == 0) {
 				unknownCount++;
 			}
-			words[i][0] = wordId;
-			// for hmm states as observations
+			words[t][0] = wordId;
+			
+			//tags
+			if(wordTagSplitted.length > 1) { //has tags
+				int numberOfTags = wordTagSplitted.length - 1;
+				//when loading test data, tagSize will already have been initialized when loading model
+				if(Corpus.tagSize == 0) { //this is the first labeled data found
+					Corpus.tagSize = numberOfTags;
+					//create tag vocabs
+					Corpus.tagVocab = new ArrayList<Vocabulary>();
+					for(int d=0; d<numberOfTags; d++) {
+						Vocabulary tempVocab = new Vocabulary();
+						tempVocab.debug = false;
+						tempVocab.smooth = false;
+						tempVocab.lower = false;
+						tempVocab.vocabThreshold = 0;
+						Corpus.tagVocab.add(tempVocab);
+					}
+				} else { //make sure all labeled data has same tag length
+					if(Corpus.tagSize != numberOfTags) {
+						throw new RuntimeException("First tag length found = " + Corpus.tagSize + 
+								", different found = " + numberOfTags + ", timestep = " + t + ", line = " + line);
+					}
+				}
+				if(t==0) {
+					//assign memory for the tags for all timesteps
+					tags = new int[T][numberOfTags];
+				}
+				//add to tagDictionary if needed and get the index
+				for(int d=0; d<numberOfTags; d++) {
+					String tag = wordTagSplitted[d+1]; //offset because first index is word
+					int tagIndex = -1;
+					if(Corpus.tagVocab.get(d).frozen) {
+						tagIndex = Corpus.tagVocab.get(d).getIndex(tag);
+					} else {
+						tagIndex = Corpus.tagVocab.get(d).addItem(tag);
+					}
+					tags[t][d] = tagIndex;
+				}				
+			}
+			
+			//TODO:
+			/*
+			//observation features other than word
+			if(splittedWordTagAndObsFeatures.length == 2) {
+				String obs = splittedWordTagAndObsFeatures[1];
+				String[] obsElements = obs.split(Corpus.obsAndTagDelimiter);
+				if (obsElements.length != Corpus.oneTimeStepObsSize) {
+					throw new RuntimeException(
+							"One timestep observation size from vocab : "
+									+ Corpus.oneTimeStepObsSize
+									+ " from instance: " + obsElements.length);
+				}
+			}
 			for (int j = 1; j < obsElements.length; j++) {
 				String obsElement = obsElements[j];
 				int obsElementId = Corpus.corpusVocab.get(j).getIndex(
 						obsElement);
 				words[i][j] = obsElementId;
 			}
+			*/
 		}
 	}
 }

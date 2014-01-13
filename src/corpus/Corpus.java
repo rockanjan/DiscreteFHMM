@@ -32,6 +32,10 @@ public class Corpus {
 	public static String delimiter = "\\s+";
 	public static String obsAndTagDelimiter = "\\|"; //separator of multiple observations and tags
 	public static String obsAndTagSeparator = "\\^"; //separator of multiple observations and tags
+	
+	public static int oneTimeStepObsSize = 1; //default is a single word
+	public static int tagSize = 0; //number of tags
+	
 	public static InstanceList trainInstanceList;
 	// testInstanceList can be empty
 	public static InstanceList testInstanceList;
@@ -49,6 +53,8 @@ public class Corpus {
 
 	static public ArrayList<Vocabulary> corpusVocab;
 	
+	static public ArrayList<Vocabulary> tagVocab;
+	
 	//public static TreeSet<FrequentConditionalStringVector> frequentConditionals;
 	public static ArrayList<FrequentConditionalStringVector> frequentConditionals;
 
@@ -62,8 +68,6 @@ public class Corpus {
 	
 	public HMMBase model;
 	
-	public static int oneTimeStepObsSize = 1; //default is a single word
-
 	public Corpus(String delimiter, int vocabThreshold) {
 		this.delimiter = delimiter;
 		this.vocabThreshold = vocabThreshold;		
@@ -242,9 +246,6 @@ public class Corpus {
 		corpusVocab.get(0).indexToFrequency.put(0, 0);
 		corpusVocab.get(0).indexToWord.add(Vocabulary.UNKNOWN);
 		
-		// make all the states from the previous hierarchy available even if they are not observed in the data
-		// will add one more to each of the vocabs' frequency
-		// have to modify this if the number of states change in each hierarchy
 		/*
 		for(int z=1; z<oneTimeStepObsSize; z++) {
 			for(int i=0; i<Config.numStates; i++) {
@@ -269,11 +270,13 @@ public class Corpus {
 						word = SmoothWord.smooth(word);
 					}
 					int wordId = corpusVocab.get(0).addItem(word);
+					/*
 					//for hmm states as observations
 					for(int j=1; j<obsElements.length; j++) {
 						String obsElement = obsElements[j];
 						int obsElementId = corpusVocab.get(j).addItem(obsElement);
-					}					
+					}
+					*/					
 				}
 			}
 		}
@@ -292,7 +295,7 @@ public class Corpus {
 		if(corpusVocab.get(0).debug) {
 			corpusVocab.get(0).debug();
 		}
-		
+		/*
 		//hmm states as observations
 		for(int i=1; i<oneTimeStepObsSize; i++) {
 			corpusVocab.get(i).vocabSize = corpusVocab.get(i).wordToIndex.size();
@@ -302,6 +305,7 @@ public class Corpus {
 				corpusVocab.get(i).debug();
 			}
 		}
+		*/
 		br.close();		
 	}
 
@@ -328,6 +332,48 @@ public class Corpus {
 				System.exit(-1);
 			}
 		}
+	}
+	
+	public void writeTagDictionaries() {
+		//write tag size
+		PrintWriter tagSizePw;
+		try {
+			tagSizePw = new PrintWriter(Config.baseDirModel + "/tagvocabsize.txt");
+			tagSizePw.println(tagSize);
+			tagSizePw.flush();
+			tagSizePw.close();
+		} catch (FileNotFoundException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		for(int d=0; d<tagSize; d++) {
+			String filename = Config.baseDirModel + "/tagvocab." + d;
+			System.out.println("Writing tag dictionary at " + filename);
+			tagVocab.get(d).writeDictionary(filename);
+			System.out.println("done!");
+		}
+	}
+	
+	public void readTagDictionaries() {
+		BufferedReader br;
+		try {
+			br = new BufferedReader(new FileReader(Config.baseDirModel + "/tagvocabsize.txt"));
+			tagSize = Integer.parseInt(br.readLine());
+			br.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		//initialize dictionaries
+		tagVocab = new ArrayList<Vocabulary>();
+		for(int d=0; d<tagSize; d++) {
+			Vocabulary tempDict = new Vocabulary();
+			String filename = Config.baseDirModel + "/tagvocab." + d;
+			System.out.print("Reading tag dictionary from " + filename + "...");
+			tempDict.readDictionary(filename);
+			System.out.println("done!");
+			tagVocab.add(tempDict);
+		}			
 	}
 	
 	/*

@@ -2,6 +2,8 @@ package config;
 
 import java.util.Random;
 
+import corpus.Corpus;
+
 /*
  * hyperparams
  */
@@ -9,24 +11,41 @@ public class Config {
 	public static long seed = 1;
 	public static Random random = new Random(seed);
 	public static int numIter = 6000;
-	public static int[] states = {2, 5}; //if there is labeled tags, these are extra layers
+	public static int[] states = {2, 5}; //if there are labeled tags, these are additional layers
 	public static int prodMK = 1;
-	static {
+	static { //after reading tags
+		for(int m=0; m<states.length; m++) {
+			prodMK *= states[m];
+		}
+	}
+	
+	public static void setFinalStates() { //after reading tags
+		int[] extraStates = states;
+		states = new int[Corpus.tagSize + extraStates.length];
+		for(int m=0; m<states.length; m++) {
+			if(m < Corpus.tagSize) {
+				states[m] = Corpus.tagVocab.get(m).vocabSize;
+			} else {
+				states[m] = extraStates[m-Corpus.tagSize];
+			}
+		}
+				
+		prodMK = 1;
 		for(int m=0; m<states.length; m++) {
 			prodMK *= states[m];
 		}
 	}
 	public final static int USE_THREAD_COUNT = 2;
-	public static int vocabThreshold = 100;
+	public static int vocabThreshold = 3;
 	
-	public static final String wordClusterFile = "brown-brown-cluster.txt";
+	public static final String wordClusterFile = "brown_train.txt.decoded.cluster.split";
 
 	public static final String baseDirData = "data/";
 	public static final String baseDirModel = "out/model/";
 	public static final String baseDirDecode = "out/decoded/";
 
-	public static String trainFile = "brown_train.txt";
-	public static String vocabFile = trainFile;
+	public static String trainFile = "brown_train_tagged.txt";
+	public static String vocabFile = "brown_train.txt";
 	public static String testFile = "brown_test.txt";
 	//public static String devFile = "wsj_biomed.dev.txt";
 	public static String devFile = "brown_dev.txt";
@@ -57,7 +76,7 @@ public class Config {
 	public static boolean sampleSequential = true;
 	public static double alpha = 0.5;
 	public static double t0 = 2;
-	public static int sampleSizeEStep = 10;
+	public static int sampleSizeEStep = 1000;
 	public static int sampleSizeMStep = sampleSizeEStep;
 	public static int sampleDevSize = 5000;
 	public static String vocabSamplingType = "unigram";
@@ -86,6 +105,7 @@ public class Config {
 		sb.append("\nDecode Folder : " + baseDirDecode);
 
 		sb.append("\nIterations : " + numIter);
+		sb.append("\nTagged size : " + Corpus.tagSize);
 		sb.append("\nNumLayers : " + states.length);
 		sb.append("\nstates : ");
 		for(int s : states) {

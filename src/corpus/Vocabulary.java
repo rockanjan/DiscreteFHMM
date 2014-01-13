@@ -15,6 +15,9 @@ public class Vocabulary {
 	public boolean debug = false;
 	public boolean smooth = true;
 	public boolean lower = true;
+	
+	public boolean frozen = false; //can add further elements?
+	
 	public int vocabThreshold = 1;
 	//index zero reserved for *unk* (low freq features)
 	
@@ -26,6 +29,9 @@ public class Vocabulary {
 	public Map<Integer, Integer> indexToFrequency = new HashMap<Integer, Integer>();
 	
 	public int addItem(String word) {
+		if(frozen) {
+			throw new RuntimeException("Calling add on already frozen Vocabulary");
+		}
 		int returnId = -1;
 		if(wordToIndex.containsKey(word)) {
 			int wordIndex = wordToIndex.get(word);
@@ -57,7 +63,13 @@ public class Vocabulary {
 		return returnId;
 	}
 	
-	//only called for the word vocab
+	public void freeze() {
+		indexToWord.trimToSize();
+		vocabSize = wordToIndex.size();
+		frozen = true;
+	}
+	
+	//only called for the word vocab, adds UNKNOWN
 	public void reduceVocab(Corpus c) {
 		System.out.println("Reducing vocab");
 		Map<String, Integer> wordToIndexNew = new HashMap<String, Integer>();
@@ -92,6 +104,7 @@ public class Vocabulary {
 	}
 	
 	public void writeDictionary(String filename) {
+		freeze();
 		try{
 			PrintWriter pw = new PrintWriter(filename);
 			//write vocabSize
@@ -140,10 +153,16 @@ public class Vocabulary {
 			e.printStackTrace();
 			System.err.println("error reading dictionary file");
 		}
+		
+		frozen = true;
+		
 		if(vocabSize != wordToIndex.size()) {
 			System.out.println("dictionary file corrputed: header size and the vocab size do not match");
+			System.out.println("from header of file " + vocabSize);
+			System.out.println("from dictionary " + wordToIndex.size());
 			System.exit(-1);
 		}
+		
 	}
 	
 	public void debug() {

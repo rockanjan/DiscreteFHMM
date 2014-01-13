@@ -26,7 +26,12 @@ public class VariationalParamObservation {
 			for(int t=0; t<T; t++) {
 				double sum = 0;
 				for(int k=0; k<states[m]; k++) {
-					int clusterId = WordClass.wordIndexToClusterIndex.get(instance.words[t][0]);
+					int clusterId = -1;
+					try{
+						clusterId = WordClass.wordIndexToClusterIndex.get(instance.words[t][0]);
+					} catch(NullPointerException npe) {
+						throw new RuntimeException("Word=" + instance.getWord(t) + " is not in cluster vocab");
+					}
 					shi[m][t][k] = param.weights.get(m, k, instance.words[t][0]) + param.weightsClass.get(m, k, clusterId);					
 					sum += Math.exp(shi[m][t][k]); //cached exponentiated result
 				}

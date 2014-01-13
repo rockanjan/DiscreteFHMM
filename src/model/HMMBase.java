@@ -85,7 +85,7 @@ public abstract class HMMBase {
 		if (iterCount < 0) {
 			modelFile = folder.getAbsolutePath() + "/variational_model_states_" + sb.toString() + "final.txt";
 		} else {
-			modelFile = modelFile = folder.getAbsolutePath() + "/variational_model_states_" + sb.toString() + "iter_" + iterCount + ".txt";
+			modelFile = folder.getAbsolutePath() + "/variational_model_states_" + sb.toString() + "iter_" + iterCount + ".txt";
 		}
 		PrintWriter pw;
 		try {
@@ -162,14 +162,6 @@ public abstract class HMMBase {
 			filename = "variational_model_states_" + sb.toString() + "final.txt";			
 		}
 		String modelFile = folder.getAbsolutePath() + "/" + filename;
-		if (Corpus.corpusVocab == null) {
-			Corpus.corpusVocab = new ArrayList<Vocabulary>();
-		}
-		if (Corpus.corpusVocab.size() == 0) {
-			Corpus.corpusVocab.add(new Vocabulary());
-		}
-		Corpus.corpusVocab.get(0).readDictionary(
-				folder.getAbsolutePath() + "/vocab.txt");
 		BufferedReader modelReader;
 		try {
 			modelReader = new BufferedReader(new FileReader(modelFile));
@@ -180,6 +172,13 @@ public abstract class HMMBase {
 				if(statesRead[m] != states[m]) {
 					System.err.format("Error reading states , m=%d, read=%d, model=%d", m, statesRead[m], states[m]);
 					System.exit(-1);
+				}
+			}
+			for(int d=0; d<Corpus.tagSize; d++) {
+				if(statesRead[d] != Corpus.tagVocab.get(d).vocabSize) {
+					System.err.println("State size from model and vocab size for tag mismatch for layer " + d);
+					System.err.println("state size read : " + statesRead[d]);
+					System.err.println("vocab size : " + Corpus.tagVocab.get(d).vocabSize);
 				}
 			}
 			param = new HMMParamNoFinalStateLog(this);
@@ -413,6 +412,18 @@ public abstract class HMMBase {
 		model.param.expWeights = model.param.weights.getCloneExp();
 		model.param.check();
 		model.saveModel(20000);
+		
+		//load
+		Corpus.corpusVocab = null;
+		if (Corpus.corpusVocab == null) {
+			Corpus.corpusVocab = new ArrayList<Vocabulary>();
+		}
+		if (Corpus.corpusVocab.size() == 0) {
+			Corpus.corpusVocab.add(new Vocabulary());
+		}
+		Corpus.corpusVocab.get(0).readDictionary(Config.baseDirModel + "/vocab.txt");
+		WordClass.populateClustersFromSavedFile();
+		
 		HMMBase loadedModel = new HMMNoFinalStateLog(Config.states, corpus);
 		String filename;
 		StringBuffer sb = new StringBuffer();

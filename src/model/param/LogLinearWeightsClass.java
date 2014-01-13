@@ -17,7 +17,7 @@ public class LogLinearWeightsClass {
 			sumKOverAllLayers += states[m];
 		}
 		length = c * sumKOverAllLayers; 
-		System.out.println("classlength = " + length);
+		//System.out.println("classlength = " + length);
 		weights = new double[length];
 	}
 	

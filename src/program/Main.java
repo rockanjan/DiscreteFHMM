@@ -3,6 +3,7 @@ package program;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -16,6 +17,7 @@ import config.LastIter;
 import corpus.Corpus;
 import corpus.Instance;
 import corpus.InstanceList;
+import corpus.Vocabulary;
 import corpus.WordClass;
 
 public class Main {
@@ -29,15 +31,32 @@ public class Main {
 		//loadFromDifferentLayerHMM(nrLayers);
 		
 		lastIter = LastIter.read();
-		if(lastIter < 0) {
+		if(lastIter < 0) { //new
+			corpus.readVocab(Config.baseDirData + Config.vocabFile);
+			readData();
+			corpus.writeTagDictionaries();
+			Corpus.corpusVocab.get(0).writeDictionary(Config.baseDirModel + "/vocab.txt");
+			//corpus.setupSampler();			
+			WordClass.populateClassInfo();
+			Config.setFinalStates();
 			initializeNewModel();
 			//loadFromDifferentLayerHMM(3);
-		} else {
+		} else { //load
+			if (Corpus.corpusVocab == null) {
+				Corpus.corpusVocab = new ArrayList<Vocabulary>();
+			}
+			if (Corpus.corpusVocab.size() == 0) {
+				Corpus.corpusVocab.add(new Vocabulary());
+			}
+			Corpus.corpusVocab.get(0).readDictionary(Config.baseDirModel + "/vocab.txt");
+			WordClass.populateClustersFromSavedFile();
+			corpus.readTagDictionaries();
+			Config.setFinalStates();
+			readData();
 			load();
 			//checkTestPerplexity();
 		}
 		Config.printParams();
-		readData();
 		train();
 		saveModel();
 		test();
@@ -72,12 +91,6 @@ public class Main {
 	}
 	
 	public static void initializeNewModel() throws IOException {
-		corpus.readVocab(Config.baseDirData + Config.vocabFile);
-		Corpus.corpusVocab.get(0).writeDictionary(Config.baseDirModel + "vocab.txt");
-		corpus.setupSampler();
-		
-		WordClass.populateClassInfo();
-		
 		model = new HMMNoFinalStateLog(Config.states, corpus);
 		corpus.model = model;
 		//random init
@@ -96,13 +109,12 @@ public class Main {
 	}
 
 	public static void load() throws IOException {
-		WordClass.populateClustersFromSavedFile();
 		model = new HMMNoFinalStateLog(Config.states, corpus);
 		StringBuffer sb = new StringBuffer();
 		for(int s : Config.states) {
 			sb.append(s + "_");
 		}
-		String filename = "variational_model_layers_" + "states_" + sb.toString() + "iter_" + lastIter + ".txt";
+		String filename = "variational_model_states_" + sb.toString() + "iter_" + lastIter + ".txt";
 		model.loadModel(filename);		
 		corpus.model = model;
 		model.initializeZerosToBest();

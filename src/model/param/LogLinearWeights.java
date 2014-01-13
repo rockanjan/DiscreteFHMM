@@ -17,7 +17,7 @@ public class LogLinearWeights {
 			sumKOverAllLayers += states[m];
 		}
 		length = vocabSize * sumKOverAllLayers; 
-		System.out.println("wordlength = " + length);
+		//System.out.println("wordlength = " + length);
 	}
 	
 	public double[] getStateVector(int m, int v) {

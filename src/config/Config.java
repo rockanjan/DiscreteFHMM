@@ -11,7 +11,7 @@ public class Config {
 	public static long seed = 1;
 	public static Random random = new Random(seed);
 	public static int numIter = 6000;
-	public static int[] states = {2, 2}; //if there are labeled tags, these are additional layers
+	public static int[] states = {}; //if there are labeled tags, these are additional layers
 	public static int prodMK = 1;
 	static { //after reading tags
 		for(int m=0; m<states.length; m++) {
@@ -36,25 +36,25 @@ public class Config {
 		}
 	}
 	public final static int USE_THREAD_COUNT = 2;
-	public static int vocabThreshold = 3;
+	public static int vocabThreshold = 1;
 	
-	public static final String wordClusterFile = "brown_train.txt.decoded.cluster.split";
+	public static final String wordClusterFile = "eng.train.SPL.decoded.cluster.max";
 
-	public static final String baseDirData = "data/";
+	public static final String baseDirData = "data/semisup/";
 	public static final String baseDirModel = "out/model/";
 	public static final String baseDirDecode = "out/decoded/";
 
-	public static String trainFile = "brown_train_sample_tagged.txt";
-	public static String vocabFile = "brown_train.txt";
-	public static String testFile = "brown_test.txt";
+	public static String trainFile = "eng.train.tagged.SPL";
+	public static String vocabFile = "eng.train.SPL";
+	public static String testFile = "eng.testb.SPL";
 	//public static String devFile = "wsj_biomed.dev.txt";
-	public static String devFile = "brown_dev.txt";
+	public static String devFile = "eng.testa.SPL";
 
 	public static String outFileTrain = trainFile + ".decoded";
 	public static String outFileTest = testFile + ".decoded";
 	public static String outFileDev = devFile + ".decoded";
 
-	public static int variationalIter = 10;
+	public static int variationalIter = 5;
 	public static double variationalConvergence = 1e-3;
 
 	//EM related
@@ -76,7 +76,7 @@ public class Config {
 	public static boolean sampleSequential = true;
 	public static double alpha = 0.5;
 	public static double t0 = 2;
-	public static int sampleSizeEStep = 1000;
+	public static int sampleSizeEStep = 5000;
 	public static int sampleSizeMStep = sampleSizeEStep;
 	public static int sampleDevSize = 5000;
 	public static String vocabSamplingType = "unigram";

@@ -107,7 +107,10 @@ public class VariationalParam {
 			// - phi_tC sum_C(prod_n!=m ( <s_tn> dot exp(theta_nC) * exp(theta_mC)))
 			
 			for(int m=0; m<model.states.length; m++) {
-				
+				//skip for labeled layer
+				if(instance.isLabeledLayer(m)) {
+					continue;
+				}
 				//for words in the cluster of current word
 				double[] sumOverY = new double[model.states[m]];
 				int wordCluster = WordClass.wordIndexToClusterIndex.get(instance.words[t][0]);

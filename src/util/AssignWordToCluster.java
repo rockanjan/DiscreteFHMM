@@ -24,7 +24,7 @@ import cc.mallet.util.CommandOption.Set;
  * approach: assign most frequent cluster for the word
  */
 public class AssignWordToCluster {
-	static String inFile="/home/anjan/workspace/HMM/out/decoded/nepali_50layers_seed1/nepali_train.txt.decoded";
+	static String inFile="/home/anjan/workspace/HMM/out/decoded/eng.train.SPL.decoded";
 	static int WORD_COL = 2;
 	static int HMM_COL = 1;
 	static int MAX_WORDS_PER_CLUSTER = 1000;

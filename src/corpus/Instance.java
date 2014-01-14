@@ -20,6 +20,7 @@ import config.Config;
 
 public class Instance {
 	public VariationalParam varParam;
+	//timestep, layer
 	public int[][] tags;
 	public int[][] words;
 	public int T; // sentence length
@@ -243,7 +244,11 @@ public class Instance {
 					for(int k=0; k<model.states[m]; k++) {
 						dot += posteriors[m][t][k] * expWeights[LogLinearWeights.getIndex(m, k, y)];
 					}
+					if(dot == 0) {
+						dot = 1e-200;
+					}
 					prod *= dot;
+					//System.out.println("prod = " + prod);
 					MathUtils.check(prod);
 					if(prod == 0) {
 						throw new RuntimeException("underflow");
@@ -352,6 +357,10 @@ public class Instance {
 	 */
 	public String getWord(int position) {
 		return Corpus.corpusVocab.get(0).indexToWord.get(words[position][0]);
+	}
+	
+	public boolean isLabeledLayer(int layer) {
+		return (tags != null && layer < Corpus.tagSize);
 	}
 
 	public void populateWordArray(String line) {

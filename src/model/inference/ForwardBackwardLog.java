@@ -7,7 +7,9 @@ import model.param.HMMParamBase;
 import model.param.MultinomialBase;
 import util.MathUtils;
 import util.MyArray;
+import corpus.Corpus;
 import corpus.Instance;
+import corpus.WordClass;
 
 public class ForwardBackwardLog extends ForwardBackward{
 	public ForwardBackwardLog(HMMBase model, Instance instance, int layer) {
@@ -28,9 +30,54 @@ public class ForwardBackwardLog extends ForwardBackward{
 		computePosterior(); //also computes jointObjective for states
 	}
 	
+	
+	
 	@Override
 	public void forward() {
 		logLikelihood =0;
+		//if labeled layer
+		if(instance.isLabeledLayer(layer)) {
+			//calculate just the loglikelihood
+			//obs should be normalized for each state 
+			// (to make it similar to variational step)
+			double obs;
+			double normalizer = 0;
+			int currentWordIndex = instance.words[0][0];
+			int currentClusterIndex = WordClass.wordIndexToClusterIndex.get(currentWordIndex);
+			double[] obsValue = new double[model.states[layer]];
+			for(int k=0; k<model.states[layer]; k++) {
+				obsValue[k] = model.param.weights.get(layer, k, currentWordIndex) 
+					+ model.param.weightsClass.get(layer, k, currentClusterIndex);
+			}
+			normalizer = MathUtils.logsumexp(obsValue);
+			//normalize and update				
+			for(int k=0; k<model.states[layer]; k++) {
+				obsValue[k] = obsValue[k] - normalizer;				
+			}
+			//initial (timestep 0)
+			obs = obsValue[instance.tags[0][layer]];
+			double pi = initial.get(instance.tags[0][layer], 0);
+			logLikelihood += pi + obs;
+			//for other timesteps
+			for(int t=1; t<T; t++) {
+				currentWordIndex = instance.words[t][0];
+				currentClusterIndex = WordClass.wordIndexToClusterIndex.get(currentWordIndex);
+				for(int k=0; k<model.states[layer]; k++) {
+					obsValue[k] = model.param.weights.get(layer, k, currentWordIndex) 
+						+ model.param.weightsClass.get(layer, k, currentClusterIndex);
+				}
+				normalizer = MathUtils.logsumexp(obsValue);
+				//normalize and update				
+				for(int k=0; k<model.states[layer]; k++) {
+					obsValue[k] = obsValue[k] - normalizer;				
+				}
+				obs = obsValue[instance.tags[0][layer]];
+				double trans = transition.get(instance.tags[t][layer], instance.tags[t-1][layer]);
+				logLikelihood += trans + obs;
+			}
+			return;
+		}
+		//reaches here only if unlabeled layer
 		alpha = new double[T][nrStates]; //alphas also stored in log scale
 		//initialization: for t=0
 		for(int i=0; i<nrStates; i++) {
@@ -60,6 +107,10 @@ public class ForwardBackwardLog extends ForwardBackward{
 	
 	@Override
 	public void backward() {
+		//if labeled layer, do nothing
+		if(instance.isLabeledLayer(layer)) {
+			return;
+		}
 		beta = new double[T][nrStates];
 		//initialization for t=T
 		for(int i=0; i<nrStates; i++) {
@@ -89,6 +140,26 @@ public class ForwardBackwardLog extends ForwardBackward{
 		}
 		posterior = new double[T][nrStates];
 		instance.posteriors[layer] = new double[T][nrStates];
+		if(instance.isLabeledLayer(layer)) {
+			for(int t=0; t<T; t++) {
+				//posterior[t][instance.tags[t][layer]] = 1.0;
+				//smooth
+				double maxParam = 0.98;
+				for(int i=0; i<model.states[layer]; i++) {
+					if(i == instance.tags[t][layer]) {
+						posterior[t][i] = maxParam;
+					} else {
+						posterior[t][i] = (1-maxParam) / (model.states[layer] - 1);
+					}
+					instance.posteriors[layer][t][i] = posterior[t][i];
+				}
+				
+			}
+			checkStatePosterior();
+			//posterior difference will be zero
+			return;
+			
+		}
 		
 		for(int t=0; t<T; t++) {
 			double[] expSum = new double[nrStates];
@@ -149,9 +220,16 @@ public class ForwardBackwardLog extends ForwardBackward{
 	}
 	
 	public void addToTransition(MultinomialBase transition) {
+		if(instance.isLabeledLayer(layer)) {
+			for(int t=0; t<T-1; t++) {
+				transition.addToCounts(instance.tags[t+1][layer], instance.tags[t][layer], 1.0);
+			}
+			return;
+		}
 		for(int t=0; t<T-1; t++) {
 			for(int i=0; i<nrStates; i++) {
 				for(int j=0; j<nrStates; j++) {
+					//opposite indices because finally we want j given i (using prob i->j)
 					transition.addToCounts(j, i, getTransitionPosterior(i, j, t));
 				}
 			}
@@ -163,6 +241,13 @@ public class ForwardBackwardLog extends ForwardBackward{
 	 * P(S_t-1, S_t | O)
 	 */
 	public double getTransitionPosterior(int currentState, int nextState, int position) {
+		if(instance.isLabeledLayer(layer)) {
+			if(instance.tags[position][layer] == currentState &&
+					instance.tags[position+1][layer] == nextState) {
+				return 1.0;
+			}
+			return 0;
+		}
 		//xi in Rabiner Tutorial
 		double alphaValue = alpha[position][currentState];
 		double trans = transition.get(nextState, currentState); //transition to next given current

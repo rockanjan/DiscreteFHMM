@@ -44,7 +44,7 @@ public class Config {
 	public static final String baseDirModel = "out/model/";
 	public static final String baseDirDecode = "out/decoded/";
 
-	public static String trainFile = "brown_train_tagged.txt";
+	public static String trainFile = "brown_train_sample_tagged.txt";
 	public static String vocabFile = "brown_train.txt";
 	public static String testFile = "brown_test.txt";
 	//public static String devFile = "wsj_biomed.dev.txt";

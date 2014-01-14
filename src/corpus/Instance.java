@@ -411,6 +411,10 @@ public class Instance {
 						}
 					}
 				}
+				//make sure all tokens of a sentence are labeled
+				if(tags == null) { //when first token is unlabeled
+					throw new RuntimeException("First token not labeled for line : " + line);
+				}
 				//add to tagDictionary if needed and get the index
 				for(int d=0; d<numberOfTags; d++) {
 					String tag = wordTagSplitted[d+1]; //offset because first index is word
@@ -422,6 +426,10 @@ public class Instance {
 					}
 					tags[t][d] = tagIndex;
 				}				
+			} else { //if a token is not labeled
+				if(tags != null) { //but tag was initialized
+					throw new RuntimeException("All tokens must be labeled for line : " + line);
+				}
 			}
 			
 			//TODO:

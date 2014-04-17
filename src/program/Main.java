@@ -90,7 +90,7 @@ public class Main {
 			corpus.readDev(devFile);
 		//save vocab file
 		corpus.saveVocabFile(outFolderPrefix + "/model/vocab.txt");
-		writeSmoothedCorpus("nepali_smoothed_train.txt");
+		writeSmoothedCorpus("nepali_smoothed_train_index.txt");
 		//System.exit(-1);
 		if(modelType == HMMType.REGULAR) {
 			System.out.println("HMM in regular scale");
@@ -146,8 +146,8 @@ public class Main {
 			for(int n=0; n<instanceList.size(); n++) {
 				Instance instance = instanceList.get(n);
 				for(int t=0; t<instance.T; t++) {
-					String word = instance.getWord(t);
-					pw.print(word + " ");
+					//String word = instance.getWord(t);
+					pw.print(instance.words[t] + " ");
 				}
 				pw.println();
 			}

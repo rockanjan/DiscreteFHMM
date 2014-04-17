@@ -200,7 +200,7 @@ public class Corpus {
 			int V = corpusVocab.vocabSize;
 			dictionaryWriter.println(V);
 			for (int v = 0; v < V; v++) {
-				dictionaryWriter.println(corpusVocab.indexToWord.get(v));
+				dictionaryWriter.println(corpusVocab.indexToWord.get(v) + " " + v + " " + corpusVocab.indexToFrequency.get(v));
 				dictionaryWriter.flush();
 			}
 			dictionaryWriter.close();

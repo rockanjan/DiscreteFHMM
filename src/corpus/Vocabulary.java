@@ -91,6 +91,7 @@ public class Vocabulary {
 		indexToFrequencyNew.put(0, indexToFrequency.get(0)); //keep the UNK no matter what
 		indexToWordNew.add(UNKNOWN);
 		int featureIndex = 1;
+		int unkCount = 0;
 		for(int i=1; i<indexToWord.size(); i++) {
 			if(indexToFrequency.get(i) > vocabThreshold) {
 				wordToIndexNew.put(indexToWord.get(i), featureIndex);
@@ -98,7 +99,11 @@ public class Vocabulary {
 				indexToFrequencyNew.put(featureIndex, indexToFrequency.get(i));
 				featureIndex = featureIndex + 1;
 			}
+			else {
+				unkCount += indexToFrequency.get(i);
+			}
 		}
+		indexToFrequencyNew.put(0, unkCount);
 		indexToWord = null; indexToFrequency = null; wordToIndex = null;
 		indexToWord = indexToWordNew;
 		indexToFrequency = indexToFrequencyNew;

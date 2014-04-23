@@ -4,3 +4,8 @@ Features:
 * Faster training by multi-threading
 * Faster training by online learning (training in mini-batches)
 
+Running
+-------
+Simply run: ./run.sh in the base directory
+
+Modify config.Config file to use your own data

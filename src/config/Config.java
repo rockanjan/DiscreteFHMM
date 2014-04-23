@@ -20,8 +20,8 @@ public class Config {
 
 	public static String trainFile = "test.txt.SPL";
 	public static String vocabFile = trainFile;
-	public static String testFile = "brown_test.txt";
-	public static String devFile = "brown_dev.txt";
+	public static String testFile = null;
+	public static String devFile = null;
 
 	public static String outFileTrain = trainFile + ".decoded";
 	public static String outFileTest = testFile + ".decoded";
